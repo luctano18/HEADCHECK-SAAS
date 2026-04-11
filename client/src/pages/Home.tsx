@@ -8,21 +8,8 @@ export default function Home() {
   const { isAuthenticated } = useAuth();
   const [, navigate] = useLocation();
 
-  const handleCheckIn = () => {
-    if (isAuthenticated) {
-      navigate("/checkin");
-    } else {
-      window.location.href = getLoginUrl();
-    }
-  };
-
-  const handleCompass = () => {
-    if (isAuthenticated) {
-      navigate("/compass");
-    } else {
-      window.location.href = getLoginUrl();
-    }
-  };
+  const handleCheckIn = () => navigate("/checkin");
+  const handleCompass = () => navigate("/compass");
 
   return (
     <div className="min-h-screen bg-[oklch(0.97_0.03_285)] font-sans">

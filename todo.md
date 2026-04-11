@@ -122,3 +122,15 @@
 
 ### Disclaimer
 - [x] Add disclaimer footer on Check-In and Compass pages
+
+## Phase 13: Guest / Free Access (No Login Required)
+
+- [x] Backend: convert checkIn.create to publicProcedure (save only if user is authenticated)
+- [x] Backend: convert sevenMirrors.startSession and submitMirrorResponse to publicProcedure (in-memory session for guests)
+- [x] Backend: convert dashboard.getCheckIns to publicProcedure (return empty for guests)
+- [x] Frontend: remove hard auth redirect from CheckIn.tsx — allow guests to complete full flow
+- [x] Frontend: remove hard auth redirect from SevenMirrors.tsx — allow guests to complete full Compass flow
+- [x] Frontend: show soft "Save your progress" login nudge after Check-In result and Compass completion
+- [x] Frontend: ensure Resources, Mindset, Zera Cards, LearnEI pages are fully public (no auth check)
+- [x] Frontend: update Home.tsx hero CTA — no login required to start
+- [x] Frontend: update nav — show Login button only when not authenticated (no forced redirect)

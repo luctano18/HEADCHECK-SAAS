@@ -6,7 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
-import { Heart, ArrowRight, ArrowLeft, Loader2, Sparkles, Award } from "lucide-react";
+import { Heart, ArrowRight, ArrowLeft, Loader2, Sparkles, Award, LogIn } from "lucide-react";
+import { getLoginUrl } from "@/const";
 
 // Updated mirror themes from headcheck.app — Self Trust Compass
 const MIRRORS = [
@@ -79,6 +80,10 @@ export default function SevenMirrors() {
   const [response, setResponse] = useState("");
   const [completionData, setCompletionData] = useState<{ summary: string; badges: string[] } | null>(null);
 
+  // Guest: in-memory responses array
+  const [guestResponses, setGuestResponses] = useState<{ mirrorTheme: string; response: string }[]>([]);
+
+  // Authenticated: start session in DB
   const startMutation = trpc.sevenMirrors.startSession.useMutation({
     onSuccess: (data) => {
       setSessionId(data.sessionId);
@@ -88,6 +93,7 @@ export default function SevenMirrors() {
     onError: () => toast.error("Could not start session. Please try again."),
   });
 
+  // Authenticated: submit each mirror response to DB
   const submitMutation = trpc.sevenMirrors.submitMirrorResponse.useMutation({
     onSuccess: (data) => {
       if (data.completed) {
@@ -101,8 +107,46 @@ export default function SevenMirrors() {
     onError: () => toast.error("Could not save your response. Please try again."),
   });
 
+  // Guest: generate AI summary without saving to DB
+  const guestSummaryMutation = trpc.sevenMirrors.guestSummary.useMutation({
+    onSuccess: (data) => {
+      setCompletionData({ summary: data.summary, badges: data.badges });
+      setPhase("complete");
+    },
+    onError: () => toast.error("Could not generate summary. Please try again."),
+  });
+
+  const handleStart = () => {
+    if (isAuthenticated) {
+      startMutation.mutate();
+    } else {
+      setGuestResponses([]);
+      setCurrentMirrorIndex(0);
+      setPhase("session");
+    }
+  };
+
+  const handleSubmitMirror = () => {
+    const currentMirror = MIRRORS[currentMirrorIndex];
+    if (!currentMirror) return;
+    const trimmed = response.trim();
+    if (isAuthenticated && sessionId) {
+      submitMutation.mutate({ sessionId, mirrorIndex: currentMirrorIndex, response: trimmed });
+    } else {
+      // Guest: accumulate in memory
+      const updated = [...guestResponses, { mirrorTheme: currentMirror.theme, response: trimmed }];
+      setGuestResponses(updated);
+      if (currentMirrorIndex === 6) {
+        // Last mirror — generate AI summary
+        guestSummaryMutation.mutate({ responses: updated });
+      } else {
+        setCurrentMirrorIndex(i => i + 1);
+        setResponse("");
+      }
+    }
+  };
+
   if (loading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin" style={{ color: "oklch(0.45 0.18 285)" }} /></div>;
-  if (!isAuthenticated) { navigate("/"); return null; }
 
   const currentMirror = MIRRORS[currentMirrorIndex];
 
@@ -174,7 +218,7 @@ export default function SevenMirrors() {
           <div className="flex flex-col gap-3">
             <Button size="lg" className="w-full rounded-full py-6 text-base font-bold"
               style={{ background: "linear-gradient(135deg, oklch(0.45 0.18 285), oklch(0.72 0.18 48))" }}
-              onClick={() => startMutation.mutate()} disabled={startMutation.isPending}>
+              onClick={handleStart} disabled={startMutation.isPending || guestSummaryMutation.isPending}>
               {startMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <Sparkles className="w-5 h-5 mr-2" />}
               Begin Your Journey
             </Button>
@@ -249,12 +293,9 @@ export default function SevenMirrors() {
             )}
             <Button className="flex-1 h-12 text-base rounded-full font-semibold"
               style={{ background: "linear-gradient(135deg, oklch(0.45 0.18 285), oklch(0.72 0.18 48))" }}
-              disabled={response.trim().length < 10 || submitMutation.isPending}
-              onClick={() => {
-                if (!sessionId) return;
-                submitMutation.mutate({ sessionId, mirrorIndex: currentMirrorIndex, response: response.trim() });
-              }}>
-              {submitMutation.isPending ? (
+              disabled={response.trim().length < 10 || submitMutation.isPending || guestSummaryMutation.isPending}
+              onClick={handleSubmitMirror}>
+              {(submitMutation.isPending || guestSummaryMutation.isPending) ? (
                 <><Loader2 className="w-4 h-4 animate-spin mr-2" />{currentMirrorIndex === 6 ? "Generating summary..." : "Saving..."}</>
               ) : currentMirrorIndex === 6 ? (
                 <><Sparkles className="w-4 h-4 mr-2" />Complete Journey</>
@@ -318,11 +359,27 @@ export default function SevenMirrors() {
             </div>
           )}
 
+          {/* Guest: soft login nudge */}
+          {!isAuthenticated && (
+            <div className="rounded-2xl p-6 text-center border-2 space-y-3"
+              style={{ background: "linear-gradient(135deg, oklch(0.95 0.04 285), oklch(0.96 0.04 48))", borderColor: "oklch(0.88 0.06 285)" }}>
+              <div className="text-2xl">✨</div>
+              <h3 className="font-bold" style={{ color: "oklch(0.18 0.04 260)" }}>Save your journey & track your growth</h3>
+              <p className="text-sm" style={{ color: "oklch(0.45 0.04 260)" }}>Create a free account to save your Compass sessions, earn badges, and track emotional patterns over time.</p>
+              <Button onClick={() => window.location.href = getLoginUrl()} className="w-full rounded-full font-semibold"
+                style={{ background: "linear-gradient(135deg, oklch(0.45 0.18 285), oklch(0.72 0.18 48))" }}>
+                <LogIn className="w-4 h-4 mr-2" /> Create Free Account
+              </Button>
+            </div>
+          )}
+
           <div className="flex flex-col gap-3">
-            <Button onClick={() => navigate("/dashboard")} className="w-full rounded-full font-semibold"
-              style={{ background: "linear-gradient(135deg, oklch(0.45 0.18 285), oklch(0.72 0.18 48))" }}>
-              View Your Dashboard
-            </Button>
+            {isAuthenticated ? (
+              <Button onClick={() => navigate("/dashboard")} className="w-full rounded-full font-semibold"
+                style={{ background: "linear-gradient(135deg, oklch(0.45 0.18 285), oklch(0.72 0.18 48))" }}>
+                View Your Dashboard
+              </Button>
+            ) : null}
             <Button onClick={() => navigate("/checkin")} variant="outline" className="w-full rounded-full">
               Start a Quick Check-In
             </Button>

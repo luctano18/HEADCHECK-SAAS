@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -8,9 +8,7 @@ import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
 import { getLoginUrl } from "@/const";
-import {
-  Brain, ArrowRight, ArrowLeft, Loader2, AlertTriangle, Phone, X, Heart
-} from "lucide-react";
+import { Brain, ArrowRight, ArrowLeft, Loader2, AlertTriangle, Phone, Heart, Sparkles, X } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const EMOTIONS = [
@@ -42,6 +40,18 @@ const INTENSITY_LABELS: Record<number, string> = {
   9: "Overwhelming", 10: "Unbearable",
 };
 
+// Type for the guest AI response stored in state
+type GuestAiResult = {
+  emotionalReflection: string;
+  brainInsight: string;
+  eiPillar: string;
+  eiPillarDescription: string;
+  aieiProverb: string;
+  aieiProverbOrigin: string;
+  personalizedNextStep: string;
+  supportInvitation: string;
+};
+
 export default function CheckIn() {
   const { isAuthenticated, loading } = useAuth();
   const [, navigate] = useLocation();
@@ -53,6 +63,7 @@ export default function CheckIn() {
   const [crisisDialogOpen, setCrisisDialogOpen] = useState(false);
   const [crisisSeverity, setCrisisSeverity] = useState<string | null>(null);
 
+  // Crisis detection (real-time, public)
   const crisisQuery = trpc.checkIns.detectCrisisRealtime.useQuery(
     { text: journal, intensity },
     { enabled: journal.length > 10, refetchInterval: false }
@@ -65,6 +76,7 @@ export default function CheckIn() {
     }
   }, [crisisQuery.data?.detected]);
 
+  // Authenticated mutation — saves to DB
   const createMutation = trpc.checkIns.create.useMutation({
     onSuccess: (data) => {
       if (data.crisisDetected) {
@@ -73,54 +85,85 @@ export default function CheckIn() {
       }
       navigate(`/check-in/${data.checkInId}`);
     },
-    onError: (err) => toast.error("Something went wrong. Please try again."),
+    onError: () => toast.error("Something went wrong. Please try again."),
   });
 
-  if (loading) {
-    return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
-  }
-  if (!isAuthenticated) {
-    window.location.href = getLoginUrl();
-    return null;
-  }
+  // Guest mutation — AI only, no DB save
+  const guestMutation = trpc.checkIns.guestCreate.useMutation({
+    onSuccess: (data) => {
+      if (data.crisisDetected) {
+        setCrisisSeverity(data.severity);
+        setCrisisDialogOpen(true);
+      }
+      // Store result in sessionStorage for the result page to read
+      sessionStorage.setItem("headcheck_guest_result", JSON.stringify({
+        aiResponse: data.aiResponse,
+        crisisDetected: data.crisisDetected,
+        severity: data.severity,
+        emotion: selectedEmotion?.label,
+        emotionEmoji: selectedEmotion?.emoji,
+        intensity,
+        context: selectedContext?.label,
+        journalEntry: journal,
+      }));
+      navigate("/check-in/guest");
+    },
+    onError: () => toast.error("Something went wrong. Please try again."),
+  });
 
   const handleSubmit = () => {
     if (!selectedEmotion || !selectedContext) return;
-    createMutation.mutate({
-      emotion: selectedEmotion.label,
-      emotionEmoji: selectedEmotion.emoji,
-      intensity,
-      context: selectedContext.value,
-      journalEntry: journal || undefined,
-    });
+    if (isAuthenticated) {
+      createMutation.mutate({
+        emotion: selectedEmotion.label,
+        emotionEmoji: selectedEmotion.emoji,
+        intensity,
+        context: selectedContext.value,
+        journalEntry: journal || undefined,
+      });
+    } else {
+      guestMutation.mutate({
+        emotion: selectedEmotion.label,
+        emotionEmoji: selectedEmotion.emoji,
+        intensity,
+        context: selectedContext.value,
+        journalEntry: journal || undefined,
+      });
+    }
   };
 
+  const isPending = createMutation.isPending || guestMutation.isPending;
   const canProceed = step === 1 ? !!selectedEmotion : step === 2 ? true : step === 3 ? !!selectedContext : true;
 
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin" style={{ color: "oklch(0.45 0.18 285)" }} /></div>;
+  }
+
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-[oklch(0.97_0.03_285)]">
+
       {/* Crisis Dialog */}
       <Dialog open={crisisDialogOpen} onOpenChange={setCrisisDialogOpen}>
-        <DialogContent className="max-w-md border-2 border-destructive/30 bg-red-50">
+        <DialogContent className="max-w-md border-2 border-red-200 bg-red-50">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-destructive">
+            <DialogTitle className="flex items-center gap-2 text-red-700">
               <AlertTriangle className="w-5 h-5" />
               We're here for you
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <p className="text-sm text-foreground leading-relaxed">
+            <p className="text-sm leading-relaxed" style={{ color: "oklch(0.22 0.04 260)" }}>
               We noticed some signs that you might be going through something really difficult right now. You don't have to face this alone.
             </p>
-            <div className="bg-white rounded-xl p-4 border border-destructive/20 text-center">
-              <p className="text-sm font-medium text-muted-foreground mb-1">Immediate Support Available 24/7</p>
-              <div className="flex items-center justify-center gap-2 text-2xl font-bold text-destructive">
+            <div className="bg-white rounded-xl p-4 border border-red-200 text-center">
+              <p className="text-sm font-medium text-red-500 mb-1">Immediate Support Available 24/7</p>
+              <div className="flex items-center justify-center gap-2 text-2xl font-bold text-red-700">
                 <Phone className="w-6 h-6" />
                 988
               </div>
-              <p className="text-xs text-muted-foreground mt-1">Suicide & Crisis Lifeline — Call or Text</p>
+              <p className="text-xs text-red-400 mt-1">Suicide & Crisis Lifeline — Call or Text</p>
             </div>
-            <p className="text-xs text-muted-foreground text-center">
+            <p className="text-xs text-center" style={{ color: "oklch(0.55 0.04 260)" }}>
               You can also continue your check-in. Your response will be handled with care.
             </p>
             <div className="flex gap-2">
@@ -135,42 +178,54 @@ export default function CheckIn() {
         </DialogContent>
       </Dialog>
 
-      {/* Header */}
-      <div className="border-b bg-card/80 backdrop-blur-sm sticky top-0 z-10">
-        <div className="container flex items-center justify-between h-16">
-          <button onClick={() => navigate("/dashboard")} className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
-            <Brain className="w-5 h-5 text-primary" />
-            <span className="font-semibold text-sm">HeadCheck AI</span>
+      {/* Nav */}
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-[oklch(0.90_0.04_285)]">
+        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+          <button onClick={() => navigate("/")} className="flex items-center gap-2 font-bold text-xl" style={{ color: "oklch(0.45 0.18 285)" }}>
+            <Heart className="w-5 h-5" style={{ fill: "oklch(0.45 0.18 285)" }} />
+            HeadCheck
           </button>
           <div className="flex items-center gap-2">
             {[1, 2, 3, 4].map((s) => (
-              <div key={s} className={`h-2 rounded-full transition-all duration-300 ${s === step ? "w-8 bg-primary" : s < step ? "w-4 bg-primary/50" : "w-4 bg-muted"}`} />
+              <div key={s} className="h-2 rounded-full transition-all duration-300"
+                style={{
+                  width: s === step ? "2rem" : "1rem",
+                  background: s <= step ? "linear-gradient(to right, oklch(0.45 0.18 285), oklch(0.72 0.18 48))" : "oklch(0.85 0.03 260)",
+                  opacity: s < step ? 0.6 : 1,
+                }} />
             ))}
           </div>
-          <span className="text-xs text-muted-foreground font-medium">Step {step} of 4</span>
+          <span className="text-xs font-medium" style={{ color: "oklch(0.55 0.04 260)" }}>Step {step} of 4</span>
         </div>
-      </div>
+      </nav>
 
-      <div className="container max-w-2xl py-12">
+      {/* Guest banner — soft nudge */}
+      {!isAuthenticated && (
+        <div className="fixed top-16 left-0 right-0 z-40 bg-amber-50 border-b border-amber-200 px-4 py-2 flex items-center justify-between">
+          <p className="text-xs text-amber-700 font-medium">
+            ✨ You're using HeadCheck as a guest — your results won't be saved.{" "}
+            <button onClick={() => window.location.href = getLoginUrl()} className="underline font-bold">Sign in to save your history</button>
+          </p>
+          <X className="w-4 h-4 text-amber-500 cursor-pointer shrink-0" />
+        </div>
+      )}
+
+      <div className="max-w-2xl mx-auto px-6 pt-28 pb-12">
+
         {/* Step 1: Emotion */}
         {step === 1 && (
-          <div className="animate-fade-in-up space-y-8">
+          <div className="space-y-8 animate-fade-in-up">
             <div className="text-center">
               <Badge variant="secondary" className="mb-3">Emotional Check-In</Badge>
-              <h1 className="font-serif text-3xl font-bold text-foreground mb-2">How are you feeling right now?</h1>
-              <p className="text-muted-foreground">Select the emotion that best describes your current state.</p>
+              <h1 className="text-3xl font-bold mb-2" style={{ color: "oklch(0.18 0.04 260)" }}>How are you feeling right now?</h1>
+              <p style={{ color: "oklch(0.55 0.04 260)" }}>Select the emotion that best describes your current state.</p>
             </div>
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
               {EMOTIONS.map((e) => (
-                <button
-                  key={e.label}
-                  onClick={() => setSelectedEmotion(e)}
-                  className={`emotion-card flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all ${
-                    selectedEmotion?.label === e.label
-                      ? `${e.color} border-current shadow-md selected`
-                      : "bg-card border-border hover:border-primary/30"
-                  }`}
-                >
+                <button key={e.label} onClick={() => setSelectedEmotion(e)}
+                  className={`flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all ${
+                    selectedEmotion?.label === e.label ? `${e.color} border-current shadow-md` : "bg-white border-[oklch(0.90_0.03_260)] hover:border-[oklch(0.70_0.08_285)]"
+                  }`}>
                   <span className="text-3xl">{e.emoji}</span>
                   <span className="text-xs font-medium">{e.label}</span>
                 </button>
@@ -181,28 +236,23 @@ export default function CheckIn() {
 
         {/* Step 2: Intensity */}
         {step === 2 && (
-          <div className="animate-fade-in-up space-y-8">
+          <div className="space-y-8 animate-fade-in-up">
             <div className="text-center">
               <Badge variant="secondary" className="mb-3">Emotional Check-In</Badge>
-              <h1 className="font-serif text-3xl font-bold text-foreground mb-2">
-                How intense is your <span className="text-primary italic">{selectedEmotion?.label}</span>?
+              <h1 className="text-3xl font-bold mb-2" style={{ color: "oklch(0.18 0.04 260)" }}>
+                How intense is your <span style={{ color: "oklch(0.45 0.18 285)" }} className="italic">{selectedEmotion?.label}</span>?
               </h1>
-              <p className="text-muted-foreground">Rate the intensity of your emotion from 1 to 10.</p>
+              <p style={{ color: "oklch(0.55 0.04 260)" }}>Rate the intensity from 1 to 10.</p>
             </div>
-            <div className="bg-card rounded-2xl p-8 border shadow-sm space-y-8">
+            <div className="bg-white rounded-2xl p-8 border shadow-sm space-y-8" style={{ borderColor: "oklch(0.92 0.03 260)" }}>
               <div className="text-center">
                 <div className="text-7xl mb-2">{selectedEmotion?.emoji}</div>
-                <div className="text-5xl font-bold text-primary mb-1">{intensity}</div>
-                <div className="text-sm text-muted-foreground font-medium">{INTENSITY_LABELS[intensity]}</div>
+                <div className="text-5xl font-bold mb-1" style={{ color: "oklch(0.45 0.18 285)" }}>{intensity}</div>
+                <div className="text-sm font-medium" style={{ color: "oklch(0.55 0.04 260)" }}>{INTENSITY_LABELS[intensity]}</div>
               </div>
               <div className="px-4">
-                <Slider
-                  value={[intensity]}
-                  onValueChange={([v]) => setIntensity(v)}
-                  min={1} max={10} step={1}
-                  className="w-full"
-                />
-                <div className="flex justify-between text-xs text-muted-foreground mt-2">
+                <Slider value={[intensity]} onValueChange={([v]) => setIntensity(v)} min={1} max={10} step={1} className="w-full" />
+                <div className="flex justify-between text-xs mt-2" style={{ color: "oklch(0.60 0.04 260)" }}>
                   <span>1 — Barely felt</span>
                   <span>10 — Overwhelming</span>
                 </div>
@@ -213,25 +263,22 @@ export default function CheckIn() {
 
         {/* Step 3: Context */}
         {step === 3 && (
-          <div className="animate-fade-in-up space-y-8">
+          <div className="space-y-8 animate-fade-in-up">
             <div className="text-center">
               <Badge variant="secondary" className="mb-3">Emotional Check-In</Badge>
-              <h1 className="font-serif text-3xl font-bold text-foreground mb-2">What's the context?</h1>
-              <p className="text-muted-foreground">Where is this emotion coming from?</p>
+              <h1 className="text-3xl font-bold mb-2" style={{ color: "oklch(0.18 0.04 260)" }}>What's the context?</h1>
+              <p style={{ color: "oklch(0.55 0.04 260)" }}>Where is this emotion coming from?</p>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               {CONTEXTS.map((c) => (
-                <button
-                  key={c.value}
-                  onClick={() => setSelectedContext(c)}
-                  className={`emotion-card flex flex-col items-center gap-3 p-6 rounded-2xl border-2 transition-all ${
+                <button key={c.value} onClick={() => setSelectedContext(c)}
+                  className={`flex flex-col items-center gap-3 p-6 rounded-2xl border-2 transition-all ${
                     selectedContext?.value === c.value
-                      ? "border-primary bg-primary/5 shadow-md selected"
-                      : "bg-card border-border hover:border-primary/30"
-                  }`}
-                >
+                      ? "border-[oklch(0.45_0.18_285)] bg-[oklch(0.95_0.04_285)] shadow-md"
+                      : "bg-white border-[oklch(0.90_0.03_260)] hover:border-[oklch(0.70_0.08_285)]"
+                  }`}>
                   <span className="text-4xl">{c.emoji}</span>
-                  <span className="text-sm font-semibold">{c.label}</span>
+                  <span className="text-sm font-semibold" style={{ color: "oklch(0.22 0.04 260)" }}>{c.label}</span>
                 </button>
               ))}
             </div>
@@ -240,18 +287,18 @@ export default function CheckIn() {
 
         {/* Step 4: Journal */}
         {step === 4 && (
-          <div className="animate-fade-in-up space-y-8">
+          <div className="space-y-8 animate-fade-in-up">
             <div className="text-center">
               <Badge variant="secondary" className="mb-3">Emotional Check-In</Badge>
-              <h1 className="font-serif text-3xl font-bold text-foreground mb-2">Share more (optional)</h1>
-              <p className="text-muted-foreground">Write freely about what's on your mind. This is your private space.</p>
+              <h1 className="text-3xl font-bold mb-2" style={{ color: "oklch(0.18 0.04 260)" }}>Share more (optional)</h1>
+              <p style={{ color: "oklch(0.55 0.04 260)" }}>Write freely about what's on your mind. This is your private space.</p>
             </div>
-            <div className="bg-card rounded-2xl p-6 border shadow-sm space-y-4">
-              <div className="flex items-center gap-3 pb-3 border-b">
+            <div className="bg-white rounded-2xl p-6 border shadow-sm space-y-4" style={{ borderColor: "oklch(0.92 0.03 260)" }}>
+              <div className="flex items-center gap-3 pb-3 border-b" style={{ borderColor: "oklch(0.92 0.03 260)" }}>
                 <div className="text-3xl">{selectedEmotion?.emoji}</div>
                 <div>
-                  <p className="font-semibold">{selectedEmotion?.label} — Intensity {intensity}/10</p>
-                  <p className="text-sm text-muted-foreground">Context: {selectedContext?.label}</p>
+                  <p className="font-semibold" style={{ color: "oklch(0.18 0.04 260)" }}>{selectedEmotion?.label} — Intensity {intensity}/10</p>
+                  <p className="text-sm" style={{ color: "oklch(0.55 0.04 260)" }}>Context: {selectedContext?.label}</p>
                 </div>
               </div>
               <Textarea
@@ -261,8 +308,8 @@ export default function CheckIn() {
                 className="min-h-40 resize-none border-0 p-0 focus-visible:ring-0 text-base"
               />
               {journal.length > 10 && crisisQuery.data?.detected && (
-                <div className="flex items-center gap-2 text-xs text-destructive bg-red-50 rounded-lg p-3">
-                  <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+                <div className="flex items-center gap-2 text-xs text-red-700 bg-red-50 rounded-lg p-3">
+                  <AlertTriangle className="w-4 h-4 shrink-0" />
                   <span>We noticed some concerning signals. If you're in crisis, please call <strong>988</strong>.</span>
                 </div>
               )}
@@ -273,28 +320,26 @@ export default function CheckIn() {
         {/* Navigation */}
         <div className="flex gap-3 mt-8">
           {step > 1 && (
-            <Button variant="outline" className="h-12 px-6" onClick={() => setStep(s => s - 1)}>
+            <Button variant="outline" className="h-12 px-6 rounded-full" onClick={() => setStep(s => s - 1)}>
               <ArrowLeft className="w-4 h-4 mr-2" /> Back
             </Button>
           )}
           {step < 4 ? (
-            <Button
-              className="flex-1 h-12 text-base"
+            <Button className="flex-1 h-12 text-base rounded-full font-semibold"
               disabled={!canProceed}
               onClick={() => setStep(s => s + 1)}
-            >
+              style={{ background: "linear-gradient(135deg, oklch(0.45 0.18 285), oklch(0.72 0.18 48))" }}>
               Continue <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           ) : (
-            <Button
-              className="flex-1 h-12 text-base"
-              disabled={createMutation.isPending}
+            <Button className="flex-1 h-12 text-base rounded-full font-semibold"
+              disabled={isPending}
               onClick={handleSubmit}
-            >
-              {createMutation.isPending ? (
+              style={{ background: "linear-gradient(135deg, oklch(0.45 0.18 285), oklch(0.72 0.18 48))" }}>
+              {isPending ? (
                 <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Generating your insights...</>
               ) : (
-                <><Heart className="w-4 h-4 mr-2" /> Get My Insights</>
+                <><Sparkles className="w-4 h-4 mr-2" /> Get My Insights</>
               )}
             </Button>
           )}

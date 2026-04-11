@@ -268,6 +268,26 @@ export const appRouter = router({
 
   // ─── Check-Ins ───────────────────────────────────────────────────────────────
   checkIns: router({
+    // Guest-accessible: generates AI response without saving to DB
+    guestCreate: publicProcedure
+      .input(z.object({
+        emotion: z.string().min(1),
+        emotionEmoji: z.string().optional(),
+        intensity: z.number().min(1).max(10),
+        context: z.enum(["School", "Family", "Relationships", "Work", "Self"]),
+        journalEntry: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const crisis = detectCrisis(input.journalEntry ?? "", input.intensity);
+        const aiData = await generateAiResponse({
+          emotion: input.emotion,
+          intensity: input.intensity,
+          context: input.context,
+          journalEntry: input.journalEntry,
+        });
+        return { aiResponse: aiData, crisisDetected: crisis.detected, severity: crisis.severity };
+      }),
+
     create: protectedProcedure
       .input(z.object({
         emotion: z.string().min(1),
@@ -336,8 +356,20 @@ export const appRouter = router({
       }),
   }),
 
-  // ─── Seven Mirrors ────────────────────────────────────────────────────────────
+  // ─── Seven Mirrors ───────────────────────────────────────────────────────────────
   sevenMirrors: router({
+    // Guest-accessible: generates AI summary without saving to DB
+    guestSummary: publicProcedure
+      .input(z.object({
+        responses: z.array(z.object({
+          mirrorTheme: z.string(),
+          response: z.string(),
+        })).length(7),
+      }))
+      .mutation(async ({ input }) => {
+        return generateSevenMirrorsSummary(input.responses);
+      }),
+
     startSession: protectedProcedure.mutation(async ({ ctx }) => {
       const existing = await getActiveSevenMirrorsSession(ctx.user.id);
       if (existing) return { sessionId: existing.id, currentMirrorIndex: existing.currentMirrorIndex };

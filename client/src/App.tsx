@@ -4,6 +4,7 @@ import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
+import GuestCheckInResult from "@/pages/GuestCheckInResult";
 import CheckIn from "./pages/CheckIn";
 import CheckInResult from "./pages/CheckInResult";
 import SevenMirrors from "./pages/SevenMirrors";
@@ -26,6 +27,7 @@ function Router() {
       <Route path="/join" component={JoinInstitution} />
       <Route path="/checkin" component={CheckIn} />
       <Route path="/check-in" component={CheckIn} />
+      <Route path="/check-in/guest" component={GuestCheckInResult} />
       <Route path="/check-in/:id" component={CheckInResult} />
       <Route path="/compass" component={SevenMirrors} />
       <Route path="/seven-mirrors" component={SevenMirrors} />
