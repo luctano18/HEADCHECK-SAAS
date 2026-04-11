@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Brain, ArrowLeft, Search, BookOpen, Video, FileText, Dumbbell, Wrench, Clock } from "lucide-react";
+import NavBar from "@/components/NavBar";
+import Footer from "@/components/Footer";
 
 type Category = "All" | "Self-Awareness" | "Self-Management" | "Social Awareness" | "Relationship Management" | "Neuroscience" | "African Wisdom";
 type ResourceType = "All" | "Article" | "Video" | "Book" | "Exercise" | "Tool";
@@ -92,24 +94,7 @@ export default function Resources() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="hc-gradient-bar h-1.5" />
-      <div className="bg-white border-b sticky top-0 z-40">
-        <div className="container flex items-center justify-between h-14">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="sm" onClick={() => navigate("/")} className="gap-1.5">
-              <ArrowLeft className="w-4 h-4" /> Back
-            </Button>
-            <div className="h-4 w-px bg-border" />
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg hc-gradient-orange flex items-center justify-center">
-                <Brain className="w-3.5 h-3.5 text-white" />
-              </div>
-              <span className="font-semibold text-sm">HeadCheck AI</span>
-            </div>
-          </div>
-        </div>
-      </div>
+      <NavBar />
 
       {/* Hero */}
       <div className="hc-gradient-warm py-12">

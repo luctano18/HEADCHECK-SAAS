@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Brain, ArrowLeft, ArrowRight, CheckCircle, School, Users, BarChart3, Shield, Bell, Globe } from "lucide-react";
 import { getLoginUrl } from "@/const";
+import NavBar from "@/components/NavBar";
+import Footer from "@/components/Footer";
 
 const FEATURES = [
   {
@@ -76,6 +78,7 @@ export default function ForInstitutions() {
 
   return (
     <div className="min-h-screen bg-background">
+      <NavBar />
       <div className="hc-gradient-bar h-1.5" />
 
       {/* Header */}

@@ -3,6 +3,8 @@ import { useLocation } from "wouter";
 import { Heart, ExternalLink, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import NavBar from "@/components/NavBar";
+import Footer from "@/components/Footer";
 
 const PILLARS = [
   {
@@ -88,29 +90,7 @@ export default function ZeraCards() {
 
   return (
     <div className="min-h-screen bg-[oklch(0.97_0.03_285)]">
-      {/* Nav */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-[oklch(0.90_0.04_285)]">
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-          <button onClick={() => navigate("/")} className="flex items-center gap-2 font-bold text-xl" style={{ color: "oklch(0.45 0.18 285)" }}>
-            <Heart className="w-5 h-5" style={{ fill: "oklch(0.45 0.18 285)" }} />
-            HeadCheck
-          </button>
-          <div className="hidden md:flex items-center gap-1">
-            {[
-              { label: "Check-In", path: "/checkin" },
-              { label: "Compass", path: "/compass" },
-              { label: "Resources", path: "/resources" },
-              { label: "Mindset", path: "/mindset" },
-            ].map((item) => (
-              <button key={item.path} onClick={() => navigate(item.path)}
-                className="px-3 py-2 rounded-lg text-sm transition-colors"
-                style={{ color: "oklch(0.45 0.05 260)" }}>
-                {item.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      </nav>
+      <NavBar />
 
       <div className="max-w-5xl mx-auto px-6 pt-28 pb-16">
 

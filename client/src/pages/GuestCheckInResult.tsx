@@ -4,6 +4,8 @@ import { getLoginUrl } from "@/const";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Heart, Brain, Compass, Sparkles, ArrowRight, Phone, LogIn, Loader2 } from "lucide-react";
+import NavBar from "@/components/NavBar";
+import Footer from "@/components/Footer";
 
 type GuestResult = {
   aiResponse: {
@@ -98,19 +100,7 @@ export default function GuestCheckInResult() {
   return (
     <div className="min-h-screen bg-[oklch(0.97_0.03_285)]">
 
-      {/* Nav */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-[oklch(0.90_0.04_285)]">
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-          <button onClick={() => navigate("/")} className="flex items-center gap-2 font-bold text-xl" style={{ color: "oklch(0.45 0.18 285)" }}>
-            <Heart className="w-5 h-5" style={{ fill: "oklch(0.45 0.18 285)" }} />
-            HeadCheck
-          </button>
-          <Button onClick={() => window.location.href = getLoginUrl()} className="rounded-full px-5 text-sm font-semibold"
-            style={{ background: "linear-gradient(135deg, oklch(0.45 0.18 285), oklch(0.72 0.18 48))" }}>
-            <LogIn className="w-4 h-4 mr-2" /> Sign In to Save
-          </Button>
-        </div>
-      </nav>
+      <NavBar />
 
       <div className="max-w-2xl mx-auto px-6 pt-28 pb-16 space-y-6">
 
@@ -216,6 +206,7 @@ export default function GuestCheckInResult() {
           HeadCheck AI is a reflective support tool, not a substitute for professional mental health care. If you are in crisis, please call or text <strong>988</strong> (Suicide & Crisis Lifeline).
         </p>
       </div>
+      <Footer />
     </div>
   );
 }

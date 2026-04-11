@@ -3,6 +3,8 @@ import { getLoginUrl } from "@/const";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
 import { Brain, Heart, Compass, Sparkles, ArrowRight, Flame, Trophy, BookOpen, Shield } from "lucide-react";
+import NavBar from "@/components/NavBar";
+import Footer from "@/components/Footer";
 
 export default function Home() {
   const { isAuthenticated } = useAuth();
@@ -14,43 +16,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-[oklch(0.97_0.03_285)] font-sans">
 
-      {/* ── TOP NAV ── */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-[oklch(0.90_0.04_285)]">
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-          <button onClick={() => navigate("/")} className="flex items-center gap-2 font-bold text-xl text-[oklch(0.45_0.18_285)]">
-            <Heart className="w-5 h-5 fill-[oklch(0.45_0.18_285)]" />
-            HeadCheck
-          </button>
-          <div className="hidden md:flex items-center gap-1">
-            {[
-              { label: "Home", icon: "🏠", path: "/" },
-              { label: "Check-In", icon: "✅", path: "/checkin" },
-              { label: "Compass", icon: "🧭", path: "/compass" },
-              { label: "Resources", icon: "📚", path: "/resources" },
-              { label: "Mindset", icon: "💡", path: "/mindset" },
-              { label: "Zera Cards", icon: "🃏", path: "/zera-cards" },
-              { label: "Coaching", icon: "🎯", path: "/coaching" },
-              { label: "About", icon: "💜", path: "/about" },
-            ].map((item) => (
-              <button
-                key={item.path}
-                onClick={() => navigate(item.path)}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm text-[oklch(0.45_0.05_260)] hover:text-[oklch(0.45_0.18_285)] hover:bg-[oklch(0.94_0.04_285)] transition-colors"
-              >
-                <span>{item.icon}</span>
-                {item.label}
-              </button>
-            ))}
-          </div>
-          <Button
-            onClick={() => isAuthenticated ? navigate("/dashboard") : window.location.href = getLoginUrl()}
-            className="rounded-full px-5 text-sm font-semibold"
-            style={{ background: "linear-gradient(135deg, oklch(0.45 0.18 285), oklch(0.72 0.18 48))" }}
-          >
-            {isAuthenticated ? "Dashboard" : "Sign In"}
-          </Button>
-        </div>
-      </nav>
+      <NavBar />
 
       {/* ── HERO ── */}
       <section className="pt-32 pb-16 px-6 text-center">
@@ -246,12 +212,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── DISCLAIMER ── */}
-      <footer className="max-w-3xl mx-auto px-6 pb-12 text-center">
-        <p className="text-xs text-[oklch(0.60_0.03_260)] leading-relaxed border-t border-[oklch(0.90_0.03_260)] pt-6">
-          This check-in is a reflective support tool. It is not a replacement for academic advising, counseling, or mental health services. If you are experiencing ongoing distress or feel unsafe, please contact your campus support services or emergency resources.
-        </p>
-      </footer>
+      <Footer />
     </div>
   );
 }

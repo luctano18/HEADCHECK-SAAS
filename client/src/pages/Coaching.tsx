@@ -6,6 +6,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
+import NavBar from "@/components/NavBar";
+import Footer from "@/components/Footer";
 import { getLoginUrl } from "@/const";
 import {
   Video, Clock, Users, Star, ArrowRight, CheckCircle, Calendar,
@@ -105,6 +107,7 @@ export default function Coaching() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 pt-20 pb-16 px-4">
+      <NavBar />
       <div className="max-w-5xl mx-auto">
 
         {/* Hero */}

@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
+import NavBar from "@/components/NavBar";
+import Footer from "@/components/Footer";
 import {
   AlertTriangle, Phone, Heart, ChevronLeft, ChevronRight,
   CheckCircle2, Info, Loader2,
@@ -254,6 +256,7 @@ export default function CheckIn() {
 
   return (
     <div className="min-h-screen" style={{ background: "linear-gradient(135deg, #f5f0ff 0%, #fff5f5 50%, #fff8f0 100%)" }}>
+      <NavBar />
       <div className="max-w-lg mx-auto px-4 py-8">
         {/* Top Nav */}
         <div className="flex items-center justify-between mb-6">

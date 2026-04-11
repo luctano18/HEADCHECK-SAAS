@@ -1,4 +1,6 @@
 import { Heart, Brain, Globe, Users, Sparkles, Shield, Star, ArrowRight } from "lucide-react";
+import NavBar from "@/components/NavBar";
+import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 
@@ -67,6 +69,7 @@ const AIEI_PROVERBS = [
 export default function About() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 pt-20 pb-16">
+      <NavBar />
 
       {/* Hero */}
       <section className="px-4 py-16 text-center max-w-4xl mx-auto">

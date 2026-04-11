@@ -5,6 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Brain, ArrowLeft, RefreshCw, Heart, Sparkles, ArrowRight } from "lucide-react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
+import NavBar from "@/components/NavBar";
+import Footer from "@/components/Footer";
 
 const AFFIRMATIONS = [
   { text: "I am capable of handling whatever comes my way today.", category: "Resilience" },
@@ -96,6 +98,7 @@ export default function Mindset() {
 
   return (
     <div className="min-h-screen bg-background">
+      <NavBar />
       <div className="hc-gradient-bar h-1.5" />
 
       {/* Header */}

@@ -5,6 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
 import { useLocation, useParams } from "wouter";
 import { Brain, Heart, Sparkles, BookOpen, ArrowRight, Loader2, Home, Star, Lightbulb, Users } from "lucide-react";
+import NavBar from "@/components/NavBar";
+import Footer from "@/components/Footer";
 
 const RESPONSE_SECTIONS = [
   { key: "emotionalReflection", icon: <Heart className="w-5 h-5" />, title: "Emotional Reflection", color: "bg-rose-50 border-rose-100", iconColor: "text-rose-500", badgeColor: "bg-rose-100 text-rose-700" },
@@ -58,6 +60,7 @@ export default function CheckInResult() {
 
   return (
     <div className="min-h-screen bg-background">
+      <NavBar />
       {/* Header */}
       <div className="border-b bg-card/80 backdrop-blur-sm sticky top-0 z-10">
         <div className="container flex items-center justify-between h-16">
