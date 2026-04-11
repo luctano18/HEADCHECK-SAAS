@@ -1,257 +1,350 @@
+import { useState } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { getLoginUrl } from "@/const";
 import { useLocation } from "wouter";
-import { Brain, Heart, Shield, Sparkles, Users, BookOpen, ArrowRight, CheckCircle2, Star } from "lucide-react";
+import { getLoginUrl } from "@/const";
+import {
+  Brain, Heart, Sparkles, ArrowRight, Shield, Users, BookOpen,
+  TrendingUp, Flame, Award, Building2, CheckCircle2, Star, Zap
+} from "lucide-react";
 
-const EMOTIONS = ["😌 Calm", "😔 Sad", "😤 Frustrated", "😰 Anxious", "😊 Hopeful", "😤 Angry", "😴 Exhausted", "🌟 Grateful"];
-
-const FEATURES = [
-  {
-    icon: <Heart className="w-6 h-6" />,
-    title: "Emotional Check-In",
-    description: "A guided daily check-in that captures your emotion, intensity, context, and personal journal — all in under 2 minutes.",
-    color: "from-pink-100 to-rose-50",
-    iconBg: "bg-rose-100 text-rose-600",
-  },
-  {
-    icon: <Brain className="w-6 h-6" />,
-    title: "AI-Powered Insights",
-    description: "Receive a 6-part structured response: emotional reflection, brain science, EI pillar guidance, African proverb, next steps, and support.",
-    color: "from-violet-100 to-purple-50",
-    iconBg: "bg-violet-100 text-violet-600",
-  },
-  {
-    icon: <Sparkles className="w-6 h-6" />,
-    title: "Seven Mirrors",
-    description: "A deep introspective journey through 7 thematic mirrors — Values, Loyalty, Inner Conflict, Self-Appreciation, Red Flags, Growth, and Peace.",
-    color: "from-amber-100 to-yellow-50",
-    iconBg: "bg-amber-100 text-amber-600",
-  },
-  {
-    icon: <Shield className="w-6 h-6" />,
-    title: "Crisis Detection",
-    description: "Real-time AI analysis of your journal entries detects distress signals and immediately connects you to the 988 Suicide & Crisis Lifeline.",
-    color: "from-green-100 to-emerald-50",
-    iconBg: "bg-emerald-100 text-emerald-600",
-  },
-  {
-    icon: <Users className="w-6 h-6" />,
-    title: "Institutional Dashboard",
-    description: "Schools and mental health centers get anonymized cohort analytics, high-risk alerts, and engagement tracking — without compromising privacy.",
-    color: "from-blue-100 to-sky-50",
-    iconBg: "bg-blue-100 text-blue-600",
-  },
-  {
-    icon: <BookOpen className="w-6 h-6" />,
-    title: "AIEI — African Wisdom",
-    description: "Grounded in African-Inspired Emotional Intelligence, each response includes a culturally resonant proverb to foster resilience and reflection.",
-    color: "from-orange-100 to-amber-50",
-    iconBg: "bg-orange-100 text-orange-600",
-  },
+const EMOTIONS = [
+  { label: "Overwhelmed", emoji: "😰" },
+  { label: "Anxious", emoji: "😟" },
+  { label: "Stressed", emoji: "😤" },
+  { label: "Disconnected", emoji: "😶" },
+  { label: "Tired", emoji: "😴" },
+  { label: "Frustrated", emoji: "😠" },
+  { label: "Heavy-hearted", emoji: "💔" },
+  { label: "Calm but unsure", emoji: "😌" },
+  { label: "Motivated but stuck", emoji: "🤔" },
+  { label: "Hopeful", emoji: "🌟" },
 ];
 
-const TESTIMONIALS = [
-  { name: "Ms. Johnson", role: "School Counselor", text: "HeadCheck AI has transformed how we support our students. The anonymized dashboard lets us spot trends before they become crises.", stars: 5 },
-  { name: "Marcus T.", role: "University Student", text: "The Seven Mirrors module helped me understand patterns in my emotions I never noticed before. The African proverbs hit different.", stars: 5 },
-  { name: "Dr. Amara", role: "Mental Health Professional", text: "The neuroscience-backed insights are accurate and accessible. My clients find it incredibly validating to understand their brain's role.", stars: 5 },
+const EI_PILLARS = [
+  { icon: "🧠", title: "Self-Awareness", desc: "Recognize and understand your emotions, strengths, and values." },
+  { icon: "🌊", title: "Self-Regulation", desc: "Manage your emotions and reactions in healthy, constructive ways." },
+  { icon: "🔥", title: "Motivation", desc: "Find inner drive and purpose, even through setbacks." },
+  { icon: "🤝", title: "Empathy", desc: "Understand and share the feelings of others with compassion." },
+  { icon: "💬", title: "Social Skills", desc: "Build healthy relationships and communicate effectively." },
+];
+
+const AFRICAN_PROVERBS = [
+  { proverb: "Hurry, hurry has no blessing.", origin: "Swahili" },
+  { proverb: "I am because we are.", origin: "Ubuntu Philosophy" },
+  { proverb: "Little by little, a little becomes a lot.", origin: "Tanzanian" },
+  { proverb: "If you want to go fast, go alone. If you want to go far, go together.", origin: "African" },
+];
+
+const B2B_FEATURES = [
+  "Team wellness dashboard with real-time insights",
+  "Anonymous student check-ins and sentiment tracking",
+  "Crisis alert system with intervention pathways",
+  "AI-powered recommendations for facilitators",
+  "Exportable reports for stakeholders",
+  "Dedicated onboarding and support",
 ];
 
 export default function Home() {
-  const { user, isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuth();
   const [, navigate] = useLocation();
+  const [selectedEmotions, setSelectedEmotions] = useState<string[]>([]);
+  const [proverb] = useState(() => AFRICAN_PROVERBS[Math.floor(Math.random() * AFRICAN_PROVERBS.length)]);
 
-  const handleGetStarted = () => {
-    if (isAuthenticated) {
-      navigate("/dashboard");
-    } else {
-      window.location.href = getLoginUrl();
-    }
+  const toggleEmotion = (label: string) => {
+    setSelectedEmotions(prev =>
+      prev.includes(label) ? prev.filter(e => e !== label) : [...prev, label]
+    );
   };
 
   return (
     <div className="min-h-screen bg-background">
       {/* ── Navigation ── */}
-      <nav className="fixed top-0 left-0 right-0 z-50 glass border-b border-white/20">
+      <nav className="sticky top-0 z-50 border-b bg-white/90 backdrop-blur-md">
         <div className="container flex items-center justify-between h-16">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center">
-              <Brain className="w-4 h-4 text-primary-foreground" />
+            <div className="w-8 h-8 rounded-xl hc-gradient-orange flex items-center justify-center shadow-sm">
+              <Brain className="w-4 h-4 text-white" />
             </div>
-            <span className="font-semibold text-lg tracking-tight">HeadCheck <span className="text-primary">AI</span></span>
+            <span className="font-bold text-foreground">HeadCheck <span className="text-primary">AI</span></span>
           </div>
-          <div className="hidden md:flex items-center gap-8 text-sm text-muted-foreground">
-            <a href="#features" className="hover:text-foreground transition-colors">Features</a>
-            <a href="#how-it-works" className="hover:text-foreground transition-colors">How It Works</a>
-            <a href="#testimonials" className="hover:text-foreground transition-colors">Stories</a>
+          <div className="hidden md:flex items-center gap-1">
+            {[
+              { label: "Check-In", path: "/check-in" },
+              { label: "Learn EI", path: "/learn-ei" },
+              { label: "Resources", path: "/resources" },
+              { label: "Seven Mirrors", path: "/seven-mirrors" },
+              { label: "Mindset", path: "/mindset" },
+              { label: "For Institutions", path: "#institutions" },
+            ].map((item) => (
+              <button
+                key={item.label}
+                onClick={() => item.path.startsWith("#") ? document.getElementById("institutions")?.scrollIntoView({ behavior: "smooth" }) : navigate(item.path)}
+                className="px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground rounded-lg hover:bg-muted/50 transition-colors"
+              >
+                {item.label}
+              </button>
+            ))}
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             {isAuthenticated ? (
               <Button onClick={() => navigate("/dashboard")} size="sm">
                 Go to Dashboard <ArrowRight className="w-4 h-4 ml-1" />
               </Button>
             ) : (
-              <>
-                <Button variant="ghost" size="sm" onClick={() => window.location.href = getLoginUrl() }>Sign In</Button>
-                <Button size="sm" onClick={handleGetStarted}>Get Started</Button>
-              </>
+              <Button asChild size="sm" className="hc-gradient-orange border-0 text-white hover:opacity-90">
+                <a href={getLoginUrl()}>Sign In</a>
+              </Button>
             )}
           </div>
         </div>
       </nav>
 
       {/* ── Hero ── */}
-      <section className="pt-32 pb-24 hc-gradient-hero relative overflow-hidden">
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute -top-40 -right-40 w-96 h-96 rounded-full bg-primary/10 blur-3xl" />
-          <div className="absolute -bottom-20 -left-20 w-80 h-80 rounded-full bg-accent/20 blur-3xl" />
-        </div>
-        <div className="container relative">
-          <div className="max-w-4xl mx-auto text-center">
-            <Badge variant="secondary" className="mb-6 px-4 py-1.5 text-sm font-medium">
-              <Sparkles className="w-3.5 h-3.5 mr-1.5 text-primary" />
-              Neuroscience × African Wisdom × Emotional Intelligence
-            </Badge>
-            <h1 className="font-serif text-5xl md:text-7xl font-bold text-foreground leading-tight mb-6">
-              Your emotional
-              <span className="block text-primary italic">wellness companion</span>
+      <section className="hc-gradient-warm py-20 md:py-28">
+        <div className="container max-w-4xl text-center space-y-6">
+          <Badge variant="secondary" className="bg-white/80 text-foreground border-0 shadow-sm px-4 py-1.5">
+            <Sparkles className="w-3.5 h-3.5 mr-1.5 text-amber-500" />
+            Neuroscience × African Wisdom × Emotional Intelligence
+          </Badge>
+
+          {/* Gradient bar like headcheck.app */}
+          <div>
+            <h1 className="font-serif text-5xl md:text-7xl font-bold text-foreground mb-3">
+              HeadCheck <span className="text-primary">AI</span>
             </h1>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
-              HeadCheck AI combines cutting-edge neuroscience with African-Inspired Emotional Intelligence to provide personalized, culturally grounded mental wellness support — for individuals and institutions alike.
+            <div className="hc-gradient-bar h-2 rounded-full max-w-md mx-auto mb-6" />
+            <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+              Your supportive space for emotional clarity. Transform stress into insight with AI-powered guidance rooted in African wisdom.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" onClick={handleGetStarted} className="text-base px-8 h-12 shadow-lg shadow-primary/25">
-                Start Your Check-In <ArrowRight className="w-5 h-5 ml-2" />
-              </Button>
-              <Button size="lg" variant="outline" onClick={() => document.getElementById("how-it-works")?.scrollIntoView({ behavior: "smooth" })} className="text-base px-8 h-12">
-                See How It Works
-              </Button>
-            </div>
           </div>
 
-          {/* Floating emotion pills */}
-          <div className="mt-16 flex flex-wrap justify-center gap-3 max-w-2xl mx-auto">
-            {EMOTIONS.map((e) => (
-              <span key={e} className="px-4 py-2 bg-white/70 backdrop-blur-sm rounded-full text-sm font-medium shadow-sm border border-white/50 hover:bg-white/90 transition-colors cursor-default">
-                {e}
-              </span>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── Features ── */}
-      <section id="features" className="py-24 bg-background">
-        <div className="container">
-          <div className="text-center mb-16">
-            <h2 className="font-serif text-4xl font-bold text-foreground mb-4">Everything you need to thrive</h2>
-            <p className="text-lg text-muted-foreground max-w-xl mx-auto">A complete emotional wellness ecosystem built for depth, privacy, and cultural resonance.</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {FEATURES.map((f) => (
-              <div key={f.title} className={`rounded-2xl p-6 bg-gradient-to-br ${f.color} border border-white/60 hover:shadow-lg transition-all duration-300 hover:-translate-y-1`}>
-                <div className={`w-12 h-12 rounded-xl ${f.iconBg} flex items-center justify-center mb-4`}>
-                  {f.icon}
-                </div>
-                <h3 className="font-semibold text-lg text-foreground mb-2">{f.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{f.description}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── How It Works ── */}
-      <section id="how-it-works" className="py-24 bg-muted/30">
-        <div className="container">
-          <div className="text-center mb-16">
-            <h2 className="font-serif text-4xl font-bold text-foreground mb-4">How HeadCheck AI works</h2>
-            <p className="text-lg text-muted-foreground max-w-xl mx-auto">A thoughtful, structured process designed to meet you exactly where you are.</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 max-w-5xl mx-auto">
+          {/* 3 pillars like headcheck.app */}
+          <div className="grid grid-cols-3 gap-4 max-w-lg mx-auto mt-8">
             {[
-              { step: "01", title: "Check In", desc: "Select your emotion, rate its intensity (1–10), choose your context, and optionally write in your journal." },
-              { step: "02", title: "AI Analysis", desc: "Our engine analyzes your input in real-time, detecting patterns and any crisis signals that need immediate attention." },
-              { step: "03", title: "Receive Insights", desc: "Get a 6-part personalized response: brain science, EI guidance, an African proverb, and your next step." },
-              { step: "04", title: "Track & Grow", desc: "Review your emotional trends over time and dive deeper with the Seven Mirrors reflection journey." },
-            ].map((s) => (
-              <div key={s.step} className="text-center">
-                <div className="w-14 h-14 rounded-2xl bg-primary text-primary-foreground flex items-center justify-center text-xl font-bold mx-auto mb-4 shadow-lg shadow-primary/25">
-                  {s.step}
-                </div>
-                <h3 className="font-semibold text-lg mb-2">{s.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{s.desc}</p>
+              { icon: <Brain className="w-5 h-5" />, label: "Ground Yourself", color: "bg-violet-100 text-violet-600" },
+              { icon: <Heart className="w-5 h-5" />, label: "Name Your Feelings", color: "bg-rose-100 text-rose-600" },
+              { icon: <Sparkles className="w-5 h-5" />, label: "Find Direction", color: "bg-amber-100 text-amber-600" },
+            ].map((p) => (
+              <div key={p.label} className="bg-white/80 rounded-2xl p-4 shadow-sm text-center space-y-2">
+                <div className={`w-10 h-10 rounded-xl ${p.color} flex items-center justify-center mx-auto`}>{p.icon}</div>
+                <p className="text-xs font-semibold text-foreground">{p.label}</p>
               </div>
             ))}
           </div>
-        </div>
-      </section>
 
-      {/* ── Testimonials ── */}
-      <section id="testimonials" className="py-24 bg-background">
-        <div className="container">
-          <div className="text-center mb-16">
-            <h2 className="font-serif text-4xl font-bold text-foreground mb-4">Voices of transformation</h2>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            {TESTIMONIALS.map((t) => (
-              <div key={t.name} className="bg-card rounded-2xl p-6 border shadow-sm hover:shadow-md transition-shadow">
-                <div className="flex mb-3">
-                  {Array.from({ length: t.stars }).map((_, i) => (
-                    <Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />
-                  ))}
-                </div>
-                <p className="text-sm text-muted-foreground leading-relaxed mb-4 italic">"{t.text}"</p>
-                <div>
-                  <p className="font-semibold text-sm">{t.name}</p>
-                  <p className="text-xs text-muted-foreground">{t.role}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── CTA ── */}
-      <section className="py-24 hc-gradient-dark text-white">
-        <div className="container text-center">
-          <h2 className="font-serif text-4xl md:text-5xl font-bold mb-6">
-            Your emotional health matters.
-            <span className="block italic font-normal text-white/80 mt-2">Start today.</span>
-          </h2>
-          <p className="text-lg text-white/70 max-w-xl mx-auto mb-10">
-            Join thousands of individuals and institutions using HeadCheck AI to build emotional resilience, one check-in at a time.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" onClick={handleGetStarted} className="bg-white text-primary hover:bg-white/90 text-base px-8 h-12 font-semibold">
-              Get Started Free <ArrowRight className="w-5 h-5 ml-2" />
+          <div className="flex flex-col sm:flex-row gap-3 justify-center pt-4">
+            {isAuthenticated ? (
+              <Button size="lg" className="h-14 px-8 text-base rounded-full hc-gradient-orange border-0 text-white hover:opacity-90 shadow-lg" onClick={() => navigate("/check-in")}>
+                <Heart className="w-5 h-5 mr-2" /> Start Your Check-In
+              </Button>
+            ) : (
+              <Button size="lg" className="h-14 px-8 text-base rounded-full hc-gradient-orange border-0 text-white hover:opacity-90 shadow-lg" asChild>
+                <a href={getLoginUrl()}>Start Your Check-In <ArrowRight className="w-5 h-5 ml-2" /></a>
+              </Button>
+            )}
+            <Button size="lg" variant="outline" className="h-14 px-8 text-base rounded-full bg-white/80 hover:bg-white" onClick={() => navigate("/seven-mirrors")}>
+              <Sparkles className="w-5 h-5 mr-2" /> Seven Mirrors
             </Button>
           </div>
-          <div className="mt-8 flex flex-wrap justify-center gap-6 text-sm text-white/60">
-            {["No credit card required", "Privacy-first design", "HIPAA/FERPA ready"].map((t) => (
-              <span key={t} className="flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4 text-white/40" /> {t}
-              </span>
+          <div className="flex items-center justify-center gap-6 text-sm text-muted-foreground">
+            <span className="flex items-center gap-1.5"><Flame className="w-4 h-4 text-orange-500" /> Build your streak</span>
+            <span className="flex items-center gap-1.5"><Award className="w-4 h-4 text-amber-500" /> Unlock achievements</span>
+            <span className="flex items-center gap-1.5"><Shield className="w-4 h-4 text-green-500" /> Private & secure</span>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Interactive Check-In Preview ── */}
+      <section className="py-16 bg-background">
+        <div className="container max-w-2xl">
+          <div className="bg-white rounded-3xl shadow-xl border p-8 space-y-6">
+            <div className="text-center">
+              <div className="w-14 h-14 rounded-2xl hc-gradient-orange flex items-center justify-center mx-auto mb-3 shadow-md">
+                <Brain className="w-7 h-7 text-white" />
+              </div>
+              <h2 className="font-serif text-2xl font-bold text-foreground">Take a moment to pause and reflect</h2>
+              <p className="text-muted-foreground mt-1">How are you feeling right now?</p>
+              <p className="text-xs text-muted-foreground">Select all that apply</p>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {EMOTIONS.map((e) => (
+                <button
+                  key={e.label}
+                  onClick={() => toggleEmotion(e.label)}
+                  className={`flex items-center gap-2.5 p-3 rounded-xl border-2 text-sm font-medium transition-all ${
+                    selectedEmotions.includes(e.label)
+                      ? "border-orange-400 bg-orange-50 text-orange-700"
+                      : "border-border bg-muted/20 text-foreground hover:border-orange-200 hover:bg-orange-50/50"
+                  }`}
+                >
+                  <span className="text-lg">{e.emoji}</span>
+                  {e.label}
+                </button>
+              ))}
+            </div>
+            <Button
+              className="w-full h-12 rounded-xl text-base hc-gradient-orange border-0 text-white hover:opacity-90"
+              disabled={selectedEmotions.length === 0}
+              onClick={() => isAuthenticated ? navigate("/check-in") : window.location.href = getLoginUrl()}
+            >
+              {selectedEmotions.length > 0 ? `Continue with ${selectedEmotions.length} feeling${selectedEmotions.length > 1 ? "s" : ""}` : "Select how you feel"} <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Daily African Proverb ── */}
+      <section className="py-12 hc-gradient-warm">
+        <div className="container max-w-2xl text-center">
+          <p className="text-3xl font-serif font-bold text-foreground mb-2">"{proverb.proverb}"</p>
+          <p className="text-sm text-muted-foreground">— {proverb.origin} proverb</p>
+        </div>
+      </section>
+
+      {/* ── 5 EI Pillars ── */}
+      <section className="py-16 bg-background">
+        <div className="container max-w-4xl space-y-10">
+          <div className="text-center">
+            <Badge variant="secondary" className="mb-3">Learn EI</Badge>
+            <h2 className="font-serif text-3xl font-bold text-foreground">The 5 Pillars of Emotional Intelligence</h2>
+            <p className="text-muted-foreground mt-2 max-w-xl mx-auto">Understanding these pillars is the foundation of emotional wellness and growth. Each pillar is paired with African wisdom to guide your journey.</p>
+          </div>
+          <div className="space-y-3">
+            {EI_PILLARS.map((p, i) => (
+              <div key={i} className="flex items-start gap-4 p-5 bg-white rounded-2xl border shadow-sm hover:shadow-md transition-shadow">
+                <div className="text-3xl flex-shrink-0">{p.icon}</div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-foreground">{p.title}</h3>
+                  <p className="text-sm text-muted-foreground mt-0.5">{p.desc}</p>
+                </div>
+                <ArrowRight className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-1" />
+              </div>
             ))}
           </div>
+          <div className="text-center">
+            <Button variant="outline" onClick={() => navigate("/learn-ei")}>
+              <BookOpen className="w-4 h-4 mr-2" /> Explore All EI Pillars
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Features Grid ── */}
+      <section className="py-16 bg-muted/30">
+        <div className="container max-w-5xl space-y-10">
+          <div className="text-center">
+            <h2 className="font-serif text-3xl font-bold text-foreground">Everything you need for emotional wellness</h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {[
+              { icon: <Heart className="w-6 h-6" />, color: "bg-rose-100 text-rose-600", title: "Emotional Check-In", desc: "Daily multi-emotion check-ins with intensity tracking, context, and personal journaling." },
+              { icon: <Sparkles className="w-6 h-6" />, color: "bg-violet-100 text-violet-600", title: "Seven Mirrors", desc: "A 7-step deep reflection journey across Values, Loyalty, Growth, Peace and more." },
+              { icon: <Brain className="w-6 h-6" />, color: "bg-amber-100 text-amber-600", title: "AI Response Engine", desc: "6-part AI responses: Brain Insight, EI Pillar, African Proverb, Next Steps, and more." },
+              { icon: <Shield className="w-6 h-6" />, color: "bg-red-100 text-red-600", title: "Crisis Detection", desc: "Real-time automatic detection with 988 Lifeline integration and intervention pathways." },
+              { icon: <Flame className="w-6 h-6" />, color: "bg-orange-100 text-orange-600", title: "Streaks & Achievements", desc: "Build daily check-in streaks and unlock achievement badges to stay motivated." },
+              { icon: <BookOpen className="w-6 h-6" />, color: "bg-green-100 text-green-600", title: "Resources Library", desc: "Curated articles, videos, books, and exercises on neuroscience and African wisdom." },
+            ].map((f) => (
+              <div key={f.title} className="bg-white rounded-2xl p-6 border shadow-sm space-y-3">
+                <div className={`w-12 h-12 rounded-xl ${f.color} flex items-center justify-center`}>{f.icon}</div>
+                <h3 className="font-semibold text-foreground">{f.title}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{f.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── For Institutions ── */}
+      <section id="institutions" className="py-16 bg-background">
+        <div className="container max-w-5xl">
+          <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl p-10 md:p-14 text-white">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
+              <div className="space-y-5">
+                <Badge className="bg-white/10 text-white border-white/20 hover:bg-white/20">
+                  <Building2 className="w-3.5 h-3.5 mr-1.5" /> For Schools & Organizations
+                </Badge>
+                <h2 className="font-serif text-3xl font-bold">HeadCheck AI for Institutions</h2>
+                <p className="text-white/70 leading-relaxed">
+                  Empower your students and teams with emotional intelligence tools. Get anonymized wellness insights, crisis alerts, and engagement analytics — all in one dedicated dashboard.
+                </p>
+                <div className="space-y-2">
+                  {B2B_FEATURES.map((f, i) => (
+                    <div key={i} className="flex items-center gap-2.5 text-sm text-white/80">
+                      <CheckCircle2 className="w-4 h-4 text-green-400 flex-shrink-0" />
+                      {f}
+                    </div>
+                  ))}
+                </div>
+                <div className="flex gap-3 pt-2">
+                  {isAuthenticated ? (
+                    <Button className="bg-white text-slate-900 hover:bg-white/90" onClick={() => navigate("/facilitator")}>
+                      <Users className="w-4 h-4 mr-2" /> Open Facilitator Dashboard
+                    </Button>
+                  ) : (
+                    <Button className="bg-white text-slate-900 hover:bg-white/90" asChild>
+                      <a href={getLoginUrl()}>Get Started for Free <ArrowRight className="w-4 h-4 ml-2" /></a>
+                    </Button>
+                  )}
+                </div>
+              </div>
+              <div className="space-y-3">
+                {[
+                  { icon: <TrendingUp className="w-5 h-5 text-violet-400" />, title: "Cohort Analytics", desc: "Track emotional trends across your entire student body, anonymously." },
+                  { icon: <Shield className="w-5 h-5 text-red-400" />, title: "Crisis Alerts", desc: "Receive instant alerts when students show signs of distress." },
+                  { icon: <Users className="w-5 h-5 text-blue-400" />, title: "Group Management", desc: "Create cohorts, invite students, and monitor engagement by group." },
+                ].map((item) => (
+                  <div key={item.title} className="bg-white/10 rounded-2xl p-4 flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0">{item.icon}</div>
+                    <div>
+                      <p className="font-semibold text-white text-sm">{item.title}</p>
+                      <p className="text-xs text-white/60 mt-0.5">{item.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Final CTA ── */}
+      <section className="py-20 hc-gradient-warm">
+        <div className="container max-w-2xl text-center space-y-6">
+          <div className="text-5xl">🌍</div>
+          <h2 className="font-serif text-3xl md:text-4xl font-bold text-foreground">Your emotional wellness journey starts today</h2>
+          <p className="text-muted-foreground">Join thousands of individuals and institutions building emotional intelligence through African wisdom and neuroscience.</p>
+          {isAuthenticated ? (
+            <Button size="lg" className="h-14 px-10 text-base rounded-full hc-gradient-orange border-0 text-white hover:opacity-90 shadow-lg" onClick={() => navigate("/check-in")}>
+              <Heart className="w-5 h-5 mr-2" /> Start Your Check-In
+            </Button>
+          ) : (
+            <Button size="lg" className="h-14 px-10 text-base rounded-full hc-gradient-orange border-0 text-white hover:opacity-90 shadow-lg" asChild>
+              <a href={getLoginUrl()}>Get Started — It's Free <ArrowRight className="w-5 h-5 ml-2" /></a>
+            </Button>
+          )}
+          <p className="text-xs text-muted-foreground">No credit card required. Private & secure. HIPAA-ready.</p>
         </div>
       </section>
 
       {/* ── Footer ── */}
-      <footer className="py-8 bg-muted/30 border-t">
-        <div className="container flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
+      <footer className="border-t bg-white py-8">
+        <div className="container flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-lg bg-primary flex items-center justify-center">
-              <Brain className="w-3 h-3 text-primary-foreground" />
+            <div className="w-7 h-7 rounded-lg hc-gradient-orange flex items-center justify-center">
+              <Brain className="w-3.5 h-3.5 text-white" />
             </div>
-            <span className="font-medium text-foreground">HeadCheck AI</span>
+            <span className="font-semibold text-sm text-foreground">HeadCheck AI</span>
           </div>
-          <p>© {new Date().getFullYear()} HeadCheck AI. All rights reserved.</p>
-          <p className="text-xs text-center md:text-right max-w-xs">
-            HeadCheck AI is an emotional support tool, not a substitute for professional clinical therapy.
-            In crisis? Call <span className="font-semibold text-foreground">988</span>.
+          <p className="text-xs text-muted-foreground text-center">
+            This tool is a reflective support companion. It is not a replacement for professional mental health services. If you are in crisis, please contact the <strong>988 Suicide & Crisis Lifeline</strong>.
           </p>
+          <div className="flex gap-4 text-xs text-muted-foreground">
+            <button onClick={() => navigate("/learn-ei")} className="hover:text-foreground transition-colors">Learn EI</button>
+            <button onClick={() => navigate("/resources")} className="hover:text-foreground transition-colors">Resources</button>
+            <button onClick={() => navigate("/mindset")} className="hover:text-foreground transition-colors">Mindset</button>
+          </div>
         </div>
       </footer>
     </div>

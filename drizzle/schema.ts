@@ -139,3 +139,28 @@ export const sevenMirrorsResponses = mysqlTable("seven_mirrors_responses", {
 });
 
 export type SevenMirrorsResponse = typeof sevenMirrorsResponses.$inferSelect;
+
+// ─── User Streaks ─────────────────────────────────────────────────────────────
+export const userStreaks = mysqlTable("user_streaks", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().unique(),
+  currentStreak: int("currentStreak").default(0).notNull(),
+  longestStreak: int("longestStreak").default(0).notNull(),
+  lastCheckInDate: varchar("lastCheckInDate", { length: 10 }), // YYYY-MM-DD
+  totalCheckIns: int("totalCheckIns").default(0).notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type UserStreak = typeof userStreaks.$inferSelect;
+
+// ─── User Achievements ────────────────────────────────────────────────────────
+export const userAchievements = mysqlTable("user_achievements", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  achievementKey: varchar("achievementKey", { length: 64 }).notNull(),
+  achievementTitle: varchar("achievementTitle", { length: 128 }).notNull(),
+  achievementEmoji: varchar("achievementEmoji", { length: 8 }).notNull(),
+  earnedAt: timestamp("earnedAt").defaultNow().notNull(),
+});
+
+export type UserAchievement = typeof userAchievements.$inferSelect;

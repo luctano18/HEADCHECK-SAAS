@@ -38,6 +38,8 @@ export default function Dashboard() {
 
   const checkIns = data?.checkIns ?? [];
   const mirrorSessions = data?.mirrorSessions ?? [];
+  const streak = data?.streak;
+  const achievements = data?.achievements ?? [];
 
   // Build chart data from check-ins
   const chartData = checkIns.slice().reverse().slice(-14).map((ci) => ({
@@ -135,12 +137,13 @@ export default function Dashboard() {
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
               {[
                 { label: "Total Check-Ins", value: checkIns.length, icon: <Heart className="w-4 h-4 text-rose-500" />, color: "bg-rose-50" },
                 { label: "Avg. Intensity", value: avgIntensity, icon: <TrendingUp className="w-4 h-4 text-violet-500" />, color: "bg-violet-50" },
-                { label: "Most Felt", value: mostFrequentEmotion ?? "—", icon: <Brain className="w-4 h-4 text-amber-500" />, color: "bg-amber-50" },
+                { label: "Most Felt", value: mostFrequentEmotion ?? "\u2014", icon: <Brain className="w-4 h-4 text-amber-500" />, color: "bg-amber-50" },
                 { label: "Mirror Sessions", value: mirrorSessions.length, icon: <Award className="w-4 h-4 text-green-500" />, color: "bg-green-50" },
+                { label: "Current Streak", value: streak ? `${streak.currentStreak}\ud83d\udd25` : "0", icon: <span className="text-base">\ud83d\udd25</span>, color: "bg-orange-50" },
               ].map((stat) => (
                 <Card key={stat.label} className="border shadow-sm">
                   <CardContent className="p-4">
@@ -153,6 +156,27 @@ export default function Dashboard() {
                 </Card>
               ))}
             </div>
+
+            {/* Achievements */}
+            {achievements.length > 0 && (
+              <Card className="border shadow-sm">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base font-semibold flex items-center gap-2">
+                    <Award className="w-4 h-4 text-amber-500" /> Achievements Earned
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-wrap gap-2">
+                    {achievements.map((a) => (
+                      <div key={a.id} className="flex items-center gap-1.5 bg-amber-50 border border-amber-100 rounded-xl px-3 py-1.5">
+                        <span className="text-base">{a.achievementEmoji}</span>
+                        <span className="text-xs font-semibold text-amber-800">{a.achievementTitle}</span>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Quick Actions (Mobile) */}
             <div className="flex gap-3 sm:hidden">

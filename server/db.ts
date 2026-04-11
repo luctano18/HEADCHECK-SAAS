@@ -12,6 +12,8 @@ import {
   sevenMirrorsResponses,
   sevenMirrorsSessions,
   users,
+  userStreaks,
+  userAchievements,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -311,6 +313,83 @@ export async function getCompletedSevenMirrorsSessions(userId: number) {
     .where(and(eq(sevenMirrorsSessions.userId, userId), eq(sevenMirrorsSessions.completed, true)))
     .orderBy(desc(sevenMirrorsSessions.createdAt))
     .limit(10);
+}
+
+// ─── Streaks & Achievements ──────────────────────────────────────────────────
+export async function updateUserStreak(userId: number): Promise<{ currentStreak: number; longestStreak: number; totalCheckIns: number; newAchievements: string[] }> {
+  const db = await getDb();
+  if (!db) return { currentStreak: 0, longestStreak: 0, totalCheckIns: 0, newAchievements: [] };
+
+  const today = new Date().toISOString().split("T")[0]!; // YYYY-MM-DD
+  const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0]!;
+
+  const existing = await db.select().from(userStreaks).where(eq(userStreaks.userId, userId)).limit(1);
+  const streak = existing[0];
+
+  let currentStreak = 1;
+  let longestStreak = 1;
+  let totalCheckIns = 1;
+
+  if (streak) {
+    totalCheckIns = streak.totalCheckIns + 1;
+    if (streak.lastCheckInDate === today) {
+      // Already checked in today — no streak change
+      currentStreak = streak.currentStreak;
+      longestStreak = streak.longestStreak;
+    } else if (streak.lastCheckInDate === yesterday) {
+      // Consecutive day
+      currentStreak = streak.currentStreak + 1;
+      longestStreak = Math.max(streak.longestStreak, currentStreak);
+    } else {
+      // Streak broken
+      currentStreak = 1;
+      longestStreak = streak.longestStreak;
+    }
+    await db.update(userStreaks).set({ currentStreak, longestStreak, totalCheckIns, lastCheckInDate: today }).where(eq(userStreaks.userId, userId));
+  } else {
+    await db.insert(userStreaks).values({ userId, currentStreak: 1, longestStreak: 1, totalCheckIns: 1, lastCheckInDate: today });
+  }
+
+  // Check for new achievements
+  const newAchievements: string[] = [];
+  const MILESTONES = [
+    { key: "first_checkin", title: "First Step", emoji: "🌱", condition: totalCheckIns >= 1 },
+    { key: "streak_3", title: "3-Day Streak", emoji: "🔥", condition: currentStreak >= 3 },
+    { key: "streak_7", title: "Week Warrior", emoji: "⚡", condition: currentStreak >= 7 },
+    { key: "streak_30", title: "Monthly Master", emoji: "🏆", condition: currentStreak >= 30 },
+    { key: "checkins_10", title: "10 Check-Ins", emoji: "💪", condition: totalCheckIns >= 10 },
+    { key: "checkins_50", title: "50 Check-Ins", emoji: "🌟", condition: totalCheckIns >= 50 },
+  ];
+
+  const existingAchievements = await db.select({ key: userAchievements.achievementKey }).from(userAchievements).where(eq(userAchievements.userId, userId));
+  const earnedKeys = new Set(existingAchievements.map(a => a.key));
+
+  for (const milestone of MILESTONES) {
+    if (milestone.condition && !earnedKeys.has(milestone.key)) {
+      await db.insert(userAchievements).values({
+        userId,
+        achievementKey: milestone.key,
+        achievementTitle: milestone.title,
+        achievementEmoji: milestone.emoji,
+      });
+      newAchievements.push(`${milestone.emoji} ${milestone.title}`);
+    }
+  }
+
+  return { currentStreak, longestStreak, totalCheckIns, newAchievements };
+}
+
+export async function getUserStreak(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(userStreaks).where(eq(userStreaks.userId, userId)).limit(1);
+  return result[0] ?? null;
+}
+
+export async function getUserAchievements(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(userAchievements).where(eq(userAchievements.userId, userId)).orderBy(desc(userAchievements.earnedAt));
 }
 
 // ─── Facilitator Analytics ────────────────────────────────────────────────────

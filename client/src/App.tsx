@@ -12,6 +12,10 @@ import FacilitatorDashboard from "./pages/FacilitatorDashboard";
 import Onboarding from "./pages/Onboarding";
 import JoinInstitution from "./pages/JoinInstitution";
 import NotFound from "./pages/NotFound";
+import Resources from "./pages/Resources";
+import LearnEI from "./pages/LearnEI";
+import Mindset from "./pages/Mindset";
+import ForInstitutions from "./pages/ForInstitutions";
 
 function Router() {
   return (
@@ -24,6 +28,10 @@ function Router() {
       <Route path="/seven-mirrors" component={SevenMirrors} />
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/facilitator" component={FacilitatorDashboard} />
+      <Route path="/resources" component={Resources} />
+      <Route path="/learn-ei" component={LearnEI} />
+      <Route path="/mindset" component={Mindset} />
+      <Route path="/for-institutions" component={ForInstitutions} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

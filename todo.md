@@ -66,3 +66,23 @@
 - [x] Responsive design verification (mobile/tablet/desktop)
 - [x] Accessibility audit (focus rings, keyboard navigation)
 - [x] Final checkpoint and delivery
+
+## Phase 10: Inspired Updates (heartcheck.app + headcheck.app)
+- [x] Redesign CSS: warm gradient palette (orange/rose/lavender), updated design tokens
+- [x] Update landing page: warm hero gradient, multi-select emotion preview, streak/achievement showcase
+- [x] Add "For Institutions" dedicated section on landing page with B2B benefits list
+- [x] Update Check-In: multi-select emotions (allow selecting multiple feelings)
+- [x] Build Resources Library page (filterable by EI category + type: articles/videos/books/exercises/tools)
+- [x] Build Learn EI page (5 Pillars of EI with African proverbs per pillar)
+- [x] Build Mindset page (daily affirmations + inspirational African proverbs)
+- [x] Add streak system to backend (daily check-in streak counter)
+- [x] Add achievements/badges system to user profile
+- [x] Update Dashboard: streak counter widget, achievements display
+- [x] Add "Book a Session" CTA button (links to external coaching)
+
+## Phase 11: Gap Fixes & Remaining Items
+- [x] For Institutions page created as standalone route (/for-institutions)
+- [x] Streak system backend (updateUserStreak, getUserStreak, getUserAchievements)
+- [x] Dashboard achievements panel and streak stat card
+- [x] All new routes registered in App.tsx (Resources, LearnEI, Mindset, ForInstitutions)
+- [x] TypeScript: 0 errors | Tests: 10/10 passing

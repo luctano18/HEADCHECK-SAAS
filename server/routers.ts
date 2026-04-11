@@ -33,6 +33,9 @@ import {
   saveAiResponse,
   saveSevenMirrorsResponse,
   updateUserOnboarding,
+  updateUserStreak,
+  getUserStreak,
+  getUserAchievements,
 } from "./db";
 
 // ─── Crisis Detection ─────────────────────────────────────────────────────────
@@ -305,7 +308,10 @@ export const appRouter = router({
 
         await saveAiResponse({ checkInId, userId: ctx.user.id, ...aiData });
 
-        return { checkInId, crisisDetected: crisis.detected, severity: crisis.severity };
+        // Update streak and check achievements
+        const streakData = await updateUserStreak(ctx.user.id);
+
+        return { checkInId, crisisDetected: crisis.detected, severity: crisis.severity, streak: streakData };
       }),
 
     list: protectedProcedure
@@ -385,19 +391,19 @@ export const appRouter = router({
         return { session, responses };
       }),
   }),
-
-  // ─── User Dashboard ───────────────────────────────────────────────────────────
+  // ─── User Dashboard ─────────────────────────────────────────────────────────────
   dashboard: router({
     getHistory: protectedProcedure.query(async ({ ctx }) => {
-      const [checkInList, aiResponseList, mirrorSessions] = await Promise.all([
+      const [checkInList, aiResponseList, mirrorSessions, streak, achievements] = await Promise.all([
         getCheckInsByUser(ctx.user.id, 30),
         getRecentAiResponses(ctx.user.id, 10),
         getCompletedSevenMirrorsSessions(ctx.user.id),
+        getUserStreak(ctx.user.id),
+        getUserAchievements(ctx.user.id),
       ]);
-      return { checkIns: checkInList, aiResponses: aiResponseList, mirrorSessions };
+      return { checkIns: checkInList, aiResponses: aiResponseList, mirrorSessions, streak, achievements };
     }),
   }),
-
   // ─── Facilitator Dashboard ────────────────────────────────────────────────────
   facilitator: router({
     getCohortTrends: protectedProcedure
