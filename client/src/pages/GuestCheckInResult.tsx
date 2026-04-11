@@ -17,6 +17,7 @@ type GuestResult = {
     aieiProverbOrigin: string;
     personalizedNextStep: string;
     supportInvitation: string;
+    mochaAffirmation?: string;
   };
   crisisDetected: boolean;
   severity: string | null;
@@ -67,6 +68,15 @@ const RESPONSE_SECTIONS = [
     gradient: "from-rose-50 to-pink-50",
     border: "border-rose-200",
     titleColor: "text-rose-700",
+  },
+  {
+    key: "mochaAffirmation" as const,
+    icon: "✨",
+    title: "Mocha's Affirmation",
+    gradient: "from-violet-50 to-pink-50",
+    border: "border-violet-200",
+    titleColor: "text-violet-700",
+    isAffirmation: true,
   },
 ];
 
@@ -145,24 +155,31 @@ export default function GuestCheckInResult() {
         </div>
 
         {/* Main Response Sections */}
-        {RESPONSE_SECTIONS.map((section) => (
-          <div key={section.key} className={`bg-gradient-to-br ${section.gradient} rounded-2xl p-5 border ${section.border} shadow-sm`}>
-            <div className="flex items-center gap-2 mb-3">
-              <span className="text-xl">{section.icon}</span>
-              <h3 className={`font-bold text-sm ${section.titleColor}`}>{section.title}</h3>
-            </div>
-            <p className="text-sm leading-relaxed" style={{ color: "oklch(0.22 0.04 260)" }}>
+        {RESPONSE_SECTIONS.map((section) => {
+          const value = aiResponse[section.key];
+          if (!value) return null;
+          return (
+            <div key={section.key} className={`bg-gradient-to-br ${section.gradient} rounded-2xl p-5 border ${section.border} shadow-sm`}>
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-xl">{section.icon}</span>
+                <h3 className={`font-bold text-sm ${section.titleColor}`}>{section.title}</h3>
+              </div>
               {section.key === "aieiProverb" ? (
-                <>
+                <p className="text-sm leading-relaxed" style={{ color: "oklch(0.22 0.04 260)" }}>
                   <em className="block text-base font-medium mb-1">"{aiResponse.aieiProverb}"</em>
                   <span className="text-xs opacity-70">— {aiResponse.aieiProverbOrigin}</span>
-                </>
+                </p>
+              ) : (section as any).isAffirmation ? (
+                <div className="text-center py-2">
+                  <p className="font-serif text-xl font-semibold leading-relaxed" style={{ color: "oklch(0.45 0.18 285)" }}>✨ {value}</p>
+                  <p className="text-xs opacity-60 mt-3">— Mocha, your HeadCheck companion</p>
+                </div>
               ) : (
-                aiResponse[section.key]
+                <p className="text-sm leading-relaxed" style={{ color: "oklch(0.22 0.04 260)" }}>{value}</p>
               )}
-            </p>
-          </div>
-        ))}
+            </div>
+          );
+        })}
 
         {/* ── SAVE YOUR PROGRESS NUDGE ── */}
         <div className="rounded-2xl p-6 text-center border-2 space-y-4"

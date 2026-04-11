@@ -94,6 +94,7 @@ export const aiResponses = mysqlTable("ai_responses", {
   aieiProverbOrigin: varchar("aieiProverbOrigin", { length: 128 }),
   personalizedNextStep: text("personalizedNextStep").notNull(),
   supportInvitation: text("supportInvitation").notNull(),
+  mochaAffirmation: text("mochaAffirmation"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 

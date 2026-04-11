@@ -186,6 +186,7 @@ export async function saveAiResponse(data: {
   aieiProverbOrigin?: string;
   personalizedNextStep: string;
   supportInvitation: string;
+  mochaAffirmation?: string;
 }) {
   const db = await getDb();
   if (!db) throw new Error("DB unavailable");

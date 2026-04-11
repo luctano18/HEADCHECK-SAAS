@@ -1,0 +1,1 @@
+ALTER TABLE `ai_responses` ADD `mochaAffirmation` text;

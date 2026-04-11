@@ -75,16 +75,16 @@ async function generateAiResponse(params: {
 A user is experiencing: Emotion: "${emotion}" | Intensity: ${intensity}/10 | Context: ${context}
 ${journalEntry ? `Journal: "${journalEntry}"` : ""}
 
-Generate a structured JSON response with EXACTLY these 6 fields:
-1. "emotionalReflection": A warm, validating 2-3 sentence reflection on what the user is feeling.
-2. "brainInsight": A 2-sentence neuroscience explanation of what's happening in the brain (mention specific brain regions like amygdala, prefrontal cortex, etc.).
+Generate a structured JSON response with EXACTLY these 7 fields:
+1. "emotionalReflection": A warm, validating 2-3 sentence reflection on what the user is feeling. Use a compassionate, non-judgmental tone.
+2. "brainInsight": A 2-sentence neuroscience explanation of what's happening in the brain (mention specific brain regions like amygdala, prefrontal cortex, hippocampus, etc.).
 3. "eiPillar": The most relevant EI pillar name (one of: Self-Awareness, Self-Regulation, Motivation, Empathy, Social Skills).
-4. "eiPillarDescription": A 2-sentence explanation of how this EI pillar applies to their current state.
-5. "aieiProverb": An authentic African proverb relevant to their situation (include origin country/culture).
-6. "aieiProverbOrigin": The country or culture of origin for the proverb.
-7. "personalizedNextStep": A specific, actionable 2-3 sentence recommendation for their next step.
+4. "eiPillarDescription": A 2-sentence explanation of how this EI pillar applies to their current state and what growth looks like.
+5. "aieiProverb": An authentic African proverb relevant to their situation.
+6. "aieiProverbOrigin": The country or culture of origin for the proverb (e.g., "Yoruba, Nigeria" or "Swahili, East Africa").
+7. "personalizedNextStep": A specific, actionable 2-3 sentence recommendation for their immediate next step.
 8. "supportInvitation": A gentle 1-2 sentence invitation to seek additional support if needed.
-
+9. "mochaAffirmation": A short, powerful 1-sentence affirmation from Mocha (the HeadCheck AI companion) that the user can carry with them. Make it personal, warm, and rooted in their specific emotional state.
 Respond ONLY with valid JSON, no markdown.`;
 
   const response = await invokeLLM({
@@ -105,8 +105,9 @@ Respond ONLY with valid JSON, no markdown.`;
             aieiProverbOrigin: { type: "string" },
             personalizedNextStep: { type: "string" },
             supportInvitation: { type: "string" },
+            mochaAffirmation: { type: "string" },
           },
-          required: ["emotionalReflection", "brainInsight", "eiPillar", "eiPillarDescription", "aieiProverb", "aieiProverbOrigin", "personalizedNextStep", "supportInvitation"],
+          required: ["emotionalReflection", "brainInsight", "eiPillar", "eiPillarDescription", "aieiProverb", "aieiProverbOrigin", "personalizedNextStep", "supportInvitation", "mochaAffirmation"],
           additionalProperties: false,
         },
       },
@@ -125,10 +126,10 @@ Respond ONLY with valid JSON, no markdown.`;
     aieiProverbOrigin: string;
     personalizedNextStep: string;
     supportInvitation: string;
+    mochaAffirmation: string;
   };
 }
-
-// ─── Seven Mirrors AI Summary ─────────────────────────────────────────────────
+// ─── Seven Mirrors AI Summaryy ─────────────────────────────────────────────────
 const SEVEN_MIRRORS = ["Values", "Loyalty", "Inner Conflict", "Self-Appreciation", "Red Flags", "Growth", "Peace"];
 
 async function generateSevenMirrorsSummary(responses: { mirrorTheme: string; response: string }[]) {
