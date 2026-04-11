@@ -16,6 +16,7 @@ import Resources from "./pages/Resources";
 import LearnEI from "./pages/LearnEI";
 import Mindset from "./pages/Mindset";
 import ForInstitutions from "./pages/ForInstitutions";
+import ZeraCards from "./pages/ZeraCards";
 
 function Router() {
   return (
@@ -23,8 +24,10 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/onboarding" component={Onboarding} />
       <Route path="/join" component={JoinInstitution} />
+      <Route path="/checkin" component={CheckIn} />
       <Route path="/check-in" component={CheckIn} />
       <Route path="/check-in/:id" component={CheckInResult} />
+      <Route path="/compass" component={SevenMirrors} />
       <Route path="/seven-mirrors" component={SevenMirrors} />
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/facilitator" component={FacilitatorDashboard} />
@@ -32,6 +35,7 @@ function Router() {
       <Route path="/learn-ei" component={LearnEI} />
       <Route path="/mindset" component={Mindset} />
       <Route path="/for-institutions" component={ForInstitutions} />
+      <Route path="/zera-cards" component={ZeraCards} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>

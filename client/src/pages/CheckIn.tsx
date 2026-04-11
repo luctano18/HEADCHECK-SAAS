@@ -299,6 +299,11 @@ export default function CheckIn() {
             </Button>
           )}
         </div>
+
+        {/* Disclaimer */}
+        <p className="text-xs text-center leading-relaxed mt-6 pb-6 px-4" style={{ color: "oklch(0.60 0.03 260)" }}>
+          This check-in is a reflective support tool. It is not a replacement for academic advising, counseling, or mental health services. If you are experiencing ongoing distress or feel unsafe, please contact your campus support services or emergency resources.
+        </p>
       </div>
     </div>
   );

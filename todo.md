@@ -86,3 +86,39 @@
 - [x] Dashboard achievements panel and streak stat card
 - [x] All new routes registered in App.tsx (Resources, LearnEI, Mindset, ForInstitutions)
 - [x] TypeScript: 0 errors | Tests: 10/10 passing
+
+## Phase 12: headcheck.app Full Content Integration
+
+### Design & Branding
+- [x] Update color palette: purple/violet primary + orange/amber gradient accent
+- [x] Update nav: add Compass + Zera Cards nav items, use icon+text labels
+- [x] Update hero gradient bar (horizontal purple→orange→green accent)
+- [x] Update CTA buttons to pill-shaped gradient (purple→orange)
+
+### Homepage Copy
+- [x] Update hero tagline: "Your supportive space for clarity"
+- [x] Update hero subline: "Transform stress into clarity with guided check-ins that feel rewarding and empowering"
+- [x] Add "What is HeadCheck?" section with exact copy
+- [x] Add "How it works" 4-step list
+- [x] Add "Who is this for?" section
+- [x] Add 3 feature cards: Ground Yourself | Name Your Feelings | Find Direction
+- [x] Add Self Trust Compass preview section on homepage
+
+### Compass / Seven Mirrors Rename & Update
+- [x] Rename "Seven Mirrors" → "Self Trust Compass" throughout the app
+- [x] Update Compass intro page with "A Journey Inward" badge
+- [x] Update subtitle and "What to Expect" section with exact copy from headcheck.app
+- [x] Update 7 mirror theme names to: Self-Awareness | Self-Compassion | Boundaries | Authenticity | Decision-Making | Resilience | Growth Mindset
+
+### Resources Library
+- [x] Replace existing resources with full 22-item list from headcheck.app
+- [x] Add African proverbs inline on resource cards
+- [x] Add read/watch time badges on each card
+
+### Zera Cards Page (NEW)
+- [x] Create /zera-cards page with ZERA hero, 5 pillars, About ZERA section
+- [x] Add interactive card flip demo (proverb → EI pillar + explanation)
+- [x] Add link to zeracards.com
+
+### Disclaimer
+- [x] Add disclaimer footer on Check-In and Compass pages

@@ -3,68 +3,68 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
-import { Brain, ArrowRight, ArrowLeft, Loader2, Sparkles, Award, Home } from "lucide-react";
+import { Heart, ArrowRight, ArrowLeft, Loader2, Sparkles, Award } from "lucide-react";
 
+// Updated mirror themes from headcheck.app — Self Trust Compass
 const MIRRORS = [
   {
-    index: 0, theme: "Values", emoji: "⚖️",
-    title: "The Mirror of Values",
-    prompt: "What are the 3 core values that guide your life? How well are you living in alignment with them right now?",
-    description: "Reflect on what truly matters to you at your core.",
+    index: 0, theme: "Self-Awareness", emoji: "🪞",
+    title: "Mirror of Self-Awareness",
+    question: "How well do you know yourself?",
+    prompt: "Reflect on a recent moment when you were surprised by your own reaction. What did it reveal about you that you hadn't fully recognized before?",
     color: "from-violet-50 to-purple-50",
     accent: "bg-violet-100 text-violet-700",
   },
   {
-    index: 1, theme: "Loyalty", emoji: "🤝",
-    title: "The Mirror of Loyalty",
-    prompt: "Who are you most loyal to in your life? Is that loyalty balanced and healthy, or does it sometimes cost you your own peace?",
-    description: "Explore the bonds that shape your sense of duty and belonging.",
-    color: "from-blue-50 to-sky-50",
-    accent: "bg-blue-100 text-blue-700",
+    index: 1, theme: "Self-Compassion", emoji: "💛",
+    title: "Mirror of Self-Compassion",
+    question: "How kind are you to yourself?",
+    prompt: "Think about how you speak to yourself when you make a mistake. Would you speak that way to a close friend? What would a kinder inner voice sound like?",
+    color: "from-yellow-50 to-amber-50",
+    accent: "bg-yellow-100 text-yellow-700",
   },
   {
-    index: 2, theme: "Inner Conflict", emoji: "🌊",
-    title: "The Mirror of Inner Conflict",
-    prompt: "What internal battle are you fighting right now? What two parts of you are in tension, and what does each part need?",
-    description: "Acknowledge the tensions within yourself with compassion.",
-    color: "from-orange-50 to-amber-50",
-    accent: "bg-orange-100 text-orange-700",
-  },
-  {
-    index: 3, theme: "Self-Appreciation", emoji: "🌸",
-    title: "The Mirror of Self-Appreciation",
-    prompt: "What is one thing you genuinely admire about yourself that you rarely acknowledge? What strength have you been taking for granted?",
-    description: "Celebrate your own light, however dimly you may see it today.",
-    color: "from-pink-50 to-rose-50",
-    accent: "bg-pink-100 text-pink-700",
-  },
-  {
-    index: 4, theme: "Red Flags", emoji: "🚩",
-    title: "The Mirror of Red Flags",
-    prompt: "What patterns, behaviors, or situations in your life are warning signs that you've been ignoring? What is your gut telling you?",
-    description: "Look honestly at what you've been avoiding seeing.",
-    color: "from-red-50 to-rose-50",
-    accent: "bg-red-100 text-red-700",
-  },
-  {
-    index: 5, theme: "Growth", emoji: "🌱",
-    title: "The Mirror of Growth",
-    prompt: "Where have you grown the most in the past year? What challenges shaped you, and what wisdom did you gain from them?",
-    description: "Honor your journey and the person you are becoming.",
+    index: 2, theme: "Boundaries", emoji: "🛡️",
+    title: "Mirror of Boundaries",
+    question: "Can you honor your needs?",
+    prompt: "Reflect on a time when you said yes but meant no, or when you felt your boundaries weren't respected. What made it difficult to honor your own needs?",
     color: "from-green-50 to-emerald-50",
     accent: "bg-green-100 text-green-700",
   },
   {
-    index: 6, theme: "Peace", emoji: "🕊️",
-    title: "The Mirror of Peace",
-    prompt: "What would it feel like to be truly at peace — with yourself, your past, and your present? What one thing would you need to release to get there?",
-    description: "Envision the stillness that lives within you.",
-    color: "from-sky-50 to-cyan-50",
-    accent: "bg-sky-100 text-sky-700",
+    index: 3, theme: "Authenticity", emoji: "✨",
+    title: "Mirror of Authenticity",
+    question: "Are you true to yourself?",
+    prompt: "In what areas of your life do you feel most like yourself? Where do you feel you're playing a role? What would it look like to show up more authentically?",
+    color: "from-orange-50 to-amber-50",
+    accent: "bg-orange-100 text-orange-700",
+  },
+  {
+    index: 4, theme: "Decision-Making", emoji: "🧭",
+    title: "Mirror of Decision-Making",
+    question: "Do you trust your choices?",
+    prompt: "Recall a decision you made recently. Did you trust your own judgment, or did you seek external validation? What does trusting yourself in decisions feel like?",
+    color: "from-blue-50 to-sky-50",
+    accent: "bg-blue-100 text-blue-700",
+  },
+  {
+    index: 5, theme: "Resilience", emoji: "🌱",
+    title: "Mirror of Resilience",
+    question: "How do you handle setbacks?",
+    prompt: "Think of a recent challenge or setback. How did you respond? What inner resources did you draw on, and what would you do differently with more self-trust?",
+    color: "from-teal-50 to-cyan-50",
+    accent: "bg-teal-100 text-teal-700",
+  },
+  {
+    index: 6, theme: "Growth Mindset", emoji: "🚀",
+    title: "Mirror of Growth Mindset",
+    question: "How do you view your potential?",
+    prompt: "Where do you feel stuck in your growth? What beliefs about yourself might be limiting you? What would become possible if you truly believed in your own potential?",
+    color: "from-pink-50 to-rose-50",
+    accent: "bg-pink-100 text-pink-700",
   },
 ];
 
@@ -101,89 +101,137 @@ export default function SevenMirrors() {
     onError: () => toast.error("Could not save your response. Please try again."),
   });
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
+  if (loading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin" style={{ color: "oklch(0.45 0.18 285)" }} /></div>;
   if (!isAuthenticated) { navigate("/"); return null; }
 
   const currentMirror = MIRRORS[currentMirrorIndex];
 
-  // ── Intro Phase ──────────────────────────────────────────────────────────────
+  // ── INTRO ──
   if (phase === "intro") {
     return (
-      <div className="min-h-screen bg-background">
-        <div className="border-b bg-card/80 backdrop-blur-sm">
-          <div className="container flex items-center justify-between h-16">
-            <button onClick={() => navigate("/dashboard")} className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
-              <Brain className="w-5 h-5 text-primary" /><span className="font-semibold text-sm">HeadCheck AI</span>
+      <div className="min-h-screen bg-[oklch(0.97_0.03_285)]">
+        {/* Nav */}
+        <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-[oklch(0.90_0.04_285)]">
+          <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+            <button onClick={() => navigate("/")} className="flex items-center gap-2 font-bold text-xl" style={{ color: "oklch(0.45 0.18 285)" }}>
+              <Heart className="w-5 h-5" style={{ fill: "oklch(0.45 0.18 285)" }} />
+              HeadCheck
             </button>
-            <Badge variant="secondary">Seven Mirrors</Badge>
-            <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard")}><Home className="w-4 h-4 mr-1" /> Dashboard</Button>
+            <Badge variant="secondary">Self Trust Compass</Badge>
           </div>
-        </div>
-        <div className="container max-w-3xl py-16 space-y-12">
-          <div className="text-center animate-fade-in-up">
-            <div className="text-6xl mb-4">🪞</div>
-            <Badge variant="secondary" className="mb-4">Deep Reflection Journey</Badge>
-            <h1 className="font-serif text-4xl md:text-5xl font-bold text-foreground mb-4">The Seven Mirrors</h1>
-            <p className="text-lg text-muted-foreground max-w-xl mx-auto leading-relaxed">
-              A guided introspective journey through seven dimensions of your inner world. Take your time — there are no right or wrong answers.
-            </p>
+        </nav>
+
+        <div className="max-w-lg mx-auto px-6 pt-28 pb-12 text-center">
+          {/* Badge */}
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white border text-sm font-medium mb-6 shadow-sm"
+            style={{ borderColor: "oklch(0.88 0.06 285)", color: "oklch(0.45 0.18 285)" }}>
+            🧭 A Journey Inward
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+
+          {/* Gradient bar */}
+          <div className="w-full h-3 rounded-full mb-6"
+            style={{ background: "linear-gradient(to right, oklch(0.55 0.22 285), oklch(0.65 0.20 340), oklch(0.72 0.18 48), oklch(0.75 0.16 120))" }} />
+
+          <h1 className="text-3xl font-black mb-3" style={{ color: "oklch(0.18 0.04 260)" }}>The Self Trust Compass</h1>
+          <p className="leading-relaxed mb-8" style={{ color: "oklch(0.45 0.04 260)" }}>
+            A seven mirror self-reflection practice that helps you check in on how you relate to yourself. Each mirror points inward asking not what is wrong, but <em>what is true</em>.
+          </p>
+
+          {/* What to Expect */}
+          <div className="bg-white rounded-2xl p-6 shadow-sm border text-left mb-5" style={{ borderColor: "oklch(0.92 0.03 260)" }}>
+            <h2 className="font-bold mb-4" style={{ color: "oklch(0.18 0.04 260)" }}>What to Expect</h2>
+            <ul className="space-y-3">
+              {[
+                <><strong>Seven mirrors</strong> exploring your relationship with yourself</>,
+                <><strong>10-15 minutes</strong> of guided reflection</>,
+                <><strong>No right answers</strong>, only honest ones</>,
+                <><strong>Your responses</strong> help you see patterns and growth areas</>,
+              ].map((item, i) => (
+                <li key={i} className="flex gap-3 items-start text-sm" style={{ color: "oklch(0.35 0.04 260)" }}>
+                  <span className="font-bold mt-0.5" style={{ color: "oklch(0.45 0.18 285)" }}>✦</span>
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Mirror grid preview */}
+          <div className="grid grid-cols-2 gap-2 mb-5">
             {MIRRORS.map((m) => (
-              <div key={m.index} className={`rounded-2xl p-4 bg-gradient-to-br ${m.color} border border-white/60 text-center`}>
-                <div className="text-2xl mb-1">{m.emoji}</div>
-                <p className="text-xs font-semibold text-foreground">{m.theme}</p>
+              <div key={m.index} className={`rounded-xl p-3 bg-gradient-to-br ${m.color} border border-white/60 text-left`}>
+                <span className="text-xl">{m.emoji}</span>
+                <p className="text-xs font-semibold mt-1" style={{ color: "oklch(0.18 0.04 260)" }}>{m.theme}</p>
+                <p className="text-xs italic" style={{ color: "oklch(0.55 0.04 260)" }}>{m.question}</p>
               </div>
             ))}
           </div>
-          <div className="bg-card rounded-2xl p-6 border shadow-sm space-y-3">
-            <h3 className="font-semibold text-foreground">Before you begin</h3>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              Find a quiet space. Breathe deeply. This journey takes approximately 15–20 minutes. You can pause and resume at any time. Your responses are private and will be used to generate a personalized AI summary and theme badges.
-            </p>
+
+          {/* Best practiced when */}
+          <div className="rounded-xl p-4 text-sm text-left mb-8" style={{ background: "oklch(0.96 0.03 285)", color: "oklch(0.45 0.04 260)" }}>
+            <strong style={{ color: "oklch(0.18 0.04 260)" }}>Best practiced when:</strong> You're not in crisis, have time to reflect deeply, and are curious about your inner landscape. This is different from the quick check-in—it's for deeper exploration.
           </div>
-          <Button size="lg" className="w-full h-14 text-base" onClick={() => startMutation.mutate()} disabled={startMutation.isPending}>
-            {startMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <Sparkles className="w-5 h-5 mr-2" />}
-            Begin the Journey
-          </Button>
+
+          <div className="flex flex-col gap-3">
+            <Button size="lg" className="w-full rounded-full py-6 text-base font-bold"
+              style={{ background: "linear-gradient(135deg, oklch(0.45 0.18 285), oklch(0.72 0.18 48))" }}
+              onClick={() => startMutation.mutate()} disabled={startMutation.isPending}>
+              {startMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <Sparkles className="w-5 h-5 mr-2" />}
+              Begin Your Journey
+            </Button>
+            <Button onClick={() => navigate("/")} variant="ghost" className="w-full rounded-full" style={{ color: "oklch(0.55 0.04 260)" }}>
+              Return Home
+            </Button>
+            <Button onClick={() => navigate("/checkin")} variant="outline" className="w-full rounded-full">
+              Try Quick Check-In
+            </Button>
+          </div>
+
+          {/* Disclaimer */}
+          <p className="text-xs mt-8 leading-relaxed" style={{ color: "oklch(0.60 0.03 260)" }}>
+            This check-in is a reflective support tool. It is not a replacement for academic advising, counseling, or mental health services. If you are experiencing ongoing distress or feel unsafe, please contact your campus support services or emergency resources.
+          </p>
         </div>
       </div>
     );
   }
 
-  // ── Session Phase ────────────────────────────────────────────────────────────
+  // ── SESSION ──
   if (phase === "session" && currentMirror) {
     return (
-      <div className="min-h-screen bg-background">
-        <div className="border-b bg-card/80 backdrop-blur-sm sticky top-0 z-10">
-          <div className="container flex items-center justify-between h-16">
-            <button onClick={() => navigate("/dashboard")} className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
-              <Brain className="w-5 h-5 text-primary" /><span className="font-semibold text-sm">HeadCheck AI</span>
+      <div className="min-h-screen bg-[oklch(0.97_0.03_285)]">
+        <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-[oklch(0.90_0.04_285)]">
+          <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+            <button onClick={() => navigate("/")} className="flex items-center gap-2 font-bold text-xl" style={{ color: "oklch(0.45 0.18 285)" }}>
+              <Heart className="w-5 h-5" style={{ fill: "oklch(0.45 0.18 285)" }} />
+              HeadCheck
             </button>
             <div className="flex items-center gap-1.5">
               {MIRRORS.map((m) => (
-                <div key={m.index} className={`h-2 rounded-full transition-all duration-300 ${
-                  m.index === currentMirrorIndex ? "w-8 bg-primary" : m.index < currentMirrorIndex ? "w-4 bg-primary/50" : "w-4 bg-muted"
-                }`} />
+                <div key={m.index} className={`h-1.5 rounded-full transition-all duration-300 ${
+                  m.index === currentMirrorIndex ? "w-8" : m.index < currentMirrorIndex ? "w-4 opacity-60" : "w-4 opacity-20"
+                }`}
+                  style={{ background: m.index <= currentMirrorIndex ? "linear-gradient(to right, oklch(0.45 0.18 285), oklch(0.72 0.18 48))" : "oklch(0.80 0.03 260)" }} />
               ))}
             </div>
-            <span className="text-xs text-muted-foreground font-medium">Mirror {currentMirrorIndex + 1} of 7</span>
+            <span className="text-xs font-medium" style={{ color: "oklch(0.55 0.04 260)" }}>Mirror {currentMirrorIndex + 1} of 7</span>
           </div>
-        </div>
-        <div className="container max-w-2xl py-12 space-y-8 animate-fade-in-up">
+        </nav>
+
+        <div className="max-w-lg mx-auto px-6 pt-28 pb-12 space-y-5">
           <div className={`rounded-3xl p-8 bg-gradient-to-br ${currentMirror.color} border border-white/60`}>
-            <div className="text-center mb-6">
+            <div className="text-center mb-5">
               <div className="text-5xl mb-3">{currentMirror.emoji}</div>
               <Badge className={currentMirror.accent}>{currentMirror.theme}</Badge>
-              <h1 className="font-serif text-2xl font-bold text-foreground mt-3 mb-2">{currentMirror.title}</h1>
-              <p className="text-sm text-muted-foreground italic">{currentMirror.description}</p>
+              <h1 className="text-2xl font-bold mt-3 mb-1" style={{ color: "oklch(0.18 0.04 260)" }}>{currentMirror.title}</h1>
+              <p className="text-sm italic" style={{ color: "oklch(0.45 0.18 285)" }}>{currentMirror.question}</p>
             </div>
             <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-5 border border-white/60">
-              <p className="text-base text-foreground leading-relaxed font-medium">{currentMirror.prompt}</p>
+              <p className="text-base leading-relaxed font-medium" style={{ color: "oklch(0.18 0.04 260)" }}>{currentMirror.prompt}</p>
             </div>
           </div>
-          <div className="bg-card rounded-2xl p-6 border shadow-sm space-y-4">
-            <label className="text-sm font-medium text-muted-foreground">Your reflection</label>
+
+          <div className="bg-white rounded-2xl p-6 border shadow-sm space-y-4" style={{ borderColor: "oklch(0.92 0.03 260)" }}>
+            <label className="text-sm font-medium" style={{ color: "oklch(0.55 0.04 260)" }}>Your reflection</label>
             <Textarea
               placeholder="Take your time. Write honestly and freely..."
               value={response}
@@ -191,87 +239,95 @@ export default function SevenMirrors() {
               className="min-h-48 resize-none border-0 p-0 focus-visible:ring-0 text-base"
             />
           </div>
+
           <div className="flex gap-3">
             {currentMirrorIndex > 0 && (
-              <Button variant="outline" className="h-12 px-6" onClick={() => { setCurrentMirrorIndex(i => i - 1); setResponse(""); }}>
+              <Button variant="outline" className="h-12 px-6 rounded-full"
+                onClick={() => { setCurrentMirrorIndex(i => i - 1); setResponse(""); }}>
                 <ArrowLeft className="w-4 h-4 mr-2" /> Back
               </Button>
             )}
-            <Button
-              className="flex-1 h-12 text-base"
+            <Button className="flex-1 h-12 text-base rounded-full font-semibold"
+              style={{ background: "linear-gradient(135deg, oklch(0.45 0.18 285), oklch(0.72 0.18 48))" }}
               disabled={response.trim().length < 10 || submitMutation.isPending}
               onClick={() => {
                 if (!sessionId) return;
                 submitMutation.mutate({ sessionId, mirrorIndex: currentMirrorIndex, response: response.trim() });
-              }}
-            >
+              }}>
               {submitMutation.isPending ? (
-                <><Loader2 className="w-4 h-4 animate-spin mr-2" /> {currentMirrorIndex === 6 ? "Generating summary..." : "Saving..."}</>
+                <><Loader2 className="w-4 h-4 animate-spin mr-2" />{currentMirrorIndex === 6 ? "Generating summary..." : "Saving..."}</>
               ) : currentMirrorIndex === 6 ? (
-                <><Sparkles className="w-4 h-4 mr-2" /> Complete Journey</>
+                <><Sparkles className="w-4 h-4 mr-2" />Complete Journey</>
               ) : (
                 <>Next Mirror <ArrowRight className="w-4 h-4 ml-2" /></>
               )}
             </Button>
           </div>
+
+          {/* Disclaimer */}
+          <p className="text-xs text-center leading-relaxed" style={{ color: "oklch(0.65 0.03 260)" }}>
+            This check-in is a reflective support tool. It is not a replacement for counseling or mental health services.
+          </p>
         </div>
       </div>
     );
   }
 
-  // ── Complete Phase ───────────────────────────────────────────────────────────
+  // ── COMPLETE ──
   if (phase === "complete" && completionData) {
     return (
-      <div className="min-h-screen bg-background">
-        <div className="border-b bg-card/80 backdrop-blur-sm">
-          <div className="container flex items-center justify-between h-16">
-            <button onClick={() => navigate("/dashboard")} className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
-              <Brain className="w-5 h-5 text-primary" /><span className="font-semibold text-sm">HeadCheck AI</span>
+      <div className="min-h-screen bg-[oklch(0.97_0.03_285)]">
+        <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-[oklch(0.90_0.04_285)]">
+          <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+            <button onClick={() => navigate("/")} className="flex items-center gap-2 font-bold text-xl" style={{ color: "oklch(0.45 0.18 285)" }}>
+              <Heart className="w-5 h-5" style={{ fill: "oklch(0.45 0.18 285)" }} />
+              HeadCheck
             </button>
             <Badge variant="secondary" className="bg-amber-100 text-amber-700">Journey Complete</Badge>
-            <Button variant="ghost" size="sm" onClick={() => navigate("/dashboard")}><Home className="w-4 h-4 mr-1" /> Dashboard</Button>
           </div>
-        </div>
-        <div className="container max-w-2xl py-12 space-y-8 animate-fade-in-up">
-          <div className="text-center">
-            <div className="text-6xl mb-4">✨</div>
-            <h1 className="font-serif text-3xl font-bold text-foreground mb-2">Your Inner Journey Complete</h1>
-            <p className="text-muted-foreground">You've looked into all seven mirrors. Here is what the AI sees in you.</p>
+        </nav>
+
+        <div className="max-w-lg mx-auto px-6 pt-28 pb-12 text-center space-y-6">
+          <div className="text-6xl">✨</div>
+          <div>
+            <h1 className="text-3xl font-black mb-2" style={{ color: "oklch(0.18 0.04 260)" }}>Journey Complete</h1>
+            <p style={{ color: "oklch(0.55 0.04 260)" }}>You've completed all seven mirrors of the Self Trust Compass.</p>
           </div>
 
-          {/* Badges */}
-          <div className="bg-card rounded-2xl p-6 border shadow-sm">
-            <div className="flex items-center gap-2 mb-4">
-              <Award className="w-5 h-5 text-amber-500" />
-              <h2 className="font-semibold text-foreground">Your Theme Badges</h2>
+          {completionData.badges.length > 0 && (
+            <div className="bg-white rounded-2xl p-6 shadow-sm border text-left" style={{ borderColor: "oklch(0.92 0.03 260)" }}>
+              <div className="flex items-center gap-2 mb-3">
+                <Award className="w-5 h-5 text-amber-500" />
+                <h2 className="font-bold" style={{ color: "oklch(0.18 0.04 260)" }}>Badges Earned</h2>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {completionData.badges.map((b) => (
+                  <Badge key={b} className="bg-amber-100 text-amber-700 px-3 py-1">{b}</Badge>
+                ))}
+              </div>
             </div>
-            <div className="flex flex-wrap gap-2">
-              {completionData.badges.map((badge, i) => (
-                <div key={i} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-200">
-                  <span className="text-sm">{MIRRORS[i]?.emoji}</span>
-                  <span className="text-xs font-semibold text-amber-800">{badge}</span>
-                </div>
-              ))}
-            </div>
-          </div>
+          )}
 
-          {/* AI Summary */}
-          <div className="bg-card rounded-2xl p-6 border shadow-sm space-y-4">
-            <div className="flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-primary" />
-              <h2 className="font-semibold text-foreground">Your AI Reflection Summary</h2>
+          {completionData.summary && (
+            <div className="bg-white rounded-2xl p-6 shadow-sm border text-left" style={{ borderColor: "oklch(0.92 0.03 260)" }}>
+              <div className="flex items-center gap-2 mb-3">
+                <Sparkles className="w-5 h-5" style={{ color: "oklch(0.45 0.18 285)" }} />
+                <h2 className="font-bold" style={{ color: "oklch(0.18 0.04 260)" }}>Your Reflection Summary</h2>
+              </div>
+              <p className="text-sm leading-relaxed" style={{ color: "oklch(0.35 0.04 260)" }}>{completionData.summary}</p>
             </div>
-            <div className="prose prose-sm max-w-none text-muted-foreground leading-relaxed">
-              {completionData.summary.split("\n\n").map((para, i) => (
-                <p key={i} className="mb-3 last:mb-0">{para}</p>
-              ))}
-            </div>
-          </div>
+          )}
 
-          <div className="grid grid-cols-2 gap-4">
-            <Button variant="outline" className="h-12" onClick={() => navigate("/check-in")}>New Check-In</Button>
-            <Button className="h-12" onClick={() => navigate("/dashboard")}>
-              <Home className="w-4 h-4 mr-2" /> Dashboard
+          <div className="flex flex-col gap-3">
+            <Button onClick={() => navigate("/dashboard")} className="w-full rounded-full font-semibold"
+              style={{ background: "linear-gradient(135deg, oklch(0.45 0.18 285), oklch(0.72 0.18 48))" }}>
+              View Your Dashboard
+            </Button>
+            <Button onClick={() => navigate("/checkin")} variant="outline" className="w-full rounded-full">
+              Start a Quick Check-In
+            </Button>
+            <Button onClick={() => navigate("/")} variant="ghost" className="w-full rounded-full" style={{ color: "oklch(0.55 0.04 260)" }}>
+              Return Home
             </Button>
           </div>
         </div>
