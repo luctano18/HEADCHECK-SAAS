@@ -1,22 +1,26 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
+import {
+  boolean,
+  int,
+  mysqlEnum,
+  mysqlTable,
+  text,
+  timestamp,
+  varchar,
+  float,
+  json,
+} from "drizzle-orm/mysql-core";
 
-/**
- * Core user table backing auth flow.
- * Extend this file with additional tables as your product grows.
- * Columns use camelCase to match both database fields and generated types.
- */
+// ─── Users ────────────────────────────────────────────────────────────────────
 export const users = mysqlTable("users", {
-  /**
-   * Surrogate primary key. Auto-incremented numeric value managed by the database.
-   * Use this for relations between tables.
-   */
   id: int("id").autoincrement().primaryKey(),
-  /** Manus OAuth identifier (openId) returned from the OAuth callback. Unique per user. */
   openId: varchar("openId", { length: 64 }).notNull().unique(),
   name: text("name"),
   email: varchar("email", { length: 320 }),
   loginMethod: varchar("loginMethod", { length: 64 }),
-  role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
+  role: mysqlEnum("role", ["student", "facilitator", "admin", "superadmin"]).default("student").notNull(),
+  institutionId: int("institutionId"),
+  groupId: int("groupId"),
+  onboardingCompleted: boolean("onboardingCompleted").default(false).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
@@ -25,4 +29,113 @@ export const users = mysqlTable("users", {
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
-// TODO: Add your tables here
+// ─── Institutions (Schools) ───────────────────────────────────────────────────
+export const institutions = mysqlTable("institutions", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  adminId: int("adminId").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type Institution = typeof institutions.$inferSelect;
+
+// ─── Groups (Cohorts within an Institution) ───────────────────────────────────
+export const groups = mysqlTable("groups", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  institutionId: int("institutionId").notNull(),
+  facilitatorId: int("facilitatorId"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type Group = typeof groups.$inferSelect;
+
+// ─── Invitations ──────────────────────────────────────────────────────────────
+export const invitations = mysqlTable("invitations", {
+  id: int("id").autoincrement().primaryKey(),
+  token: varchar("token", { length: 128 }).notNull().unique(),
+  email: varchar("email", { length: 320 }).notNull(),
+  institutionId: int("institutionId").notNull(),
+  groupId: int("groupId"),
+  invitedByUserId: int("invitedByUserId").notNull(),
+  accepted: boolean("accepted").default(false).notNull(),
+  expiresAt: timestamp("expiresAt").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type Invitation = typeof invitations.$inferSelect;
+
+// ─── Emotional Check-Ins ──────────────────────────────────────────────────────
+export const checkIns = mysqlTable("check_ins", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  emotion: varchar("emotion", { length: 64 }).notNull(),
+  emotionEmoji: varchar("emotionEmoji", { length: 8 }),
+  intensity: int("intensity").notNull(), // 1-10
+  context: mysqlEnum("context", ["School", "Family", "Relationships", "Work", "Self"]).notNull(),
+  journalEntry: text("journalEntry"),
+  crisisDetected: boolean("crisisDetected").default(false).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type CheckIn = typeof checkIns.$inferSelect;
+export type InsertCheckIn = typeof checkIns.$inferInsert;
+
+// ─── AI Responses ─────────────────────────────────────────────────────────────
+export const aiResponses = mysqlTable("ai_responses", {
+  id: int("id").autoincrement().primaryKey(),
+  checkInId: int("checkInId").notNull().unique(),
+  userId: int("userId").notNull(),
+  emotionalReflection: text("emotionalReflection").notNull(),
+  brainInsight: text("brainInsight").notNull(),
+  eiPillar: varchar("eiPillar", { length: 128 }).notNull(),
+  eiPillarDescription: text("eiPillarDescription").notNull(),
+  aieiProverb: text("aieiProverb").notNull(),
+  aieiProverbOrigin: varchar("aieiProverbOrigin", { length: 128 }),
+  personalizedNextStep: text("personalizedNextStep").notNull(),
+  supportInvitation: text("supportInvitation").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type AiResponse = typeof aiResponses.$inferSelect;
+
+// ─── Crisis Events ────────────────────────────────────────────────────────────
+export const crisisEvents = mysqlTable("crisis_events", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  checkInId: int("checkInId"),
+  triggerText: text("triggerText"),
+  severity: mysqlEnum("severity", ["moderate", "high", "critical"]).notNull(),
+  acknowledged: boolean("acknowledged").default(false).notNull(),
+  facilitatorNotified: boolean("facilitatorNotified").default(false).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type CrisisEvent = typeof crisisEvents.$inferSelect;
+
+// ─── Seven Mirrors Sessions ───────────────────────────────────────────────────
+export const sevenMirrorsSessions = mysqlTable("seven_mirrors_sessions", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  currentMirrorIndex: int("currentMirrorIndex").default(0).notNull(), // 0-6
+  completed: boolean("completed").default(false).notNull(),
+  aiSummary: text("aiSummary"),
+  badgesEarned: json("badgesEarned").$type<string[]>(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  completedAt: timestamp("completedAt"),
+});
+
+export type SevenMirrorsSession = typeof sevenMirrorsSessions.$inferSelect;
+
+// ─── Seven Mirrors Responses ──────────────────────────────────────────────────
+export const sevenMirrorsResponses = mysqlTable("seven_mirrors_responses", {
+  id: int("id").autoincrement().primaryKey(),
+  sessionId: int("sessionId").notNull(),
+  userId: int("userId").notNull(),
+  mirrorIndex: int("mirrorIndex").notNull(), // 0-6
+  mirrorTheme: varchar("mirrorTheme", { length: 64 }).notNull(),
+  response: text("response").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type SevenMirrorsResponse = typeof sevenMirrorsResponses.$inferSelect;

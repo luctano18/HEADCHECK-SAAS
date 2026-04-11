@@ -1,11 +1,22 @@
-import { eq } from "drizzle-orm";
+import { and, desc, eq, gte, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users } from "../drizzle/schema";
-import { ENV } from './_core/env';
+import {
+  InsertCheckIn,
+  InsertUser,
+  aiResponses,
+  checkIns,
+  crisisEvents,
+  groups,
+  institutions,
+  invitations,
+  sevenMirrorsResponses,
+  sevenMirrorsSessions,
+  users,
+} from "../drizzle/schema";
+import { ENV } from "./_core/env";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
-// Lazily create the drizzle instance so local tooling can run without a DB.
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
@@ -18,75 +29,337 @@ export async function getDb() {
   return _db;
 }
 
+// ─── Users ────────────────────────────────────────────────────────────────────
 export async function upsertUser(user: InsertUser): Promise<void> {
-  if (!user.openId) {
-    throw new Error("User openId is required for upsert");
-  }
-
+  if (!user.openId) throw new Error("User openId is required for upsert");
   const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot upsert user: database not available");
-    return;
+  if (!db) return;
+
+  const values: InsertUser = { openId: user.openId };
+  const updateSet: Record<string, unknown> = {};
+  const textFields = ["name", "email", "loginMethod"] as const;
+
+  for (const field of textFields) {
+    const value = user[field];
+    if (value === undefined) continue;
+    const normalized = value ?? null;
+    values[field] = normalized;
+    updateSet[field] = normalized;
   }
 
-  try {
-    const values: InsertUser = {
-      openId: user.openId,
-    };
-    const updateSet: Record<string, unknown> = {};
-
-    const textFields = ["name", "email", "loginMethod"] as const;
-    type TextField = (typeof textFields)[number];
-
-    const assignNullable = (field: TextField) => {
-      const value = user[field];
-      if (value === undefined) return;
-      const normalized = value ?? null;
-      values[field] = normalized;
-      updateSet[field] = normalized;
-    };
-
-    textFields.forEach(assignNullable);
-
-    if (user.lastSignedIn !== undefined) {
-      values.lastSignedIn = user.lastSignedIn;
-      updateSet.lastSignedIn = user.lastSignedIn;
-    }
-    if (user.role !== undefined) {
-      values.role = user.role;
-      updateSet.role = user.role;
-    } else if (user.openId === ENV.ownerOpenId) {
-      values.role = 'admin';
-      updateSet.role = 'admin';
-    }
-
-    if (!values.lastSignedIn) {
-      values.lastSignedIn = new Date();
-    }
-
-    if (Object.keys(updateSet).length === 0) {
-      updateSet.lastSignedIn = new Date();
-    }
-
-    await db.insert(users).values(values).onDuplicateKeyUpdate({
-      set: updateSet,
-    });
-  } catch (error) {
-    console.error("[Database] Failed to upsert user:", error);
-    throw error;
+  if (user.lastSignedIn !== undefined) {
+    values.lastSignedIn = user.lastSignedIn;
+    updateSet.lastSignedIn = user.lastSignedIn;
   }
+  if (user.role !== undefined) {
+    values.role = user.role;
+    updateSet.role = user.role;
+  } else if (user.openId === ENV.ownerOpenId) {
+    values.role = "superadmin";
+    updateSet.role = "superadmin";
+  }
+
+  if (!values.lastSignedIn) values.lastSignedIn = new Date();
+  if (Object.keys(updateSet).length === 0) updateSet.lastSignedIn = new Date();
+
+  await db.insert(users).values(values).onDuplicateKeyUpdate({ set: updateSet });
 }
 
 export async function getUserByOpenId(openId: string) {
   const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot get user: database not available");
-    return undefined;
-  }
-
+  if (!db) return undefined;
   const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
-
-  return result.length > 0 ? result[0] : undefined;
+  return result[0];
 }
 
-// TODO: add feature queries here as your schema grows.
+export async function updateUserOnboarding(userId: number, data: {
+  role?: "student" | "facilitator" | "admin" | "superadmin";
+  institutionId?: number;
+  groupId?: number;
+  onboardingCompleted?: boolean;
+}) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(users).set(data).where(eq(users.id, userId));
+}
+
+// ─── Institutions ─────────────────────────────────────────────────────────────
+export async function createInstitution(name: string, adminId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+  const result = await db.insert(institutions).values({ name, adminId });
+  return result[0];
+}
+
+export async function getInstitutionById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(institutions).where(eq(institutions.id, id)).limit(1);
+  return result[0];
+}
+
+export async function getInstitutionByAdminId(adminId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(institutions).where(eq(institutions.adminId, adminId)).limit(1);
+  return result[0];
+}
+
+// ─── Groups ───────────────────────────────────────────────────────────────────
+export async function createGroup(name: string, institutionId: number, facilitatorId?: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+  await db.insert(groups).values({ name, institutionId, facilitatorId });
+}
+
+export async function getGroupsByInstitution(institutionId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(groups).where(eq(groups.institutionId, institutionId));
+}
+
+// ─── Invitations ──────────────────────────────────────────────────────────────
+export async function createInvitation(data: {
+  token: string;
+  email: string;
+  institutionId: number;
+  groupId?: number;
+  invitedByUserId: number;
+  expiresAt: Date;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+  await db.insert(invitations).values(data);
+}
+
+export async function getInvitationByToken(token: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(invitations).where(eq(invitations.token, token)).limit(1);
+  return result[0];
+}
+
+export async function acceptInvitation(token: string) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(invitations).set({ accepted: true }).where(eq(invitations.token, token));
+}
+
+// ─── Check-Ins ────────────────────────────────────────────────────────────────
+export async function createCheckIn(data: InsertCheckIn) {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+  const result = await db.insert(checkIns).values(data);
+  const insertId = (result as unknown as [{ insertId: number }])[0]?.insertId;
+  return insertId;
+}
+
+export async function getCheckInsByUser(userId: number, limit = 20) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(checkIns)
+    .where(eq(checkIns.userId, userId))
+    .orderBy(desc(checkIns.createdAt))
+    .limit(limit);
+}
+
+export async function getCheckInById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(checkIns).where(eq(checkIns.id, id)).limit(1);
+  return result[0];
+}
+
+// ─── AI Responses ─────────────────────────────────────────────────────────────
+export async function saveAiResponse(data: {
+  checkInId: number;
+  userId: number;
+  emotionalReflection: string;
+  brainInsight: string;
+  eiPillar: string;
+  eiPillarDescription: string;
+  aieiProverb: string;
+  aieiProverbOrigin?: string;
+  personalizedNextStep: string;
+  supportInvitation: string;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+  await db.insert(aiResponses).values(data);
+}
+
+export async function getAiResponseByCheckIn(checkInId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(aiResponses).where(eq(aiResponses.checkInId, checkInId)).limit(1);
+  return result[0];
+}
+
+export async function getRecentAiResponses(userId: number, limit = 10) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(aiResponses)
+    .where(eq(aiResponses.userId, userId))
+    .orderBy(desc(aiResponses.createdAt))
+    .limit(limit);
+}
+
+// ─── Crisis Events ────────────────────────────────────────────────────────────
+export async function createCrisisEvent(data: {
+  userId: number;
+  checkInId?: number;
+  triggerText?: string;
+  severity: "moderate" | "high" | "critical";
+}) {
+  const db = await getDb();
+  if (!db) return;
+  await db.insert(crisisEvents).values(data);
+}
+
+export async function getCrisisEventsByInstitution(institutionId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  // Join through users table
+  return db
+    .select({
+      id: crisisEvents.id,
+      userId: crisisEvents.userId,
+      severity: crisisEvents.severity,
+      acknowledged: crisisEvents.acknowledged,
+      createdAt: crisisEvents.createdAt,
+    })
+    .from(crisisEvents)
+    .innerJoin(users, eq(crisisEvents.userId, users.id))
+    .where(eq(users.institutionId, institutionId))
+    .orderBy(desc(crisisEvents.createdAt))
+    .limit(50);
+}
+
+// ─── Seven Mirrors ────────────────────────────────────────────────────────────
+export async function createSevenMirrorsSession(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+  const result = await db.insert(sevenMirrorsSessions).values({ userId });
+  const insertId = (result as unknown as [{ insertId: number }])[0]?.insertId;
+  return insertId;
+}
+
+export async function getActiveSevenMirrorsSession(userId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db
+    .select()
+    .from(sevenMirrorsSessions)
+    .where(and(eq(sevenMirrorsSessions.userId, userId), eq(sevenMirrorsSessions.completed, false)))
+    .orderBy(desc(sevenMirrorsSessions.createdAt))
+    .limit(1);
+  return result[0];
+}
+
+export async function getSevenMirrorsSessionById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(sevenMirrorsSessions).where(eq(sevenMirrorsSessions.id, id)).limit(1);
+  return result[0];
+}
+
+export async function saveSevenMirrorsResponse(data: {
+  sessionId: number;
+  userId: number;
+  mirrorIndex: number;
+  mirrorTheme: string;
+  response: string;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+  await db.insert(sevenMirrorsResponses).values(data);
+  await db
+    .update(sevenMirrorsSessions)
+    .set({ currentMirrorIndex: data.mirrorIndex + 1 })
+    .where(eq(sevenMirrorsSessions.id, data.sessionId));
+}
+
+export async function completeSevenMirrorsSession(sessionId: number, aiSummary: string, badges: string[]) {
+  const db = await getDb();
+  if (!db) return;
+  await db
+    .update(sevenMirrorsSessions)
+    .set({ completed: true, aiSummary, badgesEarned: badges, completedAt: new Date() })
+    .where(eq(sevenMirrorsSessions.id, sessionId));
+}
+
+export async function getSevenMirrorsResponsesBySession(sessionId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(sevenMirrorsResponses)
+    .where(eq(sevenMirrorsResponses.sessionId, sessionId))
+    .orderBy(sevenMirrorsResponses.mirrorIndex);
+}
+
+export async function getCompletedSevenMirrorsSessions(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(sevenMirrorsSessions)
+    .where(and(eq(sevenMirrorsSessions.userId, userId), eq(sevenMirrorsSessions.completed, true)))
+    .orderBy(desc(sevenMirrorsSessions.createdAt))
+    .limit(10);
+}
+
+// ─── Facilitator Analytics ────────────────────────────────────────────────────
+export async function getCohortCheckInTrends(institutionId: number, days = 30) {
+  const db = await getDb();
+  if (!db) return [];
+  const since = new Date();
+  since.setDate(since.getDate() - days);
+
+  return db
+    .select({
+      emotion: checkIns.emotion,
+      context: checkIns.context,
+      intensity: checkIns.intensity,
+      createdAt: checkIns.createdAt,
+    })
+    .from(checkIns)
+    .innerJoin(users, eq(checkIns.userId, users.id))
+    .where(and(eq(users.institutionId, institutionId), gte(checkIns.createdAt, since)))
+    .orderBy(desc(checkIns.createdAt))
+    .limit(500);
+}
+
+export async function getCohortEngagement(institutionId: number) {
+  const db = await getDb();
+  if (!db) return { totalStudents: 0, activeStudents: 0, totalCheckIns: 0 };
+  const since = new Date();
+  since.setDate(since.getDate() - 7);
+
+  const [totalStudentsResult, activeStudentsResult, totalCheckInsResult] = await Promise.all([
+    db
+      .select({ count: sql<number>`count(*)` })
+      .from(users)
+      .where(and(eq(users.institutionId, institutionId), eq(users.role, "student"))),
+    db
+      .select({ count: sql<number>`count(distinct ${checkIns.userId})` })
+      .from(checkIns)
+      .innerJoin(users, eq(checkIns.userId, users.id))
+      .where(and(eq(users.institutionId, institutionId), gte(checkIns.createdAt, since))),
+    db
+      .select({ count: sql<number>`count(*)` })
+      .from(checkIns)
+      .innerJoin(users, eq(checkIns.userId, users.id))
+      .where(eq(users.institutionId, institutionId)),
+  ]);
+
+  return {
+    totalStudents: Number(totalStudentsResult[0]?.count ?? 0),
+    activeStudents: Number(activeStudentsResult[0]?.count ?? 0),
+    totalCheckIns: Number(totalCheckInsResult[0]?.count ?? 0),
+  };
+}
