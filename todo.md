@@ -134,3 +134,50 @@
 - [x] Frontend: ensure Resources, Mindset, Zera Cards, LearnEI pages are fully public (no auth check)
 - [x] Frontend: update Home.tsx hero CTA — no login required to start
 - [x] Frontend: update nav — show Login button only when not authenticated (no forced redirect)
+
+## Phase 14: heartcheck.app Full Integration
+
+### Check-In Flow Enhancements
+- [x] Add multi-select stressor/context step (School pressure, Work burnout, Family tension, Financial stress, Decision fatigue, Conflict, Uncertainty, Communication)
+- [x] Add "What do you need most right now?" step (Moment of reflection, Breathing pause, Reminder about voice)
+- [x] Add Grounding Practice step (4-4-6 Breath, Body Scan, Self-Compassion) as final step before result
+- [x] Add personalized guidance messages based on emotion + context combination
+- [x] Add completion affirmations ("You don't have to carry everything alone...")
+
+### Dashboard Enhancements
+- [ ] Add Emotion Distribution pie/donut chart
+- [ ] Add Daily Check-in Activity heatmap/bar chart
+- [ ] Add CSV export of check-in history (privacy-first, browser-side generation)
+- [ ] Add Wellness Logbook page (journal entries from check-ins)
+- [ ] Add Personalized Recommendations section (after 3+ check-ins)
+
+### Coaching Module (New)
+- [x] Add Coaching page with 3 session types: 30-min, 60-min, 3-session journey
+- [x] Add Organization Coaching inquiry form
+- [x] Add My Coaching Sessions page (view booked sessions, join call)
+- [x] Backend: coaching sessions table, booking procedure
+
+### Business/Enterprise Enhancements
+- [ ] Add Pulse Surveys feature (create surveys, gather team feedback)
+- [ ] Add Team Sentiment Analysis (from check-in comments)
+- [ ] Add CSV export for business reports
+- [ ] Add "Add Resources for Employees" feature in Facilitator Dashboard
+- [ ] Add company registration form with industry selector (Finance, Professional Services, etc.)
+
+### Resources Library Enhancements
+- [ ] Add 8 new curated resources: Feeling Wheel, Empathy Mapping, Nonviolent Communication, Difficult Conversations, Drive (Daniel Pink), Mindful Self-Compassion (Neff), Self-Awareness (Eurich), Hidden Brain Podcast
+- [ ] Add interactive Feeling Wheel tool (expand emotional vocabulary)
+- [ ] Add resource type filter: Article, Video, Book, Exercise, Tool, Podcast
+
+### Learn EI Enhancements
+- [ ] Add "Benefits of EI" section with 8 research-backed benefits
+- [ ] Add "How It Works" 4-step section: Check In → Grounding → Guidance → Grow
+- [ ] Add interactive EI self-assessment quiz (score per pillar)
+
+### About Page (New)
+- [x] Create About page with platform description, mission, how it works, and team section
+
+### Design & UX
+- [ ] Add floating card glow effects on hover (amber/orange gradient)
+- [ ] Add animate-scale-in / animate-fade-in-up CSS animations
+- [ ] Update Home hero copy to match heartcheck.app warmth and tone

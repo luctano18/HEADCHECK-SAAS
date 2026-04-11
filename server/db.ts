@@ -442,3 +442,27 @@ export async function getCohortEngagement(institutionId: number) {
     totalCheckIns: Number(totalCheckInsResult[0]?.count ?? 0),
   };
 }
+
+// ─── Coaching Sessions ────────────────────────────────────────────────────────
+export async function createCoachingSession(data: {
+  userId: number;
+  sessionType: "30min" | "60min" | "3session" | "organization";
+  questionnaire?: Record<string, string>;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const { coachingSessions } = await import("../drizzle/schema");
+  const [result] = await db.insert(coachingSessions).values({
+    userId: data.userId,
+    sessionType: data.sessionType,
+    questionnaire: data.questionnaire ?? null,
+  });
+  return { id: (result as { insertId?: number }).insertId ?? 0, ...data };
+}
+
+export async function getCoachingSessionsByUser(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  const { coachingSessions } = await import("../drizzle/schema");
+  return db.select().from(coachingSessions).where(eq(coachingSessions.userId, userId));
+}

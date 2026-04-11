@@ -29,6 +29,8 @@ export default function Home() {
               { label: "Resources", icon: "📚", path: "/resources" },
               { label: "Mindset", icon: "💡", path: "/mindset" },
               { label: "Zera Cards", icon: "🃏", path: "/zera-cards" },
+              { label: "Coaching", icon: "🎯", path: "/coaching" },
+              { label: "About", icon: "💜", path: "/about" },
             ].map((item) => (
               <button
                 key={item.path}

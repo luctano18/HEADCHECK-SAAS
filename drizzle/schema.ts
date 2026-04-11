@@ -164,3 +164,80 @@ export const userAchievements = mysqlTable("user_achievements", {
 });
 
 export type UserAchievement = typeof userAchievements.$inferSelect;
+
+// ─── Coaching Sessions ────────────────────────────────────────────────────────
+export const coachingSessions = mysqlTable("coaching_sessions", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  sessionType: mysqlEnum("sessionType", ["30min", "60min", "3session", "organization"]).notNull(),
+  status: mysqlEnum("status", ["pending", "confirmed", "completed", "cancelled"]).default("pending").notNull(),
+  scheduledAt: timestamp("scheduledAt"),
+  zoomLink: text("zoomLink"),
+  notes: text("notes"),
+  questionnaire: json("questionnaire").$type<Record<string, string>>(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type CoachingSession = typeof coachingSessions.$inferSelect;
+export type InsertCoachingSession = typeof coachingSessions.$inferInsert;
+
+// ─── Business Registrations ───────────────────────────────────────────────────
+export const businessRegistrations = mysqlTable("business_registrations", {
+  id: int("id").autoincrement().primaryKey(),
+  companyName: varchar("companyName", { length: 255 }).notNull(),
+  teamSize: mysqlEnum("teamSize", ["1-10", "11-50", "51-200", "201-500", "500+"]).notNull(),
+  industry: varchar("industry", { length: 128 }),
+  contactName: varchar("contactName", { length: 255 }).notNull(),
+  contactEmail: varchar("contactEmail", { length: 320 }).notNull(),
+  contactPhone: varchar("contactPhone", { length: 32 }),
+  wellnessGoals: text("wellnessGoals").notNull(),
+  status: mysqlEnum("status", ["pending", "validated", "rejected"]).default("pending").notNull(),
+  rejectionReason: text("rejectionReason"),
+  institutionId: int("institutionId"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  validatedAt: timestamp("validatedAt"),
+});
+
+export type BusinessRegistration = typeof businessRegistrations.$inferSelect;
+export type InsertBusinessRegistration = typeof businessRegistrations.$inferInsert;
+
+// ─── Pulse Surveys ────────────────────────────────────────────────────────────
+export const pulseSurveys = mysqlTable("pulse_surveys", {
+  id: int("id").autoincrement().primaryKey(),
+  institutionId: int("institutionId").notNull(),
+  createdByUserId: int("createdByUserId").notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  question: text("question").notNull(),
+  isActive: boolean("isActive").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type PulseSurvey = typeof pulseSurveys.$inferSelect;
+
+export const pulseSurveyResponses = mysqlTable("pulse_survey_responses", {
+  id: int("id").autoincrement().primaryKey(),
+  surveyId: int("surveyId").notNull(),
+  userId: int("userId").notNull(),
+  rating: int("rating").notNull(), // 1-5
+  comment: text("comment"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type PulseSurveyResponse = typeof pulseSurveyResponses.$inferSelect;
+
+// ─── Wellness Resources (Institution-curated) ─────────────────────────────────
+export const wellnessResources = mysqlTable("wellness_resources", {
+  id: int("id").autoincrement().primaryKey(),
+  institutionId: int("institutionId"), // null = global resource
+  addedByUserId: int("addedByUserId"),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  url: text("url"),
+  resourceType: mysqlEnum("resourceType", ["article", "video", "book", "exercise", "tool", "podcast"]).notNull(),
+  eiPillar: mysqlEnum("eiPillar", ["Self-Awareness", "Self-Regulation", "Motivation", "Empathy", "Social Skills", "All"]).default("All").notNull(),
+  isActive: boolean("isActive").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type WellnessResource = typeof wellnessResources.$inferSelect;
+export type InsertWellnessResource = typeof wellnessResources.$inferInsert;

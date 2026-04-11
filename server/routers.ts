@@ -36,6 +36,8 @@ import {
   updateUserStreak,
   getUserStreak,
   getUserAchievements,
+  createCoachingSession,
+  getCoachingSessionsByUser,
 } from "./db";
 
 // ─── Crisis Detection ─────────────────────────────────────────────────────────
@@ -453,6 +455,25 @@ export const appRouter = router({
       return getCrisisEventsByInstitution(ctx.user.institutionId);
     }),
   }),
-});
 
+  // ─── Coaching ─────────────────────────────────────────────────────────────────────────────────
+  coaching: router({
+    book: protectedProcedure
+      .input(z.object({
+        sessionType: z.enum(["30min", "60min", "3session", "organization"]),
+        questionnaire: z.record(z.string(), z.string()).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const session = await createCoachingSession({
+          userId: ctx.user.id,
+          sessionType: input.sessionType,
+          questionnaire: input.questionnaire,
+        });
+        return session;
+      }),
+    mySessions: protectedProcedure.query(async ({ ctx }) => {
+      return getCoachingSessionsByUser(ctx.user.id);
+    }),
+  }),
+});
 export type AppRouter = typeof appRouter;

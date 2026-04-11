@@ -18,6 +18,8 @@ import LearnEI from "./pages/LearnEI";
 import Mindset from "./pages/Mindset";
 import ForInstitutions from "./pages/ForInstitutions";
 import ZeraCards from "./pages/ZeraCards";
+import Coaching from "./pages/Coaching";
+import About from "./pages/About";
 
 function Router() {
   return (
@@ -27,6 +29,8 @@ function Router() {
       <Route path="/join" component={JoinInstitution} />
       <Route path="/checkin" component={CheckIn} />
       <Route path="/check-in" component={CheckIn} />
+      <Route path="/checkin/guest-result" component={GuestCheckInResult} />
+      <Route path="/checkin/result/:id" component={CheckInResult} />
       <Route path="/check-in/guest" component={GuestCheckInResult} />
       <Route path="/check-in/:id" component={CheckInResult} />
       <Route path="/compass" component={SevenMirrors} />
@@ -38,6 +42,8 @@ function Router() {
       <Route path="/mindset" component={Mindset} />
       <Route path="/for-institutions" component={ForInstitutions} />
       <Route path="/zera-cards" component={ZeraCards} />
+      <Route path="/coaching" component={Coaching} />
+      <Route path="/about" component={About} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>
