@@ -22,19 +22,22 @@ export default function Home() {
       <section className="pt-32 pb-16 px-6 text-center">
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white border border-[oklch(0.88_0.06_285)] text-[oklch(0.45_0.18_285)] text-sm font-medium mb-8 shadow-sm">
           <Heart className="w-4 h-4 fill-[oklch(0.45_0.18_285)]" />
-          Your supportive space for clarity
+          A Real Time Emotional Response System
         </div>
 
-        <h1 className="text-6xl md:text-7xl font-black text-[oklch(0.18_0.04_260)] mb-4 tracking-tight">
+        <h1 className="text-6xl md:text-7xl font-black text-[oklch(0.18_0.04_260)] mb-2 tracking-tight">
           HeadCheck
         </h1>
+        <p className="text-lg font-semibold text-[oklch(0.45_0.18_285)] mb-4 tracking-wide uppercase">
+          Know your mind. Lead your life.
+        </p>
 
         {/* Gradient bar — signature headcheck.app element */}
         <div className="w-full max-w-2xl mx-auto h-3 rounded-full mb-6"
           style={{ background: "linear-gradient(to right, oklch(0.55 0.22 285), oklch(0.65 0.20 340), oklch(0.72 0.18 48), oklch(0.75 0.16 120))" }} />
 
         <p className="text-xl text-[oklch(0.45_0.04_260)] max-w-xl mx-auto mb-10 leading-relaxed">
-          Transform stress into clarity with guided check-ins that feel rewarding and empowering
+          HeadCheck helps you understand your feelings, reflect with honesty, and take your next step with clarity.
         </p>
 
         <Button

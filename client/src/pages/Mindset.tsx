@@ -248,7 +248,7 @@ export default function Mindset() {
           <p className="font-semibold text-foreground">Ready to check in with yourself?</p>
           <p className="text-sm text-muted-foreground">Pair your mindset practice with a daily Emotional Check-In for deeper insights.</p>
           {isAuthenticated ? (
-            <Button className="hc-gradient-orange border-0 text-white hover:opacity-90" onClick={() => navigate("/check-in")}>
+            <Button className="hc-gradient-orange border-0 text-white hover:opacity-90" onClick={() => navigate("/checkin")}>
               Start Check-In <ArrowRight className="w-4 h-4 ml-1" />
             </Button>
           ) : (

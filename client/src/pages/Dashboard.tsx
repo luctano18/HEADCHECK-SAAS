@@ -8,7 +8,7 @@ import {
   Brain, Heart, Sparkles, ArrowRight, Loader2, LogOut, User,
   TrendingUp, Calendar, Award, Plus, ChevronRight
 } from "lucide-react";
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell } from "recharts";
 import { format } from "date-fns";
 
 const EMOTION_COLORS: Record<string, string> = {
@@ -74,8 +74,8 @@ export default function Dashboard() {
           <nav className="flex-1 p-4 space-y-1">
             {[
               { icon: <TrendingUp className="w-4 h-4" />, label: "Dashboard", path: "/dashboard", active: true },
-              { icon: <Heart className="w-4 h-4" />, label: "Emotional Check-In", path: "/check-in" },
-              { icon: <Sparkles className="w-4 h-4" />, label: "Seven Mirrors", path: "/seven-mirrors" },
+              { icon: <Heart className="w-4 h-4" />, label: "Emotional Check-In", path: "/checkin" },
+              { icon: <Sparkles className="w-4 h-4" />, label: "Self Trust Compass", path: "/compass" },
             ].map((item) => (
               <button
                 key={item.path}
@@ -131,7 +131,7 @@ export default function Dashboard() {
                 </h1>
                 <p className="text-muted-foreground text-sm mt-1">How are you feeling today?</p>
               </div>
-              <Button onClick={() => navigate("/check-in")} className="hidden sm:flex">
+              <Button onClick={() => navigate("/checkin")} className="hidden sm:flex">
                 <Plus className="w-4 h-4 mr-2" /> New Check-In
               </Button>
             </div>
@@ -180,13 +180,50 @@ export default function Dashboard() {
 
             {/* Quick Actions (Mobile) */}
             <div className="flex gap-3 sm:hidden">
-              <Button className="flex-1" onClick={() => navigate("/check-in")}>
+              <Button className="flex-1" onClick={() => navigate("/checkin")}>
                 <Heart className="w-4 h-4 mr-2" /> Check-In
               </Button>
-              <Button variant="outline" className="flex-1" onClick={() => navigate("/seven-mirrors")}>
-                <Sparkles className="w-4 h-4 mr-2" /> Seven Mirrors
+              <Button variant="outline" className="flex-1" onClick={() => navigate("/compass")}>
+                <Sparkles className="w-4 h-4 mr-2" /> Compass
               </Button>
             </div>
+
+            {/* Emotion Distribution Chart */}
+            {checkIns.length > 2 && (() => {
+              const emotionCounts = checkIns.reduce((acc, c) => ({ ...acc, [c.emotion]: (acc[c.emotion] ?? 0) + 1 }), {} as Record<string, number>);
+              const pieData = Object.entries(emotionCounts).map(([name, value]) => ({ name, value }));
+              const COLORS = ["#6366f1","#f59e0b","#10b981","#f97316","#06b6d4","#ec4899","#8b5cf6","#22c55e","#ef4444","#9ca3af"];
+              return (
+                <Card className="border shadow-sm">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base font-semibold flex items-center gap-2">
+                      <Brain className="w-4 h-4 text-violet-500" /> Emotion Distribution
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center gap-6">
+                      <ResponsiveContainer width={160} height={160}>
+                        <PieChart>
+                          <Pie data={pieData} cx="50%" cy="50%" innerRadius={45} outerRadius={70} paddingAngle={2} dataKey="value">
+                            {pieData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                          </Pie>
+                          <Tooltip formatter={(val, name) => [`${val} check-in${Number(val) > 1 ? 's' : ''}`, name]} />
+                        </PieChart>
+                      </ResponsiveContainer>
+                      <div className="flex-1 grid grid-cols-2 gap-1.5">
+                        {pieData.slice(0, 8).map((entry, i) => (
+                          <div key={entry.name} className="flex items-center gap-1.5 text-xs">
+                            <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: COLORS[i % COLORS.length] }} />
+                            <span className="text-muted-foreground truncate">{entry.name}</span>
+                            <span className="font-semibold text-foreground ml-auto">{entry.value}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })()}
 
             {/* Intensity Trend Chart */}
             {chartData.length > 1 && (
@@ -226,7 +263,7 @@ export default function Dashboard() {
                   <CardTitle className="text-base font-semibold flex items-center gap-2">
                     <Calendar className="w-4 h-4 text-primary" /> Recent Check-Ins
                   </CardTitle>
-                  <Button variant="ghost" size="sm" onClick={() => navigate("/check-in")}>
+                  <Button variant="ghost" size="sm" onClick={() => navigate("/checkin")}>
                     <Plus className="w-4 h-4 mr-1" /> New
                   </Button>
                 </div>
@@ -236,13 +273,13 @@ export default function Dashboard() {
                   <div className="text-center py-10 space-y-3">
                     <div className="text-4xl">💭</div>
                     <p className="text-muted-foreground text-sm">No check-ins yet. Start your first one!</p>
-                    <Button size="sm" onClick={() => navigate("/check-in")}>Begin Check-In</Button>
+                    <Button size="sm" onClick={() => navigate("/checkin")}>Begin Check-In</Button>
                   </div>
                 ) : (
                   checkIns.slice(0, 8).map((ci) => (
                     <button
                       key={ci.id}
-                      onClick={() => navigate(`/check-in/${ci.id}`)}
+                      onClick={() => navigate(`/checkin/result/${ci.id}`)}
                       className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 transition-colors text-left"
                     >
                       <span className="text-2xl flex-shrink-0">{ci.emotionEmoji ?? "💭"}</span>
@@ -263,12 +300,12 @@ export default function Dashboard() {
               </CardContent>
             </Card>
 
-            {/* Seven Mirrors Sessions */}
+            {/* Self Trust Compass Sessions */}
             {mirrorSessions.length > 0 && (
               <Card className="border shadow-sm">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-base font-semibold flex items-center gap-2">
-                    <Award className="w-4 h-4 text-amber-500" /> Seven Mirrors Sessions
+                    <Award className="w-4 h-4 text-amber-500" /> Self Trust Compass Sessions
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2">
@@ -297,9 +334,9 @@ export default function Dashboard() {
               <div className="rounded-2xl p-6 hc-gradient-hero border border-white/60 text-center space-y-3">
                 <div className="text-4xl">🪞</div>
                 <h3 className="font-serif text-xl font-bold text-foreground">Ready for a deeper journey?</h3>
-                <p className="text-sm text-muted-foreground max-w-sm mx-auto">The Seven Mirrors is a guided introspective experience across 7 dimensions of your inner world.</p>
-                <Button onClick={() => navigate("/seven-mirrors")}>
-                  <Sparkles className="w-4 h-4 mr-2" /> Begin Seven Mirrors
+                <p className="text-sm text-muted-foreground max-w-sm mx-auto">The Self Trust Compass is a guided introspective journey across 7 dimensions of your inner world.</p>
+                <Button onClick={() => navigate("/compass")}>
+                  <Sparkles className="w-4 h-4 mr-2" /> Begin the Compass
                 </Button>
               </div>
             )}

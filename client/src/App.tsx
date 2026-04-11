@@ -28,12 +28,14 @@ function Router() {
       <Route path="/onboarding" component={Onboarding} />
       <Route path="/join" component={JoinInstitution} />
       <Route path="/checkin" component={CheckIn} />
-      <Route path="/check-in" component={CheckIn} />
+      {/* Canonical routes */}
       <Route path="/checkin/guest-result" component={GuestCheckInResult} />
       <Route path="/checkin/result/:id" component={CheckInResult} />
+      <Route path="/compass" component={SevenMirrors} />
+      {/* Backward-compatible aliases */}
+      <Route path="/check-in" component={CheckIn} />
       <Route path="/check-in/guest" component={GuestCheckInResult} />
       <Route path="/check-in/:id" component={CheckInResult} />
-      <Route path="/compass" component={SevenMirrors} />
       <Route path="/seven-mirrors" component={SevenMirrors} />
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/facilitator" component={FacilitatorDashboard} />

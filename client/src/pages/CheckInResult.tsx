@@ -138,11 +138,11 @@ export default function CheckInResult() {
 
         {/* Action Buttons */}
         <div className="grid grid-cols-2 gap-4 pt-4">
-          <Button variant="outline" className="h-12" onClick={() => navigate("/check-in")}>
+          <Button variant="outline" className="h-12" onClick={() => navigate("/checkin")}>
             <Heart className="w-4 h-4 mr-2" /> New Check-In
           </Button>
-          <Button className="h-12" onClick={() => navigate("/seven-mirrors")}>
-            <Sparkles className="w-4 h-4 mr-2" /> Seven Mirrors
+          <Button className="h-12" onClick={() => navigate("/compass")}>
+            <Sparkles className="w-4 h-4 mr-2" /> Self Trust Compass
           </Button>
         </div>
 
