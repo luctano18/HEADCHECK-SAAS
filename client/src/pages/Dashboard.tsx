@@ -22,6 +22,7 @@ export default function Dashboard() {
   const [, navigate] = useLocation();
 
   const { data, isLoading } = trpc.dashboard.getHistory.useQuery(undefined, { enabled: isAuthenticated });
+  const { data: quizHistory } = trpc.quiz.getHistory.useQuery(undefined, { enabled: isAuthenticated });
 
   if (loading || isLoading) {
     return (
@@ -76,6 +77,7 @@ export default function Dashboard() {
               { icon: <TrendingUp className="w-4 h-4" />, label: "Dashboard", path: "/dashboard", active: true },
               { icon: <Heart className="w-4 h-4" />, label: "Emotional Check-In", path: "/checkin" },
               { icon: <Sparkles className="w-4 h-4" />, label: "Self Trust Compass", path: "/compass" },
+              { icon: <Brain className="w-4 h-4" />, label: "EI Quiz", path: "/ei-quiz" },
             ].map((item) => (
               <button
                 key={item.path}
@@ -323,6 +325,65 @@ export default function Dashboard() {
                           ))}
                         </div>
                       )}
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* EI Quiz Widget */}
+            <Card className="border shadow-sm bg-gradient-to-br from-violet-50 to-amber-50">
+              <CardContent className="p-5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-600 to-amber-500 flex items-center justify-center text-white text-xl">
+                      🧠
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-foreground">EI Quiz</h3>
+                      <p className="text-xs text-muted-foreground">Measure your 5 EI pillars · ~8 min</p>
+                    </div>
+                  </div>
+                  <Button
+                    size="sm"
+                    onClick={() => navigate("/ei-quiz")}
+                    className="bg-gradient-to-r from-violet-600 to-amber-500 text-white hover:from-violet-700 hover:to-amber-600 rounded-full px-5"
+                  >
+                    Take Quiz <ArrowRight className="w-3 h-3 ml-1" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* EI Quiz History */}
+            {quizHistory && quizHistory.length > 0 && (
+              <Card className="border shadow-sm">
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-base font-semibold flex items-center gap-2">
+                      <Brain className="w-4 h-4 text-violet-500" /> EI Quiz History
+                    </CardTitle>
+                    <Button variant="ghost" size="sm" onClick={() => navigate("/ei-quiz")}>
+                      <Plus className="w-4 h-4 mr-1" /> Retake
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {quizHistory.slice(0, 5).map((attempt) => (
+                    <div key={attempt.id} className="flex items-center gap-3 p-3 rounded-xl bg-violet-50/50 border border-violet-100">
+                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-600 to-amber-500 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                        {attempt.totalScore}%
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-sm text-foreground">{attempt.level}</span>
+                          <Badge variant="outline" className="text-xs border-violet-200 text-violet-700">{attempt.totalScore}%</Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {format(new Date(attempt.createdAt), "MMM d, yyyy · h:mm a")}
+                        </p>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                     </div>
                   ))}
                 </CardContent>

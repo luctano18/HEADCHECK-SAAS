@@ -184,6 +184,48 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ── EI QUIZ SECTION ── */}
+      <section className="max-w-3xl mx-auto px-6 pb-16">
+        <div className="rounded-3xl p-8 text-white relative overflow-hidden"
+          style={{ background: "linear-gradient(135deg, #7C3AED 0%, #4F46E5 50%, #D97706 100%)" }}>
+          <div className="absolute top-0 right-0 w-48 h-48 rounded-full opacity-10 bg-white -translate-y-1/2 translate-x-1/4" />
+          <div className="relative z-10">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center text-2xl">
+                🧠
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold">EI Quiz</h2>
+                <p className="text-white/70 text-sm">Emotional Intelligence Assessment · 25 questions · ~8 min</p>
+              </div>
+            </div>
+            <p className="text-white/80 mb-5 leading-relaxed">
+              Discover your EI profile across 5 pillars: Self-Awareness, Self-Regulation, Motivation, Empathy, and Social Skills. Get a personalized radar chart and an AI insight from Mocha.
+            </p>
+            <div className="grid grid-cols-3 gap-3 mb-6 text-sm">
+              <div className="bg-white/10 rounded-xl p-3 text-center">
+                <div className="font-bold text-lg">🎯</div>
+                <div className="text-white/70 text-xs mt-1">5 Pillar Scores</div>
+              </div>
+              <div className="bg-white/10 rounded-xl p-3 text-center">
+                <div className="font-bold text-lg">📊</div>
+                <div className="text-white/70 text-xs mt-1">Radar Chart</div>
+              </div>
+              <div className="bg-white/10 rounded-xl p-3 text-center">
+                <div className="font-bold text-lg">✨</div>
+                <div className="text-white/70 text-xs mt-1">AI Insight</div>
+              </div>
+            </div>
+            <Button
+              onClick={() => navigate("/ei-quiz")}
+              className="rounded-full font-semibold bg-white text-violet-700 hover:bg-white/90 px-8"
+            >
+              Take the EI Quiz <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
+          </div>
+        </div>
+      </section>
+
       {/* ── FOR INSTITUTIONS ── */}
       <section className="max-w-5xl mx-auto px-6 pb-16">
         <div className="rounded-3xl p-8 text-white"

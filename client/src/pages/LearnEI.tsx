@@ -145,6 +145,29 @@ export default function LearnEI() {
           </div>
         </div>
 
+        {/* EI Quiz CTA */}
+        <div className="mb-8 bg-white rounded-3xl p-8 shadow-sm border" style={{ borderColor: "oklch(0.92 0.03 260)" }}>
+          <div className="flex flex-col md:flex-row items-center gap-6">
+            <div className="flex-shrink-0 text-center">
+              <div className="text-6xl mb-2">🧠</div>
+              <div className="text-xs font-medium" style={{ color: "oklch(0.55 0.04 260)" }}>~8 minutes</div>
+            </div>
+            <div className="flex-1 text-center md:text-left">
+              <h2 className="text-xl font-bold mb-2" style={{ color: "oklch(0.18 0.04 260)" }}>Discover Your EI Profile</h2>
+              <p className="text-sm leading-relaxed mb-4" style={{ color: "oklch(0.45 0.04 260)" }}>
+                Take our 25-question interactive quiz to measure your emotional intelligence across all 5 pillars. Get a personalized radar chart, pillar scores, and an AI insight from Mocha.
+              </p>
+              <button
+                onClick={() => navigate("/ei-quiz")}
+                className="inline-flex items-center gap-2 px-8 py-3 rounded-full font-semibold text-sm text-white"
+                style={{ background: "linear-gradient(135deg, #7C3AED, #D97706)" }}
+              >
+                <Sparkles className="w-4 h-4" /> Take the EI Quiz
+              </button>
+            </div>
+          </div>
+        </div>
+
         {/* CTA */}
         <div className="text-center p-8 rounded-3xl text-white" style={{ background: "linear-gradient(135deg, oklch(0.45 0.18 285), oklch(0.65 0.18 340))" }}>
           <h2 className="text-2xl font-bold mb-3">Ready to build your EI?</h2>

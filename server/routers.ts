@@ -38,7 +38,15 @@ import {
   getUserAchievements,
   createCoachingSession,
   getCoachingSessionsByUser,
+  createQuizAttempt,
+  getQuizAttemptsByUser,
+  getLatestQuizAttempt,
 } from "./db";
+import {
+  EI_QUIZ_QUESTIONS,
+  calculatePillarScores,
+  getEILevel,
+} from "../shared/eiQuizData";
 
 // ─── Crisis Detection ─────────────────────────────────────────────────────────
 const CRISIS_KEYWORDS_CRITICAL = [
@@ -169,6 +177,65 @@ Respond ONLY with valid JSON.`;
   const content = typeof rawContent === "string" ? rawContent : null;
   if (!content) throw new Error("No AI summary generated");
   return JSON.parse(content) as { summary: string; badges: string[] };
+}
+
+// ─── EI Quiz AI Insight Generator ──────────────────────────────────────────────
+async function generateQuizInsight(scores: {
+  selfAwareness: number;
+  selfRegulation: number;
+  motivation: number;
+  empathy: number;
+  socialSkills: number;
+  total: number;
+}, level: string): Promise<string> {
+  const pillarLines = [
+    `Self-Awareness: ${scores.selfAwareness}%`,
+    `Self-Regulation: ${scores.selfRegulation}%`,
+    `Motivation: ${scores.motivation}%`,
+    `Empathy: ${scores.empathy}%`,
+    `Social Skills: ${scores.socialSkills}%`,
+  ].join(", ");
+
+  const strongest = Object.entries({
+    "Self-Awareness": scores.selfAwareness,
+    "Self-Regulation": scores.selfRegulation,
+    "Motivation": scores.motivation,
+    "Empathy": scores.empathy,
+    "Social Skills": scores.socialSkills,
+  }).sort((a, b) => b[1] - a[1])[0][0];
+
+  const weakest = Object.entries({
+    "Self-Awareness": scores.selfAwareness,
+    "Self-Regulation": scores.selfRegulation,
+    "Motivation": scores.motivation,
+    "Empathy": scores.empathy,
+    "Social Skills": scores.socialSkills,
+  }).sort((a, b) => a[1] - b[1])[0][0];
+
+  const prompt = `You are Mocha, the HeadCheck AI companion — warm, insightful, and grounded in African wisdom.
+
+A user just completed the Emotional Intelligence (EI) Quiz. Here are their results:
+- Overall EI Level: ${level} (${scores.total}%)
+- Pillar Scores: ${pillarLines}
+- Strongest pillar: ${strongest}
+- Area with most growth potential: ${weakest}
+
+Write a personalized 3-paragraph insight that:
+1. Celebrates their overall EI level with warmth and specificity (mention their strongest pillar)
+2. Offers a compassionate, growth-focused reflection on their area of development (${weakest})
+3. Ends with an empowering African proverb relevant to their journey, with its origin
+
+Keep the tone warm, honest, and empowering — like a wise mentor who sees their full potential. Do not use bullet points. Write in flowing paragraphs.`;
+
+  try {
+    const response = await invokeLLM({
+      messages: [{ role: "user", content: prompt }],
+    });
+    const content = response.choices[0]?.message?.content;
+    return typeof content === "string" ? content : "Your emotional intelligence journey is uniquely yours. Keep exploring, keep growing.";
+  } catch {
+    return "Your emotional intelligence journey is uniquely yours. Keep exploring, keep growing.";
+  }
 }
 
 // ─── App Router ───────────────────────────────────────────────────────────────
@@ -474,6 +541,65 @@ export const appRouter = router({
       }),
     mySessions: protectedProcedure.query(async ({ ctx }) => {
       return getCoachingSessionsByUser(ctx.user.id);
+    }),
+  }),
+
+  // ─── EI Quiz ─────────────────────────────────────────────────────────────────
+  quiz: router({
+    // Get all 25 questions (public — guests can take the quiz too)
+    getQuestions: publicProcedure.query(() => {
+      return EI_QUIZ_QUESTIONS;
+    }),
+
+    // Submit quiz answers — authenticated users get DB persistence
+    submit: protectedProcedure
+      .input(z.object({
+        answers: z.record(z.string(), z.number()),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const scores = calculatePillarScores(input.answers);
+        const level = getEILevel(scores.total);
+
+        // Generate AI insight
+        const aiInsight = await generateQuizInsight(scores, level);
+
+        const attempt = await createQuizAttempt({
+          userId: ctx.user.id,
+          selfAwarenessScore: scores.selfAwareness,
+          selfRegulationScore: scores.selfRegulation,
+          motivationScore: scores.motivation,
+          empathyScore: scores.empathy,
+          socialSkillsScore: scores.socialSkills,
+          totalScore: scores.total,
+          level,
+          answers: input.answers,
+          aiInsight,
+        });
+
+        return { ...attempt, scores, level, aiInsight };
+      }),
+
+    // Guest quiz submission — no DB persistence, returns scores + AI insight
+    guestSubmit: publicProcedure
+      .input(z.object({
+        answers: z.record(z.string(), z.number()),
+        guestToken: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const scores = calculatePillarScores(input.answers);
+        const level = getEILevel(scores.total);
+        const aiInsight = await generateQuizInsight(scores, level);
+        return { scores, level, aiInsight, answers: input.answers };
+      }),
+
+    // Get quiz history for authenticated user
+    getHistory: protectedProcedure.query(async ({ ctx }) => {
+      return getQuizAttemptsByUser(ctx.user.id);
+    }),
+
+    // Get latest quiz attempt for authenticated user
+    getLatest: protectedProcedure.query(async ({ ctx }) => {
+      return getLatestQuizAttempt(ctx.user.id);
     }),
   }),
 });

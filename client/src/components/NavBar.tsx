@@ -11,6 +11,7 @@ const NAV_LINKS = [
   { href: "/", label: "Home", emoji: "🏠" },
   { href: "/checkin", label: "Check-In", emoji: "✅" },
   { href: "/compass", label: "Compass", emoji: "🧭" },
+  { href: "/ei-quiz", label: "EI Quiz", emoji: "🧠" },
   { href: "/resources", label: "Resources", emoji: "📚" },
   { href: "/mindset", label: "Mindset", emoji: "💡" },
   { href: "/zera-cards", label: "Zera Cards", emoji: "🃏" },

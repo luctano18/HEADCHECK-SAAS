@@ -242,3 +242,24 @@ export const wellnessResources = mysqlTable("wellness_resources", {
 
 export type WellnessResource = typeof wellnessResources.$inferSelect;
 export type InsertWellnessResource = typeof wellnessResources.$inferInsert;
+
+// ─── EI Quiz Attempts ─────────────────────────────────────────────────────────
+export const quizAttempts = mysqlTable("quiz_attempts", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId"), // null for guest attempts
+  guestToken: varchar("guestToken", { length: 64 }), // client-side ID for guests
+  // Pillar scores (0-100 each)
+  selfAwarenessScore: int("selfAwarenessScore").notNull(),
+  selfRegulationScore: int("selfRegulationScore").notNull(),
+  motivationScore: int("motivationScore").notNull(),
+  empathyScore: int("empathyScore").notNull(),
+  socialSkillsScore: int("socialSkillsScore").notNull(),
+  totalScore: int("totalScore").notNull(), // 0-100
+  level: mysqlEnum("level", ["Emerging", "Developing", "Proficient", "Advanced", "Exceptional"]).notNull(),
+  answers: json("answers").$type<Record<string, number>>().notNull(), // questionId -> answer value
+  aiInsight: text("aiInsight"), // AI-generated personalized feedback
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type QuizAttempt = typeof quizAttempts.$inferSelect;
+export type InsertQuizAttempt = typeof quizAttempts.$inferInsert;

@@ -467,3 +467,61 @@ export async function getCoachingSessionsByUser(userId: number) {
   const { coachingSessions } = await import("../drizzle/schema");
   return db.select().from(coachingSessions).where(eq(coachingSessions.userId, userId));
 }
+
+// ─── EI Quiz Attempts ─────────────────────────────────────────────────────────
+export async function createQuizAttempt(data: {
+  userId?: number;
+  guestToken?: string;
+  selfAwarenessScore: number;
+  selfRegulationScore: number;
+  motivationScore: number;
+  empathyScore: number;
+  socialSkillsScore: number;
+  totalScore: number;
+  level: "Emerging" | "Developing" | "Proficient" | "Advanced" | "Exceptional";
+  answers: Record<string, number>;
+  aiInsight?: string;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const { quizAttempts } = await import("../drizzle/schema");
+  const [result] = await db.insert(quizAttempts).values({
+    userId: data.userId ?? null,
+    guestToken: data.guestToken ?? null,
+    selfAwarenessScore: data.selfAwarenessScore,
+    selfRegulationScore: data.selfRegulationScore,
+    motivationScore: data.motivationScore,
+    empathyScore: data.empathyScore,
+    socialSkillsScore: data.socialSkillsScore,
+    totalScore: data.totalScore,
+    level: data.level,
+    answers: data.answers,
+    aiInsight: data.aiInsight ?? null,
+  });
+  return { id: (result as { insertId?: number }).insertId ?? 0, ...data };
+}
+
+export async function getQuizAttemptsByUser(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  const { quizAttempts } = await import("../drizzle/schema");
+  return db
+    .select()
+    .from(quizAttempts)
+    .where(eq(quizAttempts.userId, userId))
+    .orderBy(desc(quizAttempts.createdAt))
+    .limit(20);
+}
+
+export async function getLatestQuizAttempt(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const { quizAttempts } = await import("../drizzle/schema");
+  const results = await db
+    .select()
+    .from(quizAttempts)
+    .where(eq(quizAttempts.userId, userId))
+    .orderBy(desc(quizAttempts.createdAt))
+    .limit(1);
+  return results[0] ?? null;
+}

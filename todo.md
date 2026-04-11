@@ -245,3 +245,21 @@
 - [ ] Add "Ask for Help" feature — mentor/counselor request button in dashboard
 - [ ] Add AIEI Content Library page: proverbs searchable by country and EI pillar
 - [ ] Add weekly reflection summary (email/notification to user after 7 days of check-ins)
+
+## Phase 16: Interactive EI Quiz
+
+- [x] Design 25-question EI quiz bank covering all 5 pillars (5 questions per pillar)
+- [x] Add quizAttempts table to DB schema with pillar scores and total score
+- [x] Add tRPC procedures: quiz.getQuestions, quiz.submitAttempt, quiz.getHistory, quiz.guestSubmit
+- [x] Build interactive EI Quiz page with animated question flow, progress bar, timer
+- [x] Build EI Quiz Results page with radar chart (Recharts), pillar breakdown cards, AI feedback
+- [x] Add quiz history section to Dashboard
+- [x] Add "Take the EI Quiz" CTA to LearnEI page
+- [x] Add Quiz link to NavBar
+- [x] Allow guest users to take the quiz without login (same pattern as Check-In)
+- [x] Write Vitest tests for quiz scoring logic
+
+## Phase 16 Gap Fixes
+
+- [x] Add elapsed timer display to EIQuiz.tsx (shows time taken during quiz)
+- [x] Add quiz history section to Dashboard (fetch trpc.quiz.getHistory, render recent attempts)

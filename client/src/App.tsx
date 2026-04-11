@@ -20,6 +20,8 @@ import ForInstitutions from "./pages/ForInstitutions";
 import ZeraCards from "./pages/ZeraCards";
 import Coaching from "./pages/Coaching";
 import About from "./pages/About";
+import EIQuiz from "./pages/EIQuiz";
+import EIQuizResult from "./pages/EIQuizResult";
 
 function Router() {
   return (
@@ -46,6 +48,8 @@ function Router() {
       <Route path="/zera-cards" component={ZeraCards} />
       <Route path="/coaching" component={Coaching} />
       <Route path="/about" component={About} />
+      <Route path="/ei-quiz" component={EIQuiz} />
+      <Route path="/ei-quiz/result" component={EIQuizResult} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>
