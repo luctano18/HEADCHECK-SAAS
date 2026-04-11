@@ -181,3 +181,67 @@
 - [ ] Add floating card glow effects on hover (amber/orange gradient)
 - [ ] Add animate-scale-in / animate-fade-in-up CSS animations
 - [ ] Update Home hero copy to match heartcheck.app warmth and tone
+
+## Phase 15: Consolidation & Enrichment from Source Files
+
+### A. Route & Navigation Consolidation (Eliminate Duplicates)
+- [ ] Remove duplicate routes: keep /checkin (drop /check-in), keep /compass (drop /seven-mirrors), keep /checkin/result/:id (drop /check-in/:id), keep /checkin/guest-result (drop /check-in/guest)
+- [ ] Remove ComponentShowcase.tsx page (dev-only, 1437 lines, not linked in nav)
+- [ ] Merge ForInstitutions content into a dedicated tab/section within FacilitatorDashboard or keep as standalone but remove duplicate institution copy from Home.tsx
+- [ ] Create a shared NavBar component used by ALL pages (currently each page has its own nav)
+- [ ] Create a shared Footer component with links to all pages
+
+### B. Content Deduplication
+- [ ] Extract African proverbs into a shared data file (shared/proverbs.ts) — currently duplicated across LearnEI, ZeraCards, Mindset, About
+- [ ] Extract EI pillars data into shared/eiPillars.ts — currently duplicated across LearnEI, ZeraCards, About
+- [ ] Extract Brain-Emotion mapping table into shared/brainEmotionMap.ts (from HeadCheck_Brain_Emotion_Mapping doc)
+
+### C. Seven Mirrors / Compass — Full Rebuild from Source Docs
+- [ ] Replace current generic Compass prompts with EXACT questions from 7 mirrors.docx:
+  - Mirror 1: "What do I value most in my relationship with myself?" (9 options)
+  - Mirror 2: "What does loyalty to me look like?" (8 options)
+  - Mirror 3: "How do I handle conflict within myself?" (8 options)
+  - Mirror 4: "What makes me feel appreciated by myself?" (8 options)
+  - Mirror 5: "What red flags do I ignore within myself?" (8 options)
+  - Mirror 6: "What am I currently working on within myself?" (8 options)
+  - Mirror 7: "What does peace with me look like?" (8 options)
+- [ ] Add "Other" option with revealed text input on every mirror
+- [ ] Add optional "Write freely here" journal box on every mirror
+- [ ] Update completion screen with exact copy from source doc
+- [ ] Update AI summary to detect themes: Self Trust, Boundaries, Burnout, Self-Compassion, Growth, Peace, Emotional Safety
+- [ ] Update theme badges: Self Trust, Growth, Healing, Boundaries, Inner Peace, Emotional Safety
+
+### D. Check-In Flow — Full Rebuild from Master Mocha Prompt (10 steps)
+- [ ] Step 1: Single select — "What feels strongest for you right now?" (11 emotions including Frustrated, Hopeful but uncertain)
+- [ ] Step 2: Multi-select — "What might be contributing to how you feel?" (13 stressors)
+- [ ] Step 3: Multi-select — "How is this affecting you emotionally?" (10 emotional impacts)
+- [ ] Step 4: Multi-select — "Which feelings feel most intense?" (10 intense feelings)
+- [ ] Step 5: Multi-select — "Which of these might also be affecting you?" (10 life factors)
+- [ ] Step 6: Single select — "What feels most supportive for you right now?" (7 support needs)
+- [ ] Step 7: Single select — "What feels possible for you right now?" (8 actions)
+- [ ] Step 8: Single select — "Who or what kind of support could help?" (9 support types)
+- [ ] Step 9: Single select — "Did this check-in help?" (3 options with conditional message)
+- [ ] Step 10: Single select — "Would you like to save this check-in?" (Yes/No + Why This Works card)
+- [ ] Add "Continue" button disabled until selection is made
+- [ ] Add guidance card on Step 6 and reflection card on Step 8
+
+### E. AI Response Engine — Exact 7-Part Structure from Source Docs
+- [ ] Update AI response to follow exact 7-part structure: Emotional Reflection → Brain Insight → EI Focus → African Wisdom (proverb + country + explanation) → Pattern Insight → One Next Step → Support Encouragement
+- [ ] Use exact Brain-Emotion mapping table from HeadCheck_Brain_Emotion_Mapping doc in AI prompt
+- [ ] Add "This is your brain trying to protect you, not a failure." to Brain Insight card
+- [ ] Add Pattern Insight card: detect repeated emotions from history and surface gently
+- [ ] Add user feedback loop: Yes / Somewhat / Not yet buttons on AI response
+
+### F. Check-In Summary Screen (Phase 4 from Master Mocha Prompt)
+- [ ] Add dedicated summary screen BEFORE AI insight: What you may be feeling, What may be affecting you, What seems most supportive, Your next step, Support reminder
+- [ ] Add gentle reminder card: "You may not need to solve everything today..."
+
+### G. Brand & Tagline Alignment
+- [ ] Update app tagline to: "A Real Time Emotional Response System — Know your mind. Lead your life."
+- [ ] Update Home hero subtitle to match: "HeadCheck helps you understand your feelings, reflect with honesty, and take your next step with clarity."
+- [ ] Add "Support Options" link in nav (links to crisis resources / coaching)
+
+### H. Missing Features from Critical Layers Doc
+- [ ] Add "Ask for Help" feature — mentor/counselor request button in dashboard
+- [ ] Add AIEI Content Library page: proverbs searchable by country and EI pillar
+- [ ] Add weekly reflection summary (email/notification to user after 7 days of check-ins)

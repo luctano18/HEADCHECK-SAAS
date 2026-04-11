@@ -2,526 +2,428 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
-import { getLoginUrl } from "@/const";
-import { Brain, ArrowRight, ArrowLeft, Loader2, AlertTriangle, Phone, Heart, Sparkles, Wind, Eye, Smile } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  AlertTriangle, Phone, Heart, ChevronLeft, ChevronRight,
+  CheckCircle2, Info, Loader2,
+} from "lucide-react";
+import { CHECKIN_STEPS } from "@shared/headcheckData";
 
-const EMOTIONS = [
-  { emoji: "😌", label: "Calm", color: "bg-sky-50 border-sky-200 text-sky-700 hover:bg-sky-100" },
-  { emoji: "😊", label: "Happy", color: "bg-yellow-50 border-yellow-200 text-yellow-700 hover:bg-yellow-100" },
-  { emoji: "🌟", label: "Grateful", color: "bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100" },
-  { emoji: "😔", label: "Sad", color: "bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100" },
-  { emoji: "😰", label: "Anxious", color: "bg-orange-50 border-orange-200 text-orange-700 hover:bg-orange-100" },
-  { emoji: "😤", label: "Frustrated", color: "bg-red-50 border-red-200 text-red-700 hover:bg-red-100" },
-  { emoji: "😡", label: "Angry", color: "bg-rose-50 border-rose-200 text-rose-700 hover:bg-rose-100" },
-  { emoji: "😴", label: "Exhausted", color: "bg-purple-50 border-purple-200 text-purple-700 hover:bg-purple-100" },
-  { emoji: "😶", label: "Numb", color: "bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100" },
-  { emoji: "🤔", label: "Confused", color: "bg-indigo-50 border-indigo-200 text-indigo-700 hover:bg-indigo-100" },
-  { emoji: "💪", label: "Motivated", color: "bg-green-50 border-green-200 text-green-700 hover:bg-green-100" },
-  { emoji: "🥺", label: "Vulnerable", color: "bg-pink-50 border-pink-200 text-pink-700 hover:bg-pink-100" },
-  { emoji: "🌈", label: "Hopeful", color: "bg-teal-50 border-teal-200 text-teal-700 hover:bg-teal-100" },
-  { emoji: "💫", label: "Inspired", color: "bg-violet-50 border-violet-200 text-violet-700 hover:bg-violet-100" },
-  { emoji: "🔋", label: "Disconnected", color: "bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100" },
-  { emoji: "⚡", label: "Overwhelmed", color: "bg-orange-50 border-orange-300 text-orange-800 hover:bg-orange-100" },
+// ─── Crisis Detection (client-side real-time) ─────────────────────────────────
+const CRISIS_KEYWORDS = [
+  "kill myself", "suicide", "end my life", "want to die", "don't want to live",
+  "hurt myself", "self-harm", "cutting myself", "overdose", "jump off",
+  "hopeless", "worthless", "can't go on", "no reason to live", "disappear forever",
+  "nobody cares", "better off dead", "give up on life", "can't take it anymore",
+  "i want to disappear", "i feel unsafe",
 ];
+function detectCrisis(text: string): boolean {
+  const lower = text.toLowerCase();
+  return CRISIS_KEYWORDS.some((kw) => lower.includes(kw));
+}
 
-const STRESSORS = [
-  { id: "school", label: "School or learning pressure", emoji: "📚" },
-  { id: "work", label: "Work or activism burnout", emoji: "💼" },
-  { id: "family", label: "Family or relationship tension", emoji: "🏠" },
-  { id: "financial", label: "Financial stress", emoji: "💸" },
-  { id: "decision", label: "Decision fatigue", emoji: "🤯" },
-  { id: "conflict", label: "Conflict with others", emoji: "⚡" },
-  { id: "uncertainty", label: "Uncertainty about next steps", emoji: "🧭" },
-  { id: "communication", label: "Communication and boundaries", emoji: "💬" },
-];
-
-const NEEDS = [
-  {
-    id: "reflection",
-    label: "A moment of reflection",
-    description: "Place your hand on your heart. Notice what you're feeling without trying to change it. You're allowed to feel exactly as you do right now.",
-    emoji: "🪞",
-  },
-  {
-    id: "breathing",
-    label: "A breathing pause",
-    description: "Progress doesn't have to be linear. Sometimes the most courageous thing you can do is pause and rest. You're doing better than you think.",
-    emoji: "🌬️",
-  },
-  {
-    id: "voice",
-    label: "A reminder about your voice",
-    description: "It's okay to say no. It's okay to take up space. Your needs and feelings are valid, and you have the right to express them.",
-    emoji: "🎙️",
-  },
-  {
-    id: "compassion",
-    label: "Self-compassion",
-    description: "You deserve compassion, especially from yourself. The care you give to others? You deserve that too.",
-    emoji: "💗",
-  },
-];
-
-const GROUNDING_PRACTICES = [
-  {
-    id: "breath",
-    title: "4-4-6 Breath Pattern",
-    description: "Breathe in for 4 counts, hold for 4, exhale for 6. Repeat 3 times.",
-    instruction: "Breathe in slowly for 4 counts, hold for 4, and exhale for 6. Your breath is an anchor you can always return to.",
-    icon: Wind,
-    color: "from-sky-50 to-blue-50 border-sky-200",
-    iconColor: "text-sky-500",
-  },
-  {
-    id: "bodyscan",
-    title: "Body Scan",
-    description: "Close your eyes. Scan from head to toe, noticing any tension or sensations without judgment.",
-    instruction: "Notice sensations — Close your eyes. Scan from head to toe, noticing any tension or sensations without judgment.",
-    icon: Eye,
-    color: "from-violet-50 to-purple-50 border-violet-200",
-    iconColor: "text-violet-500",
-  },
-  {
-    id: "compassion",
-    title: "Self-Compassion Practice",
-    description: "Say aloud or in your mind: 'I am doing my best with what I have right now. That is enough.'",
-    instruction: "Say aloud or in your mind: 'I am doing my best with what I have right now. That is enough.'",
-    icon: Smile,
-    color: "from-rose-50 to-pink-50 border-rose-200",
-    iconColor: "text-rose-500",
-  },
-];
-
-const CONTEXTS = [
-  { value: "School" as const, emoji: "🏫", label: "School" },
-  { value: "Family" as const, emoji: "🏠", label: "Family" },
-  { value: "Relationships" as const, emoji: "💞", label: "Relationships" },
-  { value: "Work" as const, emoji: "💼", label: "Work" },
-  { value: "Self" as const, emoji: "🪞", label: "Self" },
-];
-
-type GuestAiResult = {
-  emotionalReflection: string;
-  brainInsight: string;
-  eiPillar: string;
-  eiPillarDescription: string;
-  aieiProverb: string;
-  aieiProverbOrigin: string;
-  personalizedNextStep: string;
-  supportInvitation: string;
-};
+type StepAnswer = { selected: string[]; other?: string; journal?: string };
 
 export default function CheckIn() {
-  const { isAuthenticated, loading } = useAuth();
+  const { isAuthenticated } = useAuth();
   const [, navigate] = useLocation();
 
-  // Step 1: emotions, Step 2: stressors, Step 3: needs, Step 4: grounding, Step 5: journal+submit
-  const [step, setStep] = useState(1);
-  const [selectedEmotions, setSelectedEmotions] = useState<typeof EMOTIONS[number][]>([]);
-  const [selectedStressors, setSelectedStressors] = useState<string[]>([]);
-  const [selectedNeeds, setSelectedNeeds] = useState<string[]>([]);
-  const [selectedGrounding, setSelectedGrounding] = useState<string | null>(null);
-  const [selectedContext, setSelectedContext] = useState<typeof CONTEXTS[0] | null>(null);
-  const [journal, setJournal] = useState("");
-  const [crisisDialogOpen, setCrisisDialogOpen] = useState(false);
-  const [crisisSeverity, setCrisisSeverity] = useState<string | null>(null);
+  const [currentStep, setCurrentStep] = useState(0); // 0 = intro
+  const [answers, setAnswers] = useState<Record<number, StepAnswer>>({});
+  const [showOther, setShowOther] = useState(false);
+  const [otherText, setOtherText] = useState("");
+  const [journalText, setJournalText] = useState("");
+  const [showCrisisModal, setShowCrisisModal] = useState(false);
+  const [showNotYetMessage, setShowNotYetMessage] = useState(false);
 
-  const crisisQuery = trpc.checkIns.detectCrisisRealtime.useQuery(
-    { text: journal, intensity: 5 },
-    { enabled: journal.length > 10, refetchInterval: false }
-  );
+  const createCheckIn = trpc.checkIns.create.useMutation();
+  const guestCreate = trpc.checkIns.guestCreate.useMutation();
 
+  const totalSteps = CHECKIN_STEPS.length; // 10
+  const stepData = currentStep > 0 ? CHECKIN_STEPS[currentStep - 1] : null;
+  const currentAnswer = answers[currentStep] || { selected: [] };
+
+  // Real-time crisis detection on journal text
   useEffect(() => {
-    if (crisisQuery.data?.detected && !crisisDialogOpen) {
-      setCrisisSeverity(crisisQuery.data.severity);
-      setCrisisDialogOpen(true);
+    if (journalText.length > 10 && detectCrisis(journalText)) {
+      setShowCrisisModal(true);
     }
-  }, [crisisQuery.data?.detected]);
+  }, [journalText]);
 
-  const createMutation = trpc.checkIns.create.useMutation({
-    onSuccess: (data) => {
-      navigate(`/checkin/result/${data.checkInId}`);
-    },
-    onError: () => toast.error("Something went wrong. Please try again."),
-  });
-
-  const guestCreateMutation = trpc.checkIns.guestCreate.useMutation({
-    onSuccess: (data) => {
-      navigate("/checkin/guest-result", { state: { result: data } });
-    },
-    onError: () => toast.error("Something went wrong. Please try again."),
-  });
-
-  const handleToggleEmotion = (emotion: typeof EMOTIONS[number]) => {
-    setSelectedEmotions(prev =>
-      prev.some(e => e.label === emotion.label)
-        ? prev.filter(e => e.label !== emotion.label)
-        : [...prev, emotion]
-    );
+  const canContinue = (): boolean => {
+    if (currentStep === 0) return true;
+    if (!stepData) return false;
+    const ans = answers[currentStep] || { selected: [] };
+    if (showOther && !otherText.trim()) return false;
+    return ans.selected.length > 0;
   };
 
-  const handleToggleStressor = (id: string) => {
-    setSelectedStressors(prev =>
-      prev.includes(id) ? prev.filter(s => s !== id) : [...prev, id]
-    );
-  };
-
-  const handleToggleNeed = (id: string) => {
-    setSelectedNeeds(prev =>
-      prev.includes(id) ? prev.filter(n => n !== id) : [...prev, id]
-    );
-  };
-
-  const handleSubmit = () => {
-    if (!selectedEmotions.length || !selectedContext) return;
-    const primaryEmotion = selectedEmotions[0];
-    const journalWithContext = [
-      journal,
-      selectedStressors.length ? `Stressors: ${selectedStressors.join(", ")}` : "",
-      selectedNeeds.length ? `Needs: ${selectedNeeds.join(", ")}` : "",
-      selectedGrounding ? `Grounding practice chosen: ${selectedGrounding}` : "",
-    ].filter(Boolean).join("\n\n");
-
-    if (isAuthenticated) {
-      createMutation.mutate({
-        emotion: primaryEmotion.label,
-        emotionEmoji: primaryEmotion.emoji,
-        intensity: 5,
-        context: selectedContext.value,
-        journalEntry: journalWithContext,
-      });
+  const handleSelect = (option: string) => {
+    if (!stepData) return;
+    const prev = answers[currentStep] || { selected: [] };
+    if (stepData.type === "single") {
+      setAnswers({ ...answers, [currentStep]: { ...prev, selected: [option] } });
+      setShowNotYetMessage(option === "Not yet" && stepData.step === 9);
     } else {
-      guestCreateMutation.mutate({
-        emotion: primaryEmotion.label,
-        emotionEmoji: primaryEmotion.emoji,
-        intensity: 5,
-        context: selectedContext.value,
-        journalEntry: journalWithContext,
-      });
+      const already = prev.selected.includes(option);
+      const newSelected = already
+        ? prev.selected.filter((s) => s !== option)
+        : [...prev.selected, option];
+      setAnswers({ ...answers, [currentStep]: { ...prev, selected: newSelected } });
     }
   };
 
-  const isLoading = createMutation.isPending || guestCreateMutation.isPending;
-  const totalSteps = 5;
+  const saveCurrentExtras = () => {
+    const prev = answers[currentStep] || { selected: [] };
+    setAnswers({
+      ...answers,
+      [currentStep]: {
+        ...prev,
+        other: showOther ? otherText : undefined,
+        journal: journalText || undefined,
+      },
+    });
+  };
 
-  const stepTitles = [
-    "How are you feeling right now?",
-    "What is weighing on you right now?",
-    "What do you need most right now?",
-    "Choose a grounding practice to center yourself",
-    "Add context & reflect",
-  ];
+  const handleContinue = () => {
+    saveCurrentExtras();
+    setShowOther(false);
+    setOtherText("");
+    setJournalText("");
+    setShowNotYetMessage(false);
+    if (currentStep < totalSteps) {
+      setCurrentStep(currentStep + 1);
+    } else {
+      handleSubmit();
+    }
+  };
+
+  const handleBack = () => {
+    saveCurrentExtras();
+    setShowOther(false);
+    setOtherText("");
+    setJournalText("");
+    setShowNotYetMessage(false);
+    setCurrentStep(Math.max(0, currentStep - 1));
+  };
+
+  const handleSubmit = async () => {
+    const wantsSave = answers[10]?.selected[0] === "Yes";
+    const primaryEmotion = answers[1]?.selected[0] || "overwhelmed";
+    const stressors = answers[2]?.selected || [];
+    const intenseFeelings = answers[4]?.selected || [];
+    const supportNeed = answers[6]?.selected[0] || "";
+    const possibleAction = answers[7]?.selected[0] || "";
+    const supportType = answers[8]?.selected[0] || "";
+    const allJournals = Object.values(answers).map(a => a.journal).filter(Boolean).join("\n");
+
+    const intensity = intenseFeelings.length >= 7 ? 9
+      : intenseFeelings.length >= 4 ? 7
+      : intenseFeelings.length >= 2 ? 5 : 3;
+
+    const context = (stressors.some(s => s.toLowerCase().includes("family")) ? "Family"
+      : stressors.some(s => s.toLowerCase().includes("work")) ? "Work"
+      : stressors.some(s => s.toLowerCase().includes("assignment") || s.toLowerCase().includes("exam")) ? "School"
+      : "Self") as "School" | "Family" | "Relationships" | "Work" | "Self";
+
+    const journalEntry = allJournals || `Stressors: ${stressors.join(", ")}. Support needed: ${supportNeed}. Possible action: ${possibleAction}. Support type: ${supportType}.`;
+
+    const payload = {
+      emotion: primaryEmotion.toLowerCase(),
+      intensity,
+      context,
+      journal: journalEntry,
+    };
+
+    try {
+      if (isAuthenticated && wantsSave) {
+        const result = await createCheckIn.mutateAsync(payload);
+        navigate(`/checkin/result/${result.checkInId}`);
+      } else {
+        const result = await guestCreate.mutateAsync(payload);
+        navigate("/checkin/guest-result", { state: { result } });
+      }
+    } catch {
+      toast.error("Something went wrong. Please try again.");
+    }
+  };
+
+  const isLoading = createCheckIn.isPending || guestCreate.isPending;
+
+  // ─── Crisis Modal ──────────────────────────────────────────────────────────
+  if (showCrisisModal) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4" style={{ background: "linear-gradient(135deg, #fff1f2 0%, #fff 50%, #fff8f0 100%)" }}>
+        <div className="max-w-md w-full bg-white rounded-3xl shadow-2xl p-8 text-center border border-red-100">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Heart className="w-8 h-8 text-red-500" />
+          </div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-3">You are not alone</h1>
+          <p className="text-gray-600 mb-6 leading-relaxed">
+            Your safety matters. You deserve support right now. Please reach out — help is available.
+          </p>
+          <div className="space-y-3 mb-6">
+            <a href="tel:988" className="flex items-center gap-3 p-4 bg-red-50 rounded-2xl hover:bg-red-100 transition-colors">
+              <Phone className="w-5 h-5 text-red-500" />
+              <div className="text-left">
+                <div className="font-semibold text-gray-900">Call or Text 988</div>
+                <div className="text-sm text-gray-500">Suicide & Crisis Lifeline — 24/7, free</div>
+              </div>
+            </a>
+            <a href="sms:741741?body=HOME" className="flex items-center gap-3 p-4 bg-orange-50 rounded-2xl hover:bg-orange-100 transition-colors">
+              <AlertTriangle className="w-5 h-5 text-orange-500" />
+              <div className="text-left">
+                <div className="font-semibold text-gray-900">Text HOME to 741741</div>
+                <div className="text-sm text-gray-500">Crisis Text Line — Free, 24/7</div>
+              </div>
+            </a>
+          </div>
+          <Button variant="outline" className="w-full rounded-2xl" onClick={() => setShowCrisisModal(false)}>
+            Stay with me — I'm okay for now
+          </Button>
+          <p className="text-xs text-gray-400 mt-4">
+            HeadCheck is not a crisis service. If you are in immediate danger, please call 911.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── Intro Screen ──────────────────────────────────────────────────────────
+  if (currentStep === 0) {
+    return (
+      <div className="min-h-screen" style={{ background: "linear-gradient(135deg, #f5f0ff 0%, #fff5f5 50%, #fff8f0 100%)" }}>
+        <div className="max-w-lg mx-auto px-4 py-12">
+          <div className="flex items-center justify-between mb-10">
+            <a href="/" className="text-xl font-bold" style={{ background: "linear-gradient(135deg, #7c3aed, #ec4899)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+              HeadCheck
+            </a>
+            <button onClick={() => setShowCrisisModal(true)} className="text-xs text-gray-400 hover:text-red-500 transition-colors flex items-center gap-1">
+              <Phone className="w-3 h-3" /> Crisis Support
+            </button>
+          </div>
+          <div className="text-center mb-10">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium mb-6" style={{ background: "linear-gradient(135deg, #ede9fe, #fce7f3)", color: "#7c3aed" }}>
+              <Heart className="w-4 h-4" /> Emotional Check-In
+            </div>
+            <h1 className="text-4xl font-bold text-gray-900 mb-4">How are you doing?</h1>
+            <p className="text-lg text-gray-600 leading-relaxed">
+              HeadCheck helps you understand your feelings, reflect with honesty, and take your next step with clarity.
+            </p>
+          </div>
+          <div className="bg-white rounded-3xl p-6 shadow-sm border border-purple-100 mb-8">
+            <h3 className="font-semibold text-gray-900 mb-4">What to expect</h3>
+            <div className="space-y-3">
+              {[
+                "10 guided questions — about 5 minutes",
+                "No right or wrong answers — just honest ones",
+                "Real-time AI guidance based on your responses",
+                "Crisis support available at any moment",
+              ].map((item, i) => (
+                <div key={i} className="flex items-start gap-3">
+                  <CheckCircle2 className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: "#7c3aed" }} />
+                  <span className="text-gray-700 text-sm">{item}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <Button
+            className="w-full h-14 rounded-2xl text-lg font-semibold text-white"
+            style={{ background: "linear-gradient(135deg, #7c3aed, #ec4899)" }}
+            onClick={() => setCurrentStep(1)}
+          >
+            Begin Check-In
+          </Button>
+          <p className="text-center text-xs text-gray-400 mt-4">
+            No account required. Your responses are private and secure.
+          </p>
+          <p className="text-center text-xs text-gray-400 mt-1">
+            HeadCheck is a reflective support tool, not a substitute for professional mental health care.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── Step Screen ───────────────────────────────────────────────────────────
+  if (!stepData) return null;
+  const progress = (currentStep / totalSteps) * 100;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 pt-20 pb-16 px-4">
-      {/* Crisis Dialog */}
-      <Dialog open={crisisDialogOpen} onOpenChange={setCrisisDialogOpen}>
-        <DialogContent className="max-w-md border-red-200 bg-red-50">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-red-700">
-              <AlertTriangle className="w-5 h-5" />
-              You're Not Alone
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <p className="text-sm text-red-800">
-              {crisisSeverity === "critical"
-                ? "We noticed you may be in significant distress. Your wellbeing matters deeply."
-                : "It sounds like you're going through something really difficult right now."}
-            </p>
-            <div className="bg-white rounded-xl p-4 border border-red-200">
-              <div className="flex items-center gap-3 mb-2">
-                <Phone className="w-5 h-5 text-red-600" />
-                <span className="font-semibold text-red-700">988 Suicide & Crisis Lifeline</span>
-              </div>
-              <p className="text-sm text-gray-600 mb-3">Call or text <strong>988</strong> — free, confidential, 24/7</p>
-              <a href="tel:988" className="block w-full text-center bg-red-600 text-white py-2 rounded-lg font-semibold hover:bg-red-700 transition-colors">
-                Call 988 Now
-              </a>
-            </div>
-            <p className="text-xs text-gray-500 text-center">
-              HeadCheck AI is a wellness tool, not a substitute for professional mental health care.
-            </p>
-            <Button variant="outline" onClick={() => setCrisisDialogOpen(false)} className="w-full">
-              Continue Check-In
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      <div className="max-w-2xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-2 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full border border-amber-200 shadow-sm mb-4">
-            <Heart className="w-4 h-4 text-amber-500" />
-            <span className="text-sm font-medium text-amber-700">Emotional Check-In</span>
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-1">Take a moment to pause and reflect</h1>
-          <p className="text-gray-500 text-sm">Select all that apply</p>
+    <div className="min-h-screen" style={{ background: "linear-gradient(135deg, #f5f0ff 0%, #fff5f5 50%, #fff8f0 100%)" }}>
+      <div className="max-w-lg mx-auto px-4 py-8">
+        {/* Top Nav */}
+        <div className="flex items-center justify-between mb-6">
+          <a href="/" className="text-lg font-bold" style={{ background: "linear-gradient(135deg, #7c3aed, #ec4899)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+            HeadCheck
+          </a>
+          <button onClick={() => setShowCrisisModal(true)} className="text-xs text-gray-400 hover:text-red-500 transition-colors flex items-center gap-1">
+            <Phone className="w-3 h-3" /> Crisis Support
+          </button>
         </div>
 
         {/* Progress Bar */}
-        <div className="mb-8">
-          <div className="flex justify-between text-xs text-gray-400 mb-2">
-            <span>Step {step} of {totalSteps}</span>
-            <span>{Math.round((step / totalSteps) * 100)}%</span>
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-gray-500">Step {currentStep} of {totalSteps}</span>
+            <span className="text-sm font-medium" style={{ color: "#7c3aed" }}>{Math.round(progress)}%</span>
           </div>
-          <div className="h-2 bg-white/60 rounded-full overflow-hidden border border-amber-100">
-            <div
-              className="h-full bg-gradient-to-r from-amber-400 to-orange-400 rounded-full transition-all duration-500"
-              style={{ width: `${(step / totalSteps) * 100}%` }}
+          <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+            <div className="h-full rounded-full transition-all duration-500" style={{ width: `${progress}%`, background: "linear-gradient(90deg, #7c3aed, #ec4899)" }} />
+          </div>
+        </div>
+
+        {/* Question Card */}
+        <div className="bg-white rounded-3xl p-6 shadow-sm border border-purple-100 mb-4">
+          <h2 className="text-xl font-bold text-gray-900 mb-2">{stepData.question}</h2>
+          {stepData.type === "multi" && (
+            <p className="text-sm text-gray-500">Select all that apply</p>
+          )}
+        </div>
+
+        {/* Helper text */}
+        {"helper" in stepData && (stepData as any).helper && (
+          <div className="flex items-start gap-2 p-3 rounded-2xl mb-4" style={{ background: "#f5f0ff" }}>
+            <Info className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: "#7c3aed" }} />
+            <p className="text-sm" style={{ color: "#7c3aed" }}>{(stepData as any).helper}</p>
+          </div>
+        )}
+
+        {/* Guidance card (Step 6) */}
+        {"guidance" in stepData && (stepData as any).guidance && (
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-4">
+            <p className="text-sm text-amber-800 italic">{(stepData as any).guidance}</p>
+          </div>
+        )}
+
+        {/* Reflection card (Step 8) */}
+        {"reflection" in stepData && (stepData as any).reflection && (
+          <div className="bg-purple-50 border border-purple-200 rounded-2xl p-4 mb-4">
+            <p className="text-sm text-purple-800 italic">{(stepData as any).reflection}</p>
+          </div>
+        )}
+
+        {/* Why This Works card (Step 10) */}
+        {"whyItWorks" in stepData && (stepData as any).whyItWorks && (
+          <div className="bg-green-50 border border-green-200 rounded-2xl p-4 mb-4">
+            <p className="text-xs font-semibold text-green-700 mb-1">Why This Works</p>
+            <p className="text-sm text-green-800">{(stepData as any).whyItWorks}</p>
+          </div>
+        )}
+
+        {/* "Not yet" conditional message (Step 9) */}
+        {showNotYetMessage && (
+          <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 mb-4">
+            <p className="text-sm text-blue-800">
+              That is okay. Sometimes clarity takes more than one moment. We can still help you identify a next step.
+            </p>
+          </div>
+        )}
+
+        {/* Answer Options */}
+        <div className="space-y-2 mb-4">
+          {stepData.options.map((option) => {
+            const isSelected = currentAnswer.selected.includes(option);
+            return (
+              <button
+                key={option}
+                onClick={() => handleSelect(option)}
+                className="w-full text-left p-4 rounded-2xl border-2 transition-all duration-200 font-medium text-sm"
+                style={{
+                  borderColor: isSelected ? "#7c3aed" : "#e5e7eb",
+                  background: isSelected ? "linear-gradient(135deg, #ede9fe, #fce7f3)" : "white",
+                  color: isSelected ? "#7c3aed" : "#374151",
+                }}
+              >
+                <div className="flex items-center gap-3">
+                  <div
+                    className="w-5 h-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-all"
+                    style={{ borderColor: isSelected ? "#7c3aed" : "#d1d5db", background: isSelected ? "#7c3aed" : "transparent" }}
+                  >
+                    {isSelected && <div className="w-2 h-2 bg-white rounded-full" />}
+                  </div>
+                  {option}
+                </div>
+              </button>
+            );
+          })}
+
+          {/* Other option */}
+          {stepData.hasOther && (
+            <button
+              onClick={() => setShowOther(!showOther)}
+              className="w-full text-left p-4 rounded-2xl border-2 transition-all duration-200 font-medium text-sm"
+              style={{
+                borderColor: showOther ? "#7c3aed" : "#e5e7eb",
+                background: showOther ? "linear-gradient(135deg, #ede9fe, #fce7f3)" : "white",
+                color: showOther ? "#7c3aed" : "#374151",
+              }}
+            >
+              <div className="flex items-center gap-3">
+                <div
+                  className="w-5 h-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center"
+                  style={{ borderColor: showOther ? "#7c3aed" : "#d1d5db", background: showOther ? "#7c3aed" : "transparent" }}
+                >
+                  {showOther && <div className="w-2 h-2 bg-white rounded-full" />}
+                </div>
+                Other
+              </div>
+            </button>
+          )}
+        </div>
+
+        {/* Other text input */}
+        {showOther && (
+          <div className="mb-4">
+            <Input
+              placeholder={stepData.otherPrompt || "Tell us more..."}
+              value={otherText}
+              onChange={(e) => setOtherText(e.target.value)}
+              className="rounded-2xl border-purple-200 focus:border-purple-400"
             />
           </div>
-        </div>
+        )}
 
-        {/* Card */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl border border-amber-100 p-8">
-          <h2 className="text-xl font-semibold text-gray-800 mb-6">{stepTitles[step - 1]}</h2>
-
-          {/* Step 1: Emotion Selection */}
-          {step === 1 && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {EMOTIONS.map((emotion) => {
-                  const isSelected = selectedEmotions.some(e => e.label === emotion.label);
-                  return (
-                    <button
-                      key={emotion.label}
-                      onClick={() => handleToggleEmotion(emotion)}
-                      className={`relative flex flex-col items-center gap-2 p-3 rounded-2xl border-2 transition-all duration-200 cursor-pointer group ${
-                        isSelected
-                          ? "border-amber-400 bg-amber-50 shadow-md scale-105"
-                          : `${emotion.color} border`
-                      }`}
-                    >
-                      {isSelected && (
-                        <div className="absolute top-1 right-1 w-4 h-4 bg-amber-400 rounded-full flex items-center justify-center">
-                          <span className="text-white text-xs">✓</span>
-                        </div>
-                      )}
-                      <span className="text-2xl">{emotion.emoji}</span>
-                      <span className="text-xs font-medium">{emotion.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-              {selectedEmotions.length > 0 && (
-                <div className="flex flex-wrap gap-2 pt-2">
-                  {selectedEmotions.map(e => (
-                    <Badge key={e.label} className="bg-amber-100 text-amber-700 border-amber-200">
-                      {e.emoji} {e.label}
-                    </Badge>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Step 2: Stressors */}
-          {step === 2 && (
-            <div className="space-y-3">
-              {STRESSORS.map((stressor) => {
-                const isSelected = selectedStressors.includes(stressor.id);
-                return (
-                  <button
-                    key={stressor.id}
-                    onClick={() => handleToggleStressor(stressor.id)}
-                    className={`w-full flex items-center gap-3 p-4 rounded-2xl border-2 text-left transition-all duration-200 ${
-                      isSelected
-                        ? "border-amber-400 bg-amber-50 shadow-sm"
-                        : "border-gray-100 bg-gray-50 hover:border-amber-200 hover:bg-amber-50/50"
-                    }`}
-                  >
-                    <span className="text-xl">{stressor.emoji}</span>
-                    <span className={`text-sm font-medium ${isSelected ? "text-amber-800" : "text-gray-700"}`}>
-                      {stressor.label}
-                    </span>
-                    {isSelected && <span className="ml-auto text-amber-500">✓</span>}
-                  </button>
-                );
-              })}
-              <p className="text-xs text-gray-400 text-center pt-2">You can skip this step if nothing applies</p>
-            </div>
-          )}
-
-          {/* Step 3: Needs */}
-          {step === 3 && (
-            <div className="space-y-3">
-              {NEEDS.map((need) => {
-                const isSelected = selectedNeeds.includes(need.id);
-                return (
-                  <button
-                    key={need.id}
-                    onClick={() => handleToggleNeed(need.id)}
-                    className={`w-full text-left p-4 rounded-2xl border-2 transition-all duration-200 ${
-                      isSelected
-                        ? "border-amber-400 bg-amber-50 shadow-sm"
-                        : "border-gray-100 bg-gray-50 hover:border-amber-200 hover:bg-amber-50/50"
-                    }`}
-                  >
-                    <div className="flex items-center gap-3 mb-1">
-                      <span className="text-xl">{need.emoji}</span>
-                      <span className={`font-medium text-sm ${isSelected ? "text-amber-800" : "text-gray-700"}`}>
-                        {need.label}
-                      </span>
-                      {isSelected && <span className="ml-auto text-amber-500">✓</span>}
-                    </div>
-                    <p className="text-xs text-gray-500 pl-8 leading-relaxed">{need.description}</p>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-
-          {/* Step 4: Grounding Practice */}
-          {step === 4 && (
-            <div className="space-y-4">
-              <p className="text-sm text-gray-500 mb-4">
-                Remember: You don't have to carry everything alone. Support exists, even when it's not immediately visible.
-              </p>
-              <div className="grid gap-4">
-                {GROUNDING_PRACTICES.map((practice) => {
-                  const Icon = practice.icon;
-                  const isSelected = selectedGrounding === practice.id;
-                  return (
-                    <button
-                      key={practice.id}
-                      onClick={() => setSelectedGrounding(isSelected ? null : practice.id)}
-                      className={`w-full text-left p-5 rounded-2xl border-2 bg-gradient-to-br transition-all duration-200 ${
-                        isSelected
-                          ? "border-amber-400 shadow-md scale-[1.01]"
-                          : `${practice.color} hover:shadow-sm`
-                      }`}
-                    >
-                      <div className="flex items-start gap-4">
-                        <div className={`p-2 rounded-xl bg-white/70 ${practice.iconColor}`}>
-                          <Icon className="w-5 h-5" />
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between mb-1">
-                            <h3 className="font-semibold text-gray-800 text-sm">{practice.title}</h3>
-                            {isSelected && <span className="text-amber-500 text-sm">✓ Selected</span>}
-                          </div>
-                          <p className="text-xs text-gray-600 leading-relaxed">{practice.description}</p>
-                          {isSelected && (
-                            <div className="mt-3 p-3 bg-white/60 rounded-xl border border-amber-200">
-                              <p className="text-xs text-amber-800 italic leading-relaxed">"{practice.instruction}"</p>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Step 5: Context + Journal */}
-          {step === 5 && (
-            <div className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-3">What area of life is this connected to?</label>
-                <div className="grid grid-cols-5 gap-2">
-                  {CONTEXTS.map((ctx) => (
-                    <button
-                      key={ctx.value}
-                      onClick={() => setSelectedContext(ctx)}
-                      className={`flex flex-col items-center gap-1 p-3 rounded-2xl border-2 transition-all duration-200 ${
-                        selectedContext?.value === ctx.value
-                          ? "border-amber-400 bg-amber-50 shadow-sm"
-                          : "border-gray-100 bg-gray-50 hover:border-amber-200"
-                      }`}
-                    >
-                      <span className="text-2xl">{ctx.emoji}</span>
-                      <span className="text-xs font-medium text-gray-600">{ctx.label}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Describe how you're feeling... <span className="text-gray-400 font-normal">(optional)</span></label>
-                <Textarea
-                  value={journal}
-                  onChange={(e) => setJournal(e.target.value)}
-                  placeholder="Share what's on your mind. This is your safe space..."
-                  className="min-h-[120px] resize-none rounded-2xl border-amber-100 bg-amber-50/30 focus:border-amber-300 focus:ring-amber-200"
-                />
-                {crisisQuery.data?.detected && (
-                  <div className="flex items-center gap-2 mt-2 text-red-600 text-xs">
-                    <AlertTriangle className="w-3 h-3" />
-                    <span>We noticed some distress signals. Please reach out if you need support.</span>
-                  </div>
-                )}
-              </div>
-
-              {/* Summary */}
-              <div className="bg-amber-50 rounded-2xl p-4 border border-amber-100">
-                <p className="text-xs font-medium text-amber-700 mb-2">Your check-in summary:</p>
-                <div className="flex flex-wrap gap-2">
-                  {selectedEmotions.map(e => (
-                    <Badge key={e.label} className="bg-white text-amber-700 border-amber-200 text-xs">{e.emoji} {e.label}</Badge>
-                  ))}
-                  {selectedContext && (
-                    <Badge className="bg-white text-orange-700 border-orange-200 text-xs">{selectedContext.emoji} {selectedContext.label}</Badge>
-                  )}
-                  {selectedGrounding && (
-                    <Badge className="bg-white text-sky-700 border-sky-200 text-xs">
-                      🌬️ {GROUNDING_PRACTICES.find(g => g.id === selectedGrounding)?.title}
-                    </Badge>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Navigation */}
-          <div className="flex items-center justify-between mt-8 pt-6 border-t border-amber-100">
-            <Button
-              variant="ghost"
-              onClick={() => setStep(s => s - 1)}
-              disabled={step === 1}
-              className="text-gray-500 hover:text-gray-700"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back
-            </Button>
-
-            {step < totalSteps ? (
-              <Button
-                onClick={() => setStep(s => s + 1)}
-                disabled={step === 1 && selectedEmotions.length === 0}
-                className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white rounded-xl px-6"
-              >
-                Continue
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
-            ) : (
-              <Button
-                onClick={handleSubmit}
-                disabled={isLoading || !selectedEmotions.length || !selectedContext}
-                className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white rounded-xl px-6"
-              >
-                {isLoading ? (
-                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Generating insights...</>
-                ) : (
-                  <><Sparkles className="w-4 h-4 mr-2" /> Get My Insights</>
-                )}
-              </Button>
-            )}
+        {/* Journal box (steps 1–8 only) */}
+        {currentStep <= 8 && (
+          <div className="mb-6">
+            <Textarea
+              placeholder="Write freely here... (optional)"
+              value={journalText}
+              onChange={(e) => setJournalText(e.target.value)}
+              className="rounded-2xl border-purple-100 focus:border-purple-300 resize-none text-sm"
+              rows={3}
+            />
           </div>
+        )}
+
+        {/* Navigation */}
+        <div className="flex gap-3">
+          <Button variant="outline" onClick={handleBack} className="flex-1 h-12 rounded-2xl border-2 border-gray-200">
+            <ChevronLeft className="w-4 h-4 mr-1" /> Back
+          </Button>
+          <Button
+            onClick={handleContinue}
+            disabled={!canContinue() || isLoading}
+            className="flex-[2] h-12 rounded-2xl text-white font-semibold"
+            style={{ background: canContinue() ? "linear-gradient(135deg, #7c3aed, #ec4899)" : undefined }}
+          >
+            {isLoading ? (
+              <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Generating...</>
+            ) : currentStep === totalSteps ? (
+              "Complete Check-In ✓"
+            ) : (
+              <>Continue <ChevronRight className="w-4 h-4 ml-1" /></>
+            )}
+          </Button>
         </div>
 
-        {/* Disclaimer */}
-        <p className="text-center text-xs text-gray-400 mt-6 max-w-md mx-auto leading-relaxed">
-          HeadCheck AI is a wellness support tool, not a substitute for professional mental health care.
-          If you're in crisis, please call or text <strong>988</strong> (Suicide & Crisis Lifeline).
+        <p className="text-center text-xs text-gray-400 mt-6">
+          HeadCheck is a reflective support tool, not a substitute for professional mental health care.
+          If you are in crisis, please call or text <strong>988</strong>.
         </p>
       </div>
     </div>

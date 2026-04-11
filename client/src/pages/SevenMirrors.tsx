@@ -2,391 +2,516 @@ import { useState } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
-import { Heart, ArrowRight, ArrowLeft, Loader2, Sparkles, Award, LogIn } from "lucide-react";
+import { Heart, ArrowRight, ArrowLeft, Loader2, Sparkles, CheckCircle2, LogIn, Info } from "lucide-react";
 import { getLoginUrl } from "@/const";
+import { SEVEN_MIRRORS, REFLECTION_BADGES } from "@shared/headcheckData";
 
-// Updated mirror themes from headcheck.app — Self Trust Compass
-const MIRRORS = [
-  {
-    index: 0, theme: "Self-Awareness", emoji: "🪞",
-    title: "Mirror of Self-Awareness",
-    question: "How well do you know yourself?",
-    prompt: "Reflect on a recent moment when you were surprised by your own reaction. What did it reveal about you that you hadn't fully recognized before?",
-    color: "from-violet-50 to-purple-50",
-    accent: "bg-violet-100 text-violet-700",
-  },
-  {
-    index: 1, theme: "Self-Compassion", emoji: "💛",
-    title: "Mirror of Self-Compassion",
-    question: "How kind are you to yourself?",
-    prompt: "Think about how you speak to yourself when you make a mistake. Would you speak that way to a close friend? What would a kinder inner voice sound like?",
-    color: "from-yellow-50 to-amber-50",
-    accent: "bg-yellow-100 text-yellow-700",
-  },
-  {
-    index: 2, theme: "Boundaries", emoji: "🛡️",
-    title: "Mirror of Boundaries",
-    question: "Can you honor your needs?",
-    prompt: "Reflect on a time when you said yes but meant no, or when you felt your boundaries weren't respected. What made it difficult to honor your own needs?",
-    color: "from-green-50 to-emerald-50",
-    accent: "bg-green-100 text-green-700",
-  },
-  {
-    index: 3, theme: "Authenticity", emoji: "✨",
-    title: "Mirror of Authenticity",
-    question: "Are you true to yourself?",
-    prompt: "In what areas of your life do you feel most like yourself? Where do you feel you're playing a role? What would it look like to show up more authentically?",
-    color: "from-orange-50 to-amber-50",
-    accent: "bg-orange-100 text-orange-700",
-  },
-  {
-    index: 4, theme: "Decision-Making", emoji: "🧭",
-    title: "Mirror of Decision-Making",
-    question: "Do you trust your choices?",
-    prompt: "Recall a decision you made recently. Did you trust your own judgment, or did you seek external validation? What does trusting yourself in decisions feel like?",
-    color: "from-blue-50 to-sky-50",
-    accent: "bg-blue-100 text-blue-700",
-  },
-  {
-    index: 5, theme: "Resilience", emoji: "🌱",
-    title: "Mirror of Resilience",
-    question: "How do you handle setbacks?",
-    prompt: "Think of a recent challenge or setback. How did you respond? What inner resources did you draw on, and what would you do differently with more self-trust?",
-    color: "from-teal-50 to-cyan-50",
-    accent: "bg-teal-100 text-teal-700",
-  },
-  {
-    index: 6, theme: "Growth Mindset", emoji: "🚀",
-    title: "Mirror of Growth Mindset",
-    question: "How do you view your potential?",
-    prompt: "Where do you feel stuck in your growth? What beliefs about yourself might be limiting you? What would become possible if you truly believed in your own potential?",
-    color: "from-pink-50 to-rose-50",
-    accent: "bg-pink-100 text-pink-700",
-  },
-];
-
-type Phase = "intro" | "session" | "complete";
+type MirrorAnswer = { selected: string[]; other?: string; journal?: string };
 
 export default function SevenMirrors() {
   const { isAuthenticated, loading } = useAuth();
   const [, navigate] = useLocation();
-  const [phase, setPhase] = useState<Phase>("intro");
+
+  const [phase, setPhase] = useState<"intro" | "mirror" | "complete">("intro");
+  const [currentMirror, setCurrentMirror] = useState(0);
+  const [answers, setAnswers] = useState<Record<number, MirrorAnswer>>({});
+  const [showOther, setShowOther] = useState(false);
+  const [otherText, setOtherText] = useState("");
+  const [journalText, setJournalText] = useState("");
   const [sessionId, setSessionId] = useState<number | null>(null);
-  const [currentMirrorIndex, setCurrentMirrorIndex] = useState(0);
-  const [response, setResponse] = useState("");
-  const [completionData, setCompletionData] = useState<{ summary: string; badges: string[] } | null>(null);
+  const [aiSummary, setAiSummary] = useState<string>("");
+  const [earnedBadges, setEarnedBadges] = useState<string[]>([]);
 
-  // Guest: in-memory responses array
-  const [guestResponses, setGuestResponses] = useState<{ mirrorTheme: string; response: string }[]>([]);
+  const startSession = trpc.sevenMirrors.startSession.useMutation();
+  const submitMirrorResponse = trpc.sevenMirrors.submitMirrorResponse.useMutation();
+  const guestSummary = trpc.sevenMirrors.guestSummary.useMutation();
 
-  // Authenticated: start session in DB
-  const startMutation = trpc.sevenMirrors.startSession.useMutation({
-    onSuccess: (data) => {
-      setSessionId(data.sessionId);
-      setCurrentMirrorIndex(data.currentMirrorIndex);
-      setPhase("session");
-    },
-    onError: () => toast.error("Could not start session. Please try again."),
-  });
+  const mirror = SEVEN_MIRRORS[currentMirror];
+  const progress = ((currentMirror + 1) / SEVEN_MIRRORS.length) * 100;
+  const currentAnswer = answers[currentMirror] || { selected: [] };
 
-  // Authenticated: submit each mirror response to DB
-  const submitMutation = trpc.sevenMirrors.submitMirrorResponse.useMutation({
-    onSuccess: (data) => {
-      if (data.completed) {
-        setCompletionData({ summary: data.summary!, badges: data.badges! });
-        setPhase("complete");
-      } else {
-        setCurrentMirrorIndex(data.nextMirrorIndex!);
-        setResponse("");
-      }
-    },
-    onError: () => toast.error("Could not save your response. Please try again."),
-  });
+  const canContinue = () => {
+    const ans = answers[currentMirror] || { selected: [] };
+    if (showOther && !otherText.trim()) return false;
+    return ans.selected.length > 0;
+  };
 
-  // Guest: generate AI summary without saving to DB
-  const guestSummaryMutation = trpc.sevenMirrors.guestSummary.useMutation({
-    onSuccess: (data) => {
-      setCompletionData({ summary: data.summary, badges: data.badges });
-      setPhase("complete");
-    },
-    onError: () => toast.error("Could not generate summary. Please try again."),
-  });
+  const handleSelect = (option: string) => {
+    const prev = answers[currentMirror] || { selected: [] };
+    const already = prev.selected.includes(option);
+    const newSelected = already
+      ? prev.selected.filter((s) => s !== option)
+      : [...prev.selected, option];
+    setAnswers({ ...answers, [currentMirror]: { ...prev, selected: newSelected } });
+  };
 
-  const handleStart = () => {
+  const saveExtras = () => {
+    const prev = answers[currentMirror] || { selected: [] };
+    setAnswers({
+      ...answers,
+      [currentMirror]: {
+        ...prev,
+        other: showOther ? otherText : undefined,
+        journal: journalText || undefined,
+      },
+    });
+  };
+
+  const handleStart = async () => {
     if (isAuthenticated) {
-      startMutation.mutate();
-    } else {
-      setGuestResponses([]);
-      setCurrentMirrorIndex(0);
-      setPhase("session");
-    }
-  };
-
-  const handleSubmitMirror = () => {
-    const currentMirror = MIRRORS[currentMirrorIndex];
-    if (!currentMirror) return;
-    const trimmed = response.trim();
-    if (isAuthenticated && sessionId) {
-      submitMutation.mutate({ sessionId, mirrorIndex: currentMirrorIndex, response: trimmed });
-    } else {
-      // Guest: accumulate in memory
-      const updated = [...guestResponses, { mirrorTheme: currentMirror.theme, response: trimmed }];
-      setGuestResponses(updated);
-      if (currentMirrorIndex === 6) {
-        // Last mirror — generate AI summary
-        guestSummaryMutation.mutate({ responses: updated });
-      } else {
-        setCurrentMirrorIndex(i => i + 1);
-        setResponse("");
+      try {
+        const result = await startSession.mutateAsync();
+        setSessionId(result.sessionId);
+      } catch {
+        toast.error("Could not start session. Please try again.");
+        return;
       }
     }
+    setPhase("mirror");
   };
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 animate-spin" style={{ color: "oklch(0.45 0.18 285)" }} /></div>;
+  const handleNext = async () => {
+    saveExtras();
+    const ans = answers[currentMirror] || { selected: [] };
+    const selected = showOther && otherText.trim() ? [...ans.selected, otherText.trim()] : ans.selected;
 
-  const currentMirror = MIRRORS[currentMirrorIndex];
+    if (isAuthenticated && sessionId) {
+      try {
+        await submitMirrorResponse.mutateAsync({
+          sessionId,
+          mirrorIndex: currentMirror,
+          response: selected.join("; ") + (journalText ? "\n" + journalText : ""),
+        });
+      } catch {
+        toast.error("Could not save response. Continuing...");
+      }
+    }
 
-  // ── INTRO ──
+    setShowOther(false);
+    setOtherText("");
+    setJournalText("");
+
+    if (currentMirror < SEVEN_MIRRORS.length - 1) {
+      setCurrentMirror(currentMirror + 1);
+    } else {
+      await handleComplete();
+    }
+  };
+
+  const handleBack = () => {
+    saveExtras();
+    setShowOther(false);
+    setOtherText("");
+    setJournalText("");
+    if (currentMirror > 0) setCurrentMirror(currentMirror - 1);
+    else setPhase("intro");
+  };
+
+  const handleComplete = async () => {
+    const allAnswers = Object.entries(answers).map(([idx, ans]) => ({
+      mirrorId: SEVEN_MIRRORS[parseInt(idx)].id,
+      theme: SEVEN_MIRRORS[parseInt(idx)].theme,
+      selected: ans.selected,
+      journal: ans.journal,
+    }));
+
+    try {
+      if (isAuthenticated && sessionId) {
+        // For authenticated users, the last submitMirrorResponse already triggers completion
+        // We just use the guestSummary path to generate a summary from all answers
+        const responses = allAnswers.map(a => ({ mirrorTheme: a.theme, response: a.selected.join("; ") + (a.journal ? "\n" + a.journal : "") }));
+        const result = await guestSummary.mutateAsync({ responses });
+        setAiSummary(result.summary);
+        setEarnedBadges(result.badges || []);
+      } else {
+        const responses = allAnswers.map(a => ({ mirrorTheme: a.theme, response: a.selected.join("; ") + (a.journal ? "\n" + a.journal : "") }));
+        const result = await guestSummary.mutateAsync({ responses });
+        setAiSummary(result.summary);
+        setEarnedBadges(result.badges || []);
+      }
+      setPhase("complete");
+    } catch {
+      toast.error("Could not generate your summary. Please try again.");
+    }
+  };
+
+  const isLoading = startSession.isPending || submitMirrorResponse.isPending || guestSummary.isPending;
+
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center">
+      <Loader2 className="w-8 h-8 animate-spin" style={{ color: "oklch(0.45 0.18 285)" }} />
+    </div>
+  );
+
+  // ─── INTRO ──────────────────────────────────────────────────────────────────
   if (phase === "intro") {
     return (
-      <div className="min-h-screen bg-[oklch(0.97_0.03_285)]">
-        {/* Nav */}
-        <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-[oklch(0.90_0.04_285)]">
+      <div className="min-h-screen" style={{ background: "linear-gradient(135deg, oklch(0.97 0.03 285) 0%, oklch(0.98 0.02 340) 50%, oklch(0.98 0.02 48) 100%)" }}>
+        <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b" style={{ borderColor: "oklch(0.92 0.03 260)" }}>
           <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
             <button onClick={() => navigate("/")} className="flex items-center gap-2 font-bold text-xl" style={{ color: "oklch(0.45 0.18 285)" }}>
               <Heart className="w-5 h-5" style={{ fill: "oklch(0.45 0.18 285)" }} />
               HeadCheck
             </button>
-            <Badge variant="secondary">Self Trust Compass</Badge>
+            <span className="text-sm font-medium px-3 py-1 rounded-full" style={{ background: "oklch(0.95 0.04 285)", color: "oklch(0.45 0.18 285)" }}>
+              Self Trust Compass
+            </span>
           </div>
         </nav>
 
-        <div className="max-w-lg mx-auto px-6 pt-28 pb-12 text-center">
-          {/* Badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white border text-sm font-medium mb-6 shadow-sm"
-            style={{ borderColor: "oklch(0.88 0.06 285)", color: "oklch(0.45 0.18 285)" }}>
-            🧭 A Journey Inward
+        <div className="max-w-lg mx-auto px-6 pt-28 pb-16">
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium mb-6 bg-white shadow-sm border" style={{ borderColor: "oklch(0.88 0.06 285)", color: "oklch(0.45 0.18 285)" }}>
+              🧭 A Journey Inward
+            </div>
+            <h1 className="text-4xl font-black mb-4" style={{ color: "oklch(0.18 0.04 260)" }}>The Seven Mirrors</h1>
+            <p className="text-lg leading-relaxed" style={{ color: "oklch(0.45 0.04 260)" }}>
+              A guided self-reflection practice. Seven mirrors. Seven truths. One honest look at who you are becoming.
+            </p>
           </div>
 
-          {/* Gradient bar */}
-          <div className="w-full h-3 rounded-full mb-6"
-            style={{ background: "linear-gradient(to right, oklch(0.55 0.22 285), oklch(0.65 0.20 340), oklch(0.72 0.18 48), oklch(0.75 0.16 120))" }} />
+          {/* Mirrors preview grid */}
+          <div className="bg-white rounded-3xl p-6 shadow-sm border mb-5" style={{ borderColor: "oklch(0.92 0.03 260)" }}>
+            <h3 className="font-bold mb-4" style={{ color: "oklch(0.18 0.04 260)" }}>Your seven mirrors</h3>
+            <div className="grid grid-cols-2 gap-2">
+              {SEVEN_MIRRORS.map((m, i) => (
+                <div key={m.id} className="flex items-center gap-2 p-2.5 rounded-xl" style={{ background: "oklch(0.96 0.03 285)" }}>
+                  <span className="text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center text-white flex-shrink-0" style={{ background: "oklch(0.45 0.18 285)", fontSize: "10px" }}>{i + 1}</span>
+                  <span className="text-sm font-medium" style={{ color: "oklch(0.25 0.04 260)" }}>{m.theme}</span>
+                </div>
+              ))}
+            </div>
+          </div>
 
-          <h1 className="text-3xl font-black mb-3" style={{ color: "oklch(0.18 0.04 260)" }}>The Self Trust Compass</h1>
-          <p className="leading-relaxed mb-8" style={{ color: "oklch(0.45 0.04 260)" }}>
-            A seven mirror self-reflection practice that helps you check in on how you relate to yourself. Each mirror points inward asking not what is wrong, but <em>what is true</em>.
-          </p>
-
-          {/* What to Expect */}
-          <div className="bg-white rounded-2xl p-6 shadow-sm border text-left mb-5" style={{ borderColor: "oklch(0.92 0.03 260)" }}>
-            <h2 className="font-bold mb-4" style={{ color: "oklch(0.18 0.04 260)" }}>What to Expect</h2>
-            <ul className="space-y-3">
+          {/* What to expect */}
+          <div className="bg-white rounded-3xl p-6 shadow-sm border mb-5" style={{ borderColor: "oklch(0.92 0.03 260)" }}>
+            <h3 className="font-bold mb-3" style={{ color: "oklch(0.18 0.04 260)" }}>What to expect</h3>
+            <ul className="space-y-2">
               {[
-                <><strong>Seven mirrors</strong> exploring your relationship with yourself</>,
-                <><strong>10-15 minutes</strong> of guided reflection</>,
-                <><strong>No right answers</strong>, only honest ones</>,
-                <><strong>Your responses</strong> help you see patterns and growth areas</>,
+                "Seven mirrors exploring your relationship with yourself",
+                "10–15 minutes of guided reflection",
+                "No right answers, only honest ones",
+                "AI-generated summary with reflection badges",
               ].map((item, i) => (
-                <li key={i} className="flex gap-3 items-start text-sm" style={{ color: "oklch(0.35 0.04 260)" }}>
-                  <span className="font-bold mt-0.5" style={{ color: "oklch(0.45 0.18 285)" }}>✦</span>
-                  <span>{item}</span>
+                <li key={i} className="flex items-start gap-2 text-sm" style={{ color: "oklch(0.40 0.04 260)" }}>
+                  <span style={{ color: "oklch(0.45 0.18 285)" }}>✦</span>
+                  {item}
                 </li>
               ))}
             </ul>
           </div>
 
-          {/* Mirror grid preview */}
-          <div className="grid grid-cols-2 gap-2 mb-5">
-            {MIRRORS.map((m) => (
-              <div key={m.index} className={`rounded-xl p-3 bg-gradient-to-br ${m.color} border border-white/60 text-left`}>
-                <span className="text-xl">{m.emoji}</span>
-                <p className="text-xs font-semibold mt-1" style={{ color: "oklch(0.18 0.04 260)" }}>{m.theme}</p>
-                <p className="text-xs italic" style={{ color: "oklch(0.55 0.04 260)" }}>{m.question}</p>
-              </div>
-            ))}
-          </div>
-
-          {/* Best practiced when */}
-          <div className="rounded-xl p-4 text-sm text-left mb-8" style={{ background: "oklch(0.96 0.03 285)", color: "oklch(0.45 0.04 260)" }}>
-            <strong style={{ color: "oklch(0.18 0.04 260)" }}>Best practiced when:</strong> You're not in crisis, have time to reflect deeply, and are curious about your inner landscape. This is different from the quick check-in—it's for deeper exploration.
+          {/* Disclaimer */}
+          <div className="flex items-start gap-2 p-4 rounded-2xl mb-6" style={{ background: "oklch(0.97 0.04 48)", borderLeft: "3px solid oklch(0.72 0.18 48)" }}>
+            <Info className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: "oklch(0.55 0.18 48)" }} />
+            <p className="text-sm" style={{ color: "oklch(0.40 0.08 48)" }}>
+              This is a reflective support tool, not therapy. If you are in crisis, please call or text <strong>988</strong>.
+            </p>
           </div>
 
           <div className="flex flex-col gap-3">
-            <Button size="lg" className="w-full rounded-full py-6 text-base font-bold"
+            <Button
+              size="lg"
+              className="w-full rounded-full py-6 text-base font-bold text-white"
               style={{ background: "linear-gradient(135deg, oklch(0.45 0.18 285), oklch(0.72 0.18 48))" }}
-              onClick={handleStart} disabled={startMutation.isPending || guestSummaryMutation.isPending}>
-              {startMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <Sparkles className="w-5 h-5 mr-2" />}
+              onClick={handleStart}
+              disabled={isLoading}
+            >
+              {isLoading ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <Sparkles className="w-5 h-5 mr-2" />}
               Begin Your Journey
-            </Button>
-            <Button onClick={() => navigate("/")} variant="ghost" className="w-full rounded-full" style={{ color: "oklch(0.55 0.04 260)" }}>
-              Return Home
             </Button>
             <Button onClick={() => navigate("/checkin")} variant="outline" className="w-full rounded-full">
               Try Quick Check-In
             </Button>
+            <Button onClick={() => navigate("/")} variant="ghost" className="w-full rounded-full" style={{ color: "oklch(0.55 0.04 260)" }}>
+              Return Home
+            </Button>
           </div>
-
-          {/* Disclaimer */}
-          <p className="text-xs mt-8 leading-relaxed" style={{ color: "oklch(0.60 0.03 260)" }}>
-            This check-in is a reflective support tool. It is not a replacement for academic advising, counseling, or mental health services. If you are experiencing ongoing distress or feel unsafe, please contact your campus support services or emergency resources.
-          </p>
+          <p className="text-center text-xs mt-4" style={{ color: "oklch(0.65 0.03 260)" }}>No account required · Takes 10–15 minutes</p>
         </div>
       </div>
     );
   }
 
-  // ── SESSION ──
-  if (phase === "session" && currentMirror) {
+  // ─── MIRROR STEP ────────────────────────────────────────────────────────────
+  if (phase === "mirror" && mirror) {
     return (
-      <div className="min-h-screen bg-[oklch(0.97_0.03_285)]">
-        <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-[oklch(0.90_0.04_285)]">
+      <div className="min-h-screen" style={{ background: "linear-gradient(135deg, oklch(0.97 0.03 285) 0%, oklch(0.98 0.02 340) 50%, oklch(0.98 0.02 48) 100%)" }}>
+        <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b" style={{ borderColor: "oklch(0.92 0.03 260)" }}>
           <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
             <button onClick={() => navigate("/")} className="flex items-center gap-2 font-bold text-xl" style={{ color: "oklch(0.45 0.18 285)" }}>
               <Heart className="w-5 h-5" style={{ fill: "oklch(0.45 0.18 285)" }} />
               HeadCheck
             </button>
-            <div className="flex items-center gap-1.5">
-              {MIRRORS.map((m) => (
-                <div key={m.index} className={`h-1.5 rounded-full transition-all duration-300 ${
-                  m.index === currentMirrorIndex ? "w-8" : m.index < currentMirrorIndex ? "w-4 opacity-60" : "w-4 opacity-20"
-                }`}
-                  style={{ background: m.index <= currentMirrorIndex ? "linear-gradient(to right, oklch(0.45 0.18 285), oklch(0.72 0.18 48))" : "oklch(0.80 0.03 260)" }} />
-              ))}
-            </div>
-            <span className="text-xs font-medium" style={{ color: "oklch(0.55 0.04 260)" }}>Mirror {currentMirrorIndex + 1} of 7</span>
+            <span className="text-sm font-medium" style={{ color: "oklch(0.55 0.04 260)" }}>
+              Mirror {currentMirror + 1} of {SEVEN_MIRRORS.length}
+            </span>
           </div>
         </nav>
 
-        <div className="max-w-lg mx-auto px-6 pt-28 pb-12 space-y-5">
-          <div className={`rounded-3xl p-8 bg-gradient-to-br ${currentMirror.color} border border-white/60`}>
-            <div className="text-center mb-5">
-              <div className="text-5xl mb-3">{currentMirror.emoji}</div>
-              <Badge className={currentMirror.accent}>{currentMirror.theme}</Badge>
-              <h1 className="text-2xl font-bold mt-3 mb-1" style={{ color: "oklch(0.18 0.04 260)" }}>{currentMirror.title}</h1>
-              <p className="text-sm italic" style={{ color: "oklch(0.45 0.18 285)" }}>{currentMirror.question}</p>
+        <div className="max-w-lg mx-auto px-6 pt-24 pb-12">
+          {/* Progress bar */}
+          <div className="mb-6">
+            <div className="flex justify-between text-xs mb-1.5" style={{ color: "oklch(0.55 0.04 260)" }}>
+              <span>Self Trust Compass</span>
+              <span style={{ color: "oklch(0.45 0.18 285)" }}>{Math.round(progress)}%</span>
             </div>
-            <div className="bg-white/70 backdrop-blur-sm rounded-2xl p-5 border border-white/60">
-              <p className="text-base leading-relaxed font-medium" style={{ color: "oklch(0.18 0.04 260)" }}>{currentMirror.prompt}</p>
+            <div className="h-2 rounded-full overflow-hidden" style={{ background: "oklch(0.92 0.03 260)" }}>
+              <div
+                className="h-full rounded-full transition-all duration-500"
+                style={{ width: `${progress}%`, background: "linear-gradient(90deg, oklch(0.45 0.18 285), oklch(0.72 0.18 48))" }}
+              />
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl p-6 border shadow-sm space-y-4" style={{ borderColor: "oklch(0.92 0.03 260)" }}>
-            <label className="text-sm font-medium" style={{ color: "oklch(0.55 0.04 260)" }}>Your reflection</label>
+          {/* Theme badge */}
+          <div className="mb-4">
+            <span className="px-3 py-1 rounded-full text-xs font-semibold text-white" style={{ background: "linear-gradient(135deg, oklch(0.45 0.18 285), oklch(0.65 0.18 340))" }}>
+              Mirror {mirror.id} — {mirror.theme}
+            </span>
+          </div>
+
+          {/* Question card */}
+          <div className="bg-white rounded-3xl p-6 shadow-sm border mb-4" style={{ borderColor: "oklch(0.92 0.03 260)" }}>
+            <h2 className="text-xl font-bold mb-1" style={{ color: "oklch(0.18 0.04 260)" }}>{mirror.question}</h2>
+            <p className="text-sm" style={{ color: "oklch(0.55 0.04 260)" }}>Select all that apply</p>
+          </div>
+
+          {/* Guidance */}
+          {mirror.guidance && (
+            <div className="flex items-start gap-2 p-3 rounded-2xl mb-4" style={{ background: "oklch(0.96 0.03 285)" }}>
+              <Info className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: "oklch(0.45 0.18 285)" }} />
+              <p className="text-sm" style={{ color: "oklch(0.40 0.06 285)" }}>{mirror.guidance}</p>
+            </div>
+          )}
+
+          {/* Options */}
+          <div className="space-y-2 mb-4">
+            {mirror.options.map((option) => {
+              const isSelected = currentAnswer.selected.includes(option);
+              return (
+                <button
+                  key={option}
+                  onClick={() => handleSelect(option)}
+                  className="w-full text-left p-4 rounded-2xl border-2 transition-all duration-200 text-sm font-medium"
+                  style={{
+                    borderColor: isSelected ? "oklch(0.45 0.18 285)" : "oklch(0.90 0.02 260)",
+                    background: isSelected ? "linear-gradient(135deg, oklch(0.95 0.04 285), oklch(0.96 0.03 340))" : "white",
+                    color: isSelected ? "oklch(0.35 0.12 285)" : "oklch(0.30 0.04 260)",
+                  }}
+                >
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="w-5 h-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-all"
+                      style={{
+                        borderColor: isSelected ? "oklch(0.45 0.18 285)" : "oklch(0.80 0.03 260)",
+                        background: isSelected ? "oklch(0.45 0.18 285)" : "transparent",
+                      }}
+                    >
+                      {isSelected && <div className="w-2 h-2 bg-white rounded-full" />}
+                    </div>
+                    {option}
+                  </div>
+                </button>
+              );
+            })}
+
+            {/* Other */}
+            <button
+              onClick={() => setShowOther(!showOther)}
+              className="w-full text-left p-4 rounded-2xl border-2 transition-all duration-200 text-sm font-medium"
+              style={{
+                borderColor: showOther ? "oklch(0.45 0.18 285)" : "oklch(0.90 0.02 260)",
+                background: showOther ? "linear-gradient(135deg, oklch(0.95 0.04 285), oklch(0.96 0.03 340))" : "white",
+                color: showOther ? "oklch(0.35 0.12 285)" : "oklch(0.30 0.04 260)",
+              }}
+            >
+              <div className="flex items-center gap-3">
+                <div
+                  className="w-5 h-5 rounded-full border-2 flex-shrink-0 flex items-center justify-center"
+                  style={{
+                    borderColor: showOther ? "oklch(0.45 0.18 285)" : "oklch(0.80 0.03 260)",
+                    background: showOther ? "oklch(0.45 0.18 285)" : "transparent",
+                  }}
+                >
+                  {showOther && <div className="w-2 h-2 bg-white rounded-full" />}
+                </div>
+                Other
+              </div>
+            </button>
+          </div>
+
+          {showOther && (
+            <div className="mb-4">
+              <Input
+                placeholder={mirror.otherPrompt}
+                value={otherText}
+                onChange={(e) => setOtherText(e.target.value)}
+                className="rounded-2xl"
+                style={{ borderColor: "oklch(0.85 0.04 285)" }}
+              />
+            </div>
+          )}
+
+          {/* Journal */}
+          <div className="mb-6">
             <Textarea
-              placeholder="Take your time. Write honestly and freely..."
-              value={response}
-              onChange={(e) => setResponse(e.target.value)}
-              className="min-h-48 resize-none border-0 p-0 focus-visible:ring-0 text-base"
+              placeholder={mirror.journalPlaceholder}
+              value={journalText}
+              onChange={(e) => setJournalText(e.target.value)}
+              className="rounded-2xl resize-none text-sm"
+              style={{ borderColor: "oklch(0.90 0.03 260)" }}
+              rows={4}
             />
           </div>
 
+          {/* Navigation */}
           <div className="flex gap-3">
-            {currentMirrorIndex > 0 && (
-              <Button variant="outline" className="h-12 px-6 rounded-full"
-                onClick={() => { setCurrentMirrorIndex(i => i - 1); setResponse(""); }}>
-                <ArrowLeft className="w-4 h-4 mr-2" /> Back
-              </Button>
-            )}
-            <Button className="flex-1 h-12 text-base rounded-full font-semibold"
-              style={{ background: "linear-gradient(135deg, oklch(0.45 0.18 285), oklch(0.72 0.18 48))" }}
-              disabled={response.trim().length < 10 || submitMutation.isPending || guestSummaryMutation.isPending}
-              onClick={handleSubmitMirror}>
-              {(submitMutation.isPending || guestSummaryMutation.isPending) ? (
-                <><Loader2 className="w-4 h-4 animate-spin mr-2" />{currentMirrorIndex === 6 ? "Generating summary..." : "Saving..."}</>
-              ) : currentMirrorIndex === 6 ? (
-                <><Sparkles className="w-4 h-4 mr-2" />Complete Journey</>
+            <Button
+              variant="outline"
+              onClick={handleBack}
+              className="flex-1 h-12 rounded-2xl border-2"
+              style={{ borderColor: "oklch(0.88 0.03 260)" }}
+            >
+              <ArrowLeft className="w-4 h-4 mr-1" /> Back
+            </Button>
+            <Button
+              onClick={handleNext}
+              disabled={!canContinue() || isLoading}
+              className="flex-[2] h-12 rounded-2xl font-semibold text-white"
+              style={{ background: canContinue() ? "linear-gradient(135deg, oklch(0.45 0.18 285), oklch(0.72 0.18 48))" : undefined }}
+            >
+              {isLoading ? (
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> {currentMirror === SEVEN_MIRRORS.length - 1 ? "Generating..." : "Saving..."}</>
+              ) : currentMirror === SEVEN_MIRRORS.length - 1 ? (
+                "Complete Journey ✓"
               ) : (
-                <>Next Mirror <ArrowRight className="w-4 h-4 ml-2" /></>
+                <>Next Mirror <ArrowRight className="w-4 h-4 ml-1" /></>
               )}
             </Button>
           </div>
 
-          {/* Disclaimer */}
-          <p className="text-xs text-center leading-relaxed" style={{ color: "oklch(0.65 0.03 260)" }}>
-            This check-in is a reflective support tool. It is not a replacement for counseling or mental health services.
+          <p className="text-center text-xs mt-6" style={{ color: "oklch(0.65 0.03 260)" }}>
+            If you are in crisis, please call or text <strong>988</strong>.
           </p>
         </div>
       </div>
     );
   }
 
-  // ── COMPLETE ──
-  if (phase === "complete" && completionData) {
+  // ─── COMPLETION ─────────────────────────────────────────────────────────────
+  if (phase === "complete") {
+    const earnedBadgeObjects = REFLECTION_BADGES.filter(b => earnedBadges.includes(b.id));
+
     return (
-      <div className="min-h-screen bg-[oklch(0.97_0.03_285)]">
-        <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-[oklch(0.90_0.04_285)]">
+      <div className="min-h-screen" style={{ background: "linear-gradient(135deg, oklch(0.97 0.03 285) 0%, oklch(0.98 0.02 340) 50%, oklch(0.98 0.02 48) 100%)" }}>
+        <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b" style={{ borderColor: "oklch(0.92 0.03 260)" }}>
           <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
             <button onClick={() => navigate("/")} className="flex items-center gap-2 font-bold text-xl" style={{ color: "oklch(0.45 0.18 285)" }}>
               <Heart className="w-5 h-5" style={{ fill: "oklch(0.45 0.18 285)" }} />
               HeadCheck
             </button>
-            <Badge variant="secondary" className="bg-amber-100 text-amber-700">Journey Complete</Badge>
           </div>
         </nav>
 
-        <div className="max-w-lg mx-auto px-6 pt-28 pb-12 text-center space-y-6">
-          <div className="text-6xl">✨</div>
-          <div>
-            <h1 className="text-3xl font-black mb-2" style={{ color: "oklch(0.18 0.04 260)" }}>Journey Complete</h1>
-            <p style={{ color: "oklch(0.55 0.04 260)" }}>You've completed all seven mirrors of the Self Trust Compass.</p>
+        <div className="max-w-lg mx-auto px-6 pt-24 pb-16">
+          {/* Hero */}
+          <div className="text-center mb-8">
+            <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-5" style={{ background: "linear-gradient(135deg, oklch(0.92 0.06 285), oklch(0.95 0.04 340))" }}>
+              <Sparkles className="w-10 h-10" style={{ color: "oklch(0.45 0.18 285)" }} />
+            </div>
+            <h1 className="text-3xl font-black mb-3" style={{ color: "oklch(0.18 0.04 260)" }}>You did it.</h1>
+            <p className="leading-relaxed" style={{ color: "oklch(0.45 0.04 260)" }}>
+              You completed all seven mirrors. That takes courage. Here is what your reflection revealed.
+            </p>
           </div>
 
-          {completionData.badges.length > 0 && (
-            <div className="bg-white rounded-2xl p-6 shadow-sm border text-left" style={{ borderColor: "oklch(0.92 0.03 260)" }}>
-              <div className="flex items-center gap-2 mb-3">
-                <Award className="w-5 h-5 text-amber-500" />
-                <h2 className="font-bold" style={{ color: "oklch(0.18 0.04 260)" }}>Badges Earned</h2>
+          {/* AI Summary */}
+          {aiSummary && (
+            <div className="bg-white rounded-3xl p-6 shadow-sm border mb-5" style={{ borderColor: "oklch(0.92 0.03 260)" }}>
+              <div className="flex items-center gap-2 mb-4">
+                <Sparkles className="w-5 h-5" style={{ color: "oklch(0.45 0.18 285)" }} />
+                <h3 className="font-bold" style={{ color: "oklch(0.18 0.04 260)" }}>Your Reflection Summary</h3>
               </div>
+              <p className="text-sm leading-relaxed whitespace-pre-line" style={{ color: "oklch(0.35 0.04 260)" }}>{aiSummary}</p>
+            </div>
+          )}
+
+          {/* Badges */}
+          {earnedBadgeObjects.length > 0 && (
+            <div className="bg-white rounded-3xl p-6 shadow-sm border mb-5" style={{ borderColor: "oklch(0.92 0.03 260)" }}>
+              <h3 className="font-bold mb-4" style={{ color: "oklch(0.18 0.04 260)" }}>Badges Earned</h3>
               <div className="flex flex-wrap gap-2">
-                {completionData.badges.map((b) => (
-                  <Badge key={b} className="bg-amber-100 text-amber-700 px-3 py-1">{b}</Badge>
+                {earnedBadgeObjects.map((badge) => (
+                  <div key={badge.id} className="flex items-center gap-2 px-3 py-1.5 rounded-full border-2" style={{ borderColor: badge.color, background: `${badge.color}15` }}>
+                    <span>{badge.emoji}</span>
+                    <span className="text-sm font-semibold" style={{ color: badge.color }}>{badge.label}</span>
+                  </div>
                 ))}
               </div>
             </div>
           )}
 
-          {completionData.summary && (
-            <div className="bg-white rounded-2xl p-6 shadow-sm border text-left" style={{ borderColor: "oklch(0.92 0.03 260)" }}>
-              <div className="flex items-center gap-2 mb-3">
-                <Sparkles className="w-5 h-5" style={{ color: "oklch(0.45 0.18 285)" }} />
-                <h2 className="font-bold" style={{ color: "oklch(0.18 0.04 260)" }}>Your Reflection Summary</h2>
-              </div>
-              <p className="text-sm leading-relaxed" style={{ color: "oklch(0.35 0.04 260)" }}>{completionData.summary}</p>
+          {/* Mirrors recap */}
+          <div className="bg-white rounded-3xl p-6 shadow-sm border mb-5" style={{ borderColor: "oklch(0.92 0.03 260)" }}>
+            <h3 className="font-bold mb-4" style={{ color: "oklch(0.18 0.04 260)" }}>Your Seven Mirrors</h3>
+            <div className="space-y-2">
+              {SEVEN_MIRRORS.map((m, i) => {
+                const ans = answers[i];
+                return (
+                  <div key={m.id} className="flex items-start gap-3 p-3 rounded-xl" style={{ background: "oklch(0.96 0.03 285)" }}>
+                    <CheckCircle2 className="w-5 h-5 mt-0.5 flex-shrink-0" style={{ color: "oklch(0.45 0.18 285)" }} />
+                    <div>
+                      <p className="text-sm font-semibold" style={{ color: "oklch(0.25 0.04 260)" }}>{m.theme}</p>
+                      {ans?.selected.length > 0 && (
+                        <p className="text-xs mt-0.5" style={{ color: "oklch(0.55 0.04 260)" }}>
+                          {ans.selected.slice(0, 2).join(", ")}{ans.selected.length > 2 ? ` +${ans.selected.length - 2} more` : ""}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-          )}
+          </div>
 
-          {/* Guest: soft login nudge */}
+          {/* Guest nudge */}
           {!isAuthenticated && (
-            <div className="rounded-2xl p-6 text-center border-2 space-y-3"
-              style={{ background: "linear-gradient(135deg, oklch(0.95 0.04 285), oklch(0.96 0.04 48))", borderColor: "oklch(0.88 0.06 285)" }}>
-              <div className="text-2xl">✨</div>
-              <h3 className="font-bold" style={{ color: "oklch(0.18 0.04 260)" }}>Save your journey & track your growth</h3>
-              <p className="text-sm" style={{ color: "oklch(0.45 0.04 260)" }}>Create a free account to save your Compass sessions, earn badges, and track emotional patterns over time.</p>
-              <Button onClick={() => window.location.href = getLoginUrl()} className="w-full rounded-full font-semibold"
-                style={{ background: "linear-gradient(135deg, oklch(0.45 0.18 285), oklch(0.72 0.18 48))" }}>
-                <LogIn className="w-4 h-4 mr-2" /> Create Free Account
-              </Button>
+            <div className="bg-white rounded-3xl p-6 shadow-sm border mb-5 text-center" style={{ borderColor: "oklch(0.88 0.06 285)" }}>
+              <p className="text-sm mb-3" style={{ color: "oklch(0.40 0.04 260)" }}>
+                <strong>Save your reflection.</strong> Create a free account to track your journey over time.
+              </p>
+              <a
+                href={getLoginUrl()}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white"
+                style={{ background: "linear-gradient(135deg, oklch(0.45 0.18 285), oklch(0.65 0.18 340))" }}
+              >
+                <LogIn className="w-4 h-4" /> Create Free Account
+              </a>
             </div>
           )}
 
+          {/* Actions */}
           <div className="flex flex-col gap-3">
-            {isAuthenticated ? (
-              <Button onClick={() => navigate("/dashboard")} className="w-full rounded-full font-semibold"
-                style={{ background: "linear-gradient(135deg, oklch(0.45 0.18 285), oklch(0.72 0.18 48))" }}>
-                View Your Dashboard
-              </Button>
-            ) : null}
-            <Button onClick={() => navigate("/checkin")} variant="outline" className="w-full rounded-full">
-              Start a Quick Check-In
+            <Button
+              className="w-full h-12 rounded-2xl font-semibold text-white"
+              style={{ background: "linear-gradient(135deg, oklch(0.45 0.18 285), oklch(0.72 0.18 48))" }}
+              onClick={() => navigate("/checkin")}
+            >
+              Do a Check-In
             </Button>
-            <Button onClick={() => navigate("/")} variant="ghost" className="w-full rounded-full" style={{ color: "oklch(0.55 0.04 260)" }}>
+            <Button variant="outline" className="w-full h-12 rounded-2xl" onClick={() => navigate("/")}>
               Return Home
             </Button>
           </div>
+
+          <p className="text-center text-xs mt-6" style={{ color: "oklch(0.65 0.03 260)" }}>
+            If you are in crisis, please call or text <strong>988</strong>.
+          </p>
         </div>
       </div>
     );
