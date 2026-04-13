@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavProgress } from "@/contexts/NavProgressContext";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -32,6 +33,7 @@ type StepAnswer = { selected: string[]; other?: string; journal?: string };
 export default function CheckIn() {
   const { isAuthenticated } = useAuth();
   const [, navigate] = useLocation();
+  const { setProgress, clearProgress } = useNavProgress();
 
   const [currentStep, setCurrentStep] = useState(0); // 0 = intro
   const [answers, setAnswers] = useState<Record<number, StepAnswer>>({});
@@ -54,6 +56,23 @@ export default function CheckIn() {
       setShowCrisisModal(true);
     }
   }, [journalText]);
+
+  // Sync progress with NavBar
+  useEffect(() => {
+    if (currentStep > 0) {
+      setProgress({
+        current: currentStep,
+        total: totalSteps,
+        label: "Check-In",
+        color: "linear-gradient(90deg, #7c3aed, #ec4899)",
+        active: true,
+      });
+    } else {
+      clearProgress();
+    }
+    return () => { clearProgress(); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentStep]);
 
   const canContinue = (): boolean => {
     if (currentStep === 0) return true;

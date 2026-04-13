@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavProgress } from "@/contexts/NavProgressContext";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -16,6 +17,7 @@ type MirrorAnswer = { selected: string[]; other?: string; journal?: string };
 export default function SevenMirrors() {
   const { isAuthenticated, loading } = useAuth();
   const [, navigate] = useLocation();
+  const { setProgress, clearProgress } = useNavProgress();
 
   const [phase, setPhase] = useState<"intro" | "mirror" | "complete">("intro");
   const [currentMirror, setCurrentMirror] = useState(0);
@@ -33,6 +35,31 @@ export default function SevenMirrors() {
 
   const mirror = SEVEN_MIRRORS[currentMirror];
   const progress = ((currentMirror + 1) / SEVEN_MIRRORS.length) * 100;
+
+  // Sync progress with NavBar
+  useEffect(() => {
+    if (phase === "mirror") {
+      setProgress({
+        current: currentMirror + 1,
+        total: SEVEN_MIRRORS.length,
+        label: "Compass",
+        color: "linear-gradient(90deg, #6d28d9, #f59e0b)",
+        active: true,
+      });
+    } else if (phase === "complete") {
+      setProgress({
+        current: SEVEN_MIRRORS.length,
+        total: SEVEN_MIRRORS.length,
+        label: "Compass",
+        color: "linear-gradient(90deg, #6d28d9, #f59e0b)",
+        active: true,
+      });
+    } else {
+      clearProgress();
+    }
+    return () => { clearProgress(); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, currentMirror]);
   const currentAnswer = answers[currentMirror] || { selected: [] };
 
   const canContinue = () => {

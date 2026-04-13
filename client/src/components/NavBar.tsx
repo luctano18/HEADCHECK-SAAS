@@ -13,6 +13,7 @@ import {
 import { Heart, Menu, X, LayoutDashboard, LogOut, ChevronDown, User } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
+import { useNavProgress } from "@/contexts/NavProgressContext";
 
 const NAV_LINKS = [
   { href: "/", label: "Home", emoji: "🏠" },
@@ -42,6 +43,7 @@ export default function NavBar() {
   const { isAuthenticated, user } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const utils = trpc.useUtils();
+  const { progress } = useNavProgress();
 
   const logoutMutation = trpc.auth.logout.useMutation({
     onSuccess: async () => {
@@ -63,6 +65,11 @@ export default function NavBar() {
 
   const initials = getInitials(user?.name, user?.email);
 
+  // Compute progress percentage (0–100)
+  const pct = progress.active && progress.total > 0
+    ? Math.round((progress.current / progress.total) * 100)
+    : 0;
+
   return (
     <nav
       className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b"
@@ -70,6 +77,7 @@ export default function NavBar() {
       role="navigation"
       aria-label="Navigation principale"
     >
+      {/* ── Main bar ─────────────────────────────────────────────── */}
       <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
         {/* Logo */}
         <button
@@ -82,23 +90,65 @@ export default function NavBar() {
           HeadCheck
         </button>
 
-        {/* Desktop nav links */}
-        <div className="hidden lg:flex items-center gap-1">
-          {NAV_LINKS.map((link) => (
-            <button
-              key={link.href}
-              onClick={() => navigate(link.href)}
-              className="px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
-              style={{
-                background: isActive(link.href) ? "oklch(0.95 0.04 285)" : "transparent",
-                color: isActive(link.href) ? "oklch(0.45 0.18 285)" : "oklch(0.40 0.04 260)",
-              }}
-              aria-current={isActive(link.href) ? "page" : undefined}
+        {/* Desktop nav links — hidden when progress bar is active to give more space */}
+        {!progress.active && (
+          <div className="hidden lg:flex items-center gap-1">
+            {NAV_LINKS.map((link) => (
+              <button
+                key={link.href}
+                onClick={() => navigate(link.href)}
+                className="px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
+                style={{
+                  background: isActive(link.href) ? "oklch(0.95 0.04 285)" : "transparent",
+                  color: isActive(link.href) ? "oklch(0.45 0.18 285)" : "oklch(0.40 0.04 260)",
+                }}
+                aria-current={isActive(link.href) ? "page" : undefined}
+              >
+                {link.label}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Progress label — shown when active (replaces nav links on desktop) */}
+        {progress.active && (
+          <div className="hidden lg:flex items-center gap-3 flex-1 mx-6">
+            {/* Journey label */}
+            <span
+              className="text-sm font-semibold whitespace-nowrap"
+              style={{ color: "oklch(0.45 0.18 285)" }}
             >
-              {link.label}
-            </button>
-          ))}
-        </div>
+              {progress.label}
+            </span>
+
+            {/* Progress track */}
+            <div
+              className="flex-1 h-2 rounded-full overflow-hidden"
+              style={{ background: "oklch(0.93 0.03 285)" }}
+              role="progressbar"
+              aria-valuenow={progress.current}
+              aria-valuemin={0}
+              aria-valuemax={progress.total}
+              aria-label={`${progress.label} — étape ${progress.current} sur ${progress.total}`}
+            >
+              <div
+                className="h-full rounded-full transition-all duration-500 ease-out"
+                style={{
+                  width: `${pct}%`,
+                  background: progress.color,
+                }}
+              />
+            </div>
+
+            {/* Step counter */}
+            <span
+              className="text-sm font-medium whitespace-nowrap tabular-nums"
+              style={{ color: "oklch(0.40 0.04 260)" }}
+            >
+              {progress.current} / {progress.total}
+            </span>
+          </div>
+        )}
 
         {/* Right side — desktop */}
         <div className="hidden lg:flex items-center gap-2">
@@ -207,6 +257,46 @@ export default function NavBar() {
           {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
         </button>
       </div>
+
+      {/* ── Progress bar (mobile) — thin strip below main bar ─────── */}
+      {progress.active && (
+        <div className="lg:hidden px-4 pb-2">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold" style={{ color: "oklch(0.45 0.18 285)" }}>
+              {progress.label}
+            </span>
+            <div
+              className="flex-1 h-1.5 rounded-full overflow-hidden"
+              style={{ background: "oklch(0.93 0.03 285)" }}
+              role="progressbar"
+              aria-valuenow={progress.current}
+              aria-valuemin={0}
+              aria-valuemax={progress.total}
+            >
+              <div
+                className="h-full rounded-full transition-all duration-500 ease-out"
+                style={{ width: `${pct}%`, background: progress.color }}
+              />
+            </div>
+            <span className="text-xs tabular-nums" style={{ color: "oklch(0.50 0.04 260)" }}>
+              {progress.current}/{progress.total}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* ── Full-width progress strip (desktop, thin line at bottom of nav) ── */}
+      {progress.active && (
+        <div
+          className="hidden lg:block h-0.5 w-full"
+          style={{ background: "oklch(0.93 0.03 285)" }}
+        >
+          <div
+            className="h-full transition-all duration-500 ease-out"
+            style={{ width: `${pct}%`, background: progress.color }}
+          />
+        </div>
+      )}
 
       {/* Mobile menu */}
       {mobileOpen && (

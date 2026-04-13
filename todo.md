@@ -372,3 +372,13 @@
 - [x] Supprimer les 3 headers maison de SevenMirrors.tsx et remplacer par NavBar
 - [x] Ajuster pt-24/pt-28 pour compenser la hauteur de la NavBar fixe
 - [x] 0 erreur TypeScript
+
+## Phase 23: Indicateur de progression dans la NavBar
+
+- [x] Créer un contexte React `NavProgressContext` (current, total, label, color)
+- [x] Ajouter une barre de progression fine sous la NavBar (conditionnelle, visible uniquement sur /checkin et /compass)
+- [x] Afficher étape courante / total + libellé du parcours dans la NavBar (ex. "Check-In · 3 / 10")
+- [x] Brancher le contexte dans CheckIn.tsx (currentStep / totalSteps)
+- [x] Brancher le contexte dans SevenMirrors.tsx (currentMirror / SEVEN_MIRRORS.length)
+- [x] Réinitialiser le contexte au démontage des pages (useEffect cleanup)
+- [x] 0 erreur TypeScript
