@@ -330,3 +330,11 @@
 - [x] Supprimer le bouton GitHub de SocialAuthButtons.tsx
 - [x] Supprimer les tests GitHub de socialAuth.test.ts
 - [x] Mettre à jour todo.md Phase 18 pour refléter le retrait de GitHub
+
+## Phase 19: Bouton de déconnexion dans l'en-tête
+
+- [x] Lire NavBar.tsx et useAuth pour comprendre l'état actuel
+- [x] Remplacer le bouton "Sign Out" basique par un menu dropdown utilisateur (avatar initiales, nom, email, lien Dashboard, bouton Sign Out rouge)
+- [x] Ajouter confirmation visuelle de déconnexion (toast avec message de confirmation)
+- [x] Vérifier accessibilité : focus visible, aria-label, keyboard navigation, aria-current
+- [x] 0 erreur TypeScript
