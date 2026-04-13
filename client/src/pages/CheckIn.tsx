@@ -57,15 +57,28 @@ export default function CheckIn() {
     }
   }, [journalText]);
 
-  // Sync progress with NavBar
+  // Sync progress with NavBar (including step summaries)
   useEffect(() => {
     if (currentStep > 0) {
+      const steps = CHECKIN_STEPS.map((s) => ({
+        id: s.step,
+        label: s.question.length > 40 ? s.question.substring(0, 38) + "…" : s.question,
+        description: (s as Record<string, unknown>).helper as string | undefined
+          ?? (s as Record<string, unknown>).guidance as string | undefined
+          ?? (s as Record<string, unknown>).reflection as string | undefined,
+        status: (
+          s.step < currentStep ? "done" :
+          s.step === currentStep ? "current" :
+          "upcoming"
+        ) as import("@/contexts/NavProgressContext").StepStatus,
+      }));
       setProgress({
         current: currentStep,
         total: totalSteps,
         label: "Check-In",
         color: "linear-gradient(90deg, #7c3aed, #ec4899)",
         active: true,
+        steps,
       });
     } else {
       clearProgress();

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -10,10 +10,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Heart, Menu, X, LayoutDashboard, LogOut, ChevronDown, User } from "lucide-react";
+import {
+  Heart, Menu, X, LayoutDashboard, LogOut, ChevronDown, User,
+  CheckCircle2, Circle, ArrowRight, ChevronUp,
+} from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
-import { useNavProgress } from "@/contexts/NavProgressContext";
+import { useNavProgress, type StepStatus } from "@/contexts/NavProgressContext";
 
 const NAV_LINKS = [
   { href: "/", label: "Home", emoji: "🏠" },
@@ -38,10 +41,28 @@ function getInitials(name?: string | null, email?: string | null): string {
   return "HC";
 }
 
+/** Step status icon */
+function StepIcon({ status }: { status: StepStatus }) {
+  if (status === "done")
+    return <CheckCircle2 className="w-4 h-4 flex-shrink-0" style={{ color: "oklch(0.55 0.18 160)" }} />;
+  if (status === "current")
+    return (
+      <span
+        className="w-4 h-4 rounded-full flex-shrink-0 border-2 flex items-center justify-center"
+        style={{ borderColor: "oklch(0.45 0.18 285)", background: "oklch(0.95 0.04 285)" }}
+      >
+        <span className="w-1.5 h-1.5 rounded-full" style={{ background: "oklch(0.45 0.18 285)" }} />
+      </span>
+    );
+  return <Circle className="w-4 h-4 flex-shrink-0 text-muted-foreground opacity-40" />;
+}
+
 export default function NavBar() {
   const [location, navigate] = useLocation();
   const { isAuthenticated, user } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [summaryOpen, setSummaryOpen] = useState(false);
+  const summaryRef = useRef<HTMLDivElement>(null);
   const utils = trpc.useUtils();
   const { progress } = useNavProgress();
 
@@ -57,7 +78,6 @@ export default function NavBar() {
   });
 
   const handleLogout = () => logoutMutation.mutate();
-
   const isActive = (href: string) => href === "/" ? location === "/" : location.startsWith(href);
 
   const dashboardPath =
@@ -69,6 +89,84 @@ export default function NavBar() {
   const pct = progress.active && progress.total > 0
     ? Math.round((progress.current / progress.total) * 100)
     : 0;
+
+  // Close summary panel on outside click or Escape
+  useEffect(() => {
+    if (!summaryOpen) return;
+    const handleKey = (e: KeyboardEvent) => { if (e.key === "Escape") setSummaryOpen(false); };
+    const handleClick = (e: MouseEvent) => {
+      if (summaryRef.current && !summaryRef.current.contains(e.target as Node)) {
+        setSummaryOpen(false);
+      }
+    };
+    document.addEventListener("keydown", handleKey);
+    document.addEventListener("mousedown", handleClick);
+    return () => {
+      document.removeEventListener("keydown", handleKey);
+      document.removeEventListener("mousedown", handleClick);
+    };
+  }, [summaryOpen]);
+
+  // Close summary when progress clears
+  useEffect(() => {
+    if (!progress.active) setSummaryOpen(false);
+  }, [progress.active]);
+
+  /** The clickable progress widget (bar + label + counter) */
+  const ProgressWidget = ({ mobile = false }: { mobile?: boolean }) => (
+    <button
+      onClick={() => progress.steps.length > 0 && setSummaryOpen((o) => !o)}
+      className={[
+        "flex items-center gap-2 rounded-xl transition-colors",
+        mobile ? "w-full px-0 py-1" : "flex-1 px-2 py-1 hover:bg-violet-50",
+        progress.steps.length > 0 ? "cursor-pointer" : "cursor-default",
+      ].join(" ")}
+      aria-expanded={summaryOpen}
+      aria-haspopup={progress.steps.length > 0 ? "true" : undefined}
+      aria-label={`${progress.label} — étape ${progress.current} sur ${progress.total}. ${progress.steps.length > 0 ? "Cliquez pour voir le résumé des étapes." : ""}`}
+      title={progress.steps.length > 0 ? "Voir le résumé des étapes" : undefined}
+    >
+      {/* Journey label */}
+      <span
+        className="text-xs font-semibold whitespace-nowrap"
+        style={{ color: "oklch(0.45 0.18 285)" }}
+      >
+        {progress.label}
+      </span>
+
+      {/* Progress track */}
+      <div
+        className={["rounded-full overflow-hidden flex-1", mobile ? "h-1.5" : "h-2"].join(" ")}
+        style={{ background: "oklch(0.93 0.03 285)" }}
+        role="progressbar"
+        aria-valuenow={progress.current}
+        aria-valuemin={0}
+        aria-valuemax={progress.total}
+      >
+        <div
+          className="h-full rounded-full transition-all duration-500 ease-out"
+          style={{ width: `${pct}%`, background: progress.color }}
+        />
+      </div>
+
+      {/* Step counter */}
+      <span
+        className="text-xs font-medium whitespace-nowrap tabular-nums"
+        style={{ color: "oklch(0.40 0.04 260)" }}
+      >
+        {progress.current}/{progress.total}
+      </span>
+
+      {/* Toggle chevron when steps available */}
+      {progress.steps.length > 0 && (
+        <span aria-hidden="true" className="text-muted-foreground">
+          {summaryOpen
+            ? <ChevronUp className="w-3.5 h-3.5" />
+            : <ChevronDown className="w-3.5 h-3.5" />}
+        </span>
+      )}
+    </button>
+  );
 
   return (
     <nav
@@ -90,7 +188,7 @@ export default function NavBar() {
           HeadCheck
         </button>
 
-        {/* Desktop nav links — hidden when progress bar is active to give more space */}
+        {/* Desktop nav links — hidden when progress bar is active */}
         {!progress.active && (
           <div className="hidden lg:flex items-center gap-1">
             {NAV_LINKS.map((link) => (
@@ -110,57 +208,22 @@ export default function NavBar() {
           </div>
         )}
 
-        {/* Progress label — shown when active (replaces nav links on desktop) */}
+        {/* Desktop progress widget — shown when active */}
         {progress.active && (
-          <div className="hidden lg:flex items-center gap-3 flex-1 mx-6">
-            {/* Journey label */}
-            <span
-              className="text-sm font-semibold whitespace-nowrap"
-              style={{ color: "oklch(0.45 0.18 285)" }}
-            >
-              {progress.label}
-            </span>
-
-            {/* Progress track */}
-            <div
-              className="flex-1 h-2 rounded-full overflow-hidden"
-              style={{ background: "oklch(0.93 0.03 285)" }}
-              role="progressbar"
-              aria-valuenow={progress.current}
-              aria-valuemin={0}
-              aria-valuemax={progress.total}
-              aria-label={`${progress.label} — étape ${progress.current} sur ${progress.total}`}
-            >
-              <div
-                className="h-full rounded-full transition-all duration-500 ease-out"
-                style={{
-                  width: `${pct}%`,
-                  background: progress.color,
-                }}
-              />
-            </div>
-
-            {/* Step counter */}
-            <span
-              className="text-sm font-medium whitespace-nowrap tabular-nums"
-              style={{ color: "oklch(0.40 0.04 260)" }}
-            >
-              {progress.current} / {progress.total}
-            </span>
+          <div className="hidden lg:flex items-center flex-1 mx-4" ref={summaryRef}>
+            <ProgressWidget />
           </div>
         )}
 
         {/* Right side — desktop */}
         <div className="hidden lg:flex items-center gap-2">
           {isAuthenticated ? (
-            /* ── User dropdown menu ─────────────────────────────────── */
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
                   className="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-violet-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
                   aria-label="Menu utilisateur"
                 >
-                  {/* Avatar with initials */}
                   <span
                     className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
                     style={{ background: "linear-gradient(135deg, oklch(0.45 0.18 285), oklch(0.65 0.18 340))" }}
@@ -168,7 +231,6 @@ export default function NavBar() {
                   >
                     {initials}
                   </span>
-                  {/* Name (truncated) */}
                   <span
                     className="hidden xl:block text-sm font-medium max-w-[120px] truncate"
                     style={{ color: "oklch(0.25 0.04 260)" }}
@@ -180,7 +242,6 @@ export default function NavBar() {
               </DropdownMenuTrigger>
 
               <DropdownMenuContent align="end" className="w-56 rounded-xl shadow-lg">
-                {/* User info header */}
                 <DropdownMenuLabel className="pb-1">
                   <p className="text-sm font-semibold truncate">{user?.name ?? "Mon compte"}</p>
                   {user?.email && (
@@ -190,7 +251,6 @@ export default function NavBar() {
 
                 <DropdownMenuSeparator />
 
-                {/* Dashboard */}
                 <DropdownMenuItem
                   onClick={() => navigate(dashboardPath)}
                   className="cursor-pointer rounded-lg"
@@ -199,7 +259,6 @@ export default function NavBar() {
                   Tableau de bord
                 </DropdownMenuItem>
 
-                {/* Profile */}
                 <DropdownMenuItem
                   onClick={() => navigate("/profile")}
                   className="cursor-pointer rounded-lg"
@@ -210,7 +269,6 @@ export default function NavBar() {
 
                 <DropdownMenuSeparator />
 
-                {/* Sign Out — visually distinct */}
                 <DropdownMenuItem
                   onClick={handleLogout}
                   disabled={logoutMutation.isPending}
@@ -223,7 +281,6 @@ export default function NavBar() {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            /* ── Guest buttons ──────────────────────────────────────── */
             <div className="flex items-center gap-2">
               <Button
                 variant="ghost"
@@ -258,34 +315,14 @@ export default function NavBar() {
         </button>
       </div>
 
-      {/* ── Progress bar (mobile) — thin strip below main bar ─────── */}
+      {/* ── Mobile progress widget ─────────────────────────────── */}
       {progress.active && (
-        <div className="lg:hidden px-4 pb-2">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold" style={{ color: "oklch(0.45 0.18 285)" }}>
-              {progress.label}
-            </span>
-            <div
-              className="flex-1 h-1.5 rounded-full overflow-hidden"
-              style={{ background: "oklch(0.93 0.03 285)" }}
-              role="progressbar"
-              aria-valuenow={progress.current}
-              aria-valuemin={0}
-              aria-valuemax={progress.total}
-            >
-              <div
-                className="h-full rounded-full transition-all duration-500 ease-out"
-                style={{ width: `${pct}%`, background: progress.color }}
-              />
-            </div>
-            <span className="text-xs tabular-nums" style={{ color: "oklch(0.50 0.04 260)" }}>
-              {progress.current}/{progress.total}
-            </span>
-          </div>
+        <div className="lg:hidden px-4 pb-2" ref={summaryRef}>
+          <ProgressWidget mobile />
         </div>
       )}
 
-      {/* ── Full-width progress strip (desktop, thin line at bottom of nav) ── */}
+      {/* ── Full-width progress strip (desktop bottom line) ──── */}
       {progress.active && (
         <div
           className="hidden lg:block h-0.5 w-full"
@@ -295,6 +332,95 @@ export default function NavBar() {
             className="h-full transition-all duration-500 ease-out"
             style={{ width: `${pct}%`, background: progress.color }}
           />
+        </div>
+      )}
+
+      {/* ── Step Summary Panel (dropdown below NavBar) ────────── */}
+      {summaryOpen && progress.steps.length > 0 && (
+        <div
+          className="absolute left-0 right-0 top-full z-40 bg-white border-b shadow-xl"
+          style={{ borderColor: "oklch(0.92 0.03 260)" }}
+          role="region"
+          aria-label="Résumé des étapes du parcours"
+        >
+          <div className="max-w-3xl mx-auto px-4 py-4">
+            {/* Panel header */}
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-sm font-bold" style={{ color: "oklch(0.25 0.04 260)" }}>
+                {progress.label} — Résumé des étapes
+              </h2>
+              <button
+                onClick={() => setSummaryOpen(false)}
+                className="p-1 rounded-lg hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
+                aria-label="Fermer le résumé"
+              >
+                <X className="w-4 h-4 text-muted-foreground" />
+              </button>
+            </div>
+
+            {/* Step list — responsive grid */}
+            <ol className="grid grid-cols-1 sm:grid-cols-2 gap-2" aria-label="Liste des étapes">
+              {progress.steps.map((step, idx) => (
+                <li
+                  key={step.id}
+                  className={[
+                    "flex items-start gap-2.5 px-3 py-2.5 rounded-xl border transition-colors",
+                    step.status === "current"
+                      ? "border-violet-300 bg-violet-50"
+                      : step.status === "done"
+                        ? "border-emerald-200 bg-emerald-50/60"
+                        : "border-gray-100 bg-gray-50/60",
+                  ].join(" ")}
+                >
+                  <span className="mt-0.5">
+                    <StepIcon status={step.status} />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p
+                      className="text-xs font-semibold leading-tight"
+                      style={{
+                        color: step.status === "upcoming"
+                          ? "oklch(0.60 0.02 260)"
+                          : "oklch(0.25 0.04 260)",
+                      }}
+                    >
+                      {idx + 1}. {step.label}
+                    </p>
+                    {step.description && (
+                      <p
+                        className="text-xs mt-0.5 leading-snug line-clamp-2"
+                        style={{ color: "oklch(0.50 0.03 260)" }}
+                      >
+                        {step.description}
+                      </p>
+                    )}
+                  </div>
+                  {step.status === "current" && (
+                    <ArrowRight
+                      className="w-3.5 h-3.5 mt-0.5 flex-shrink-0"
+                      style={{ color: "oklch(0.45 0.18 285)" }}
+                      aria-hidden="true"
+                    />
+                  )}
+                </li>
+              ))}
+            </ol>
+
+            {/* Progress summary footer */}
+            <div
+              className="mt-3 pt-3 border-t flex items-center justify-between text-xs"
+              style={{ borderColor: "oklch(0.92 0.03 260)" }}
+            >
+              <span style={{ color: "oklch(0.50 0.03 260)" }}>
+                {progress.steps.filter((s) => s.status === "done").length} étape
+                {progress.steps.filter((s) => s.status === "done").length !== 1 ? "s" : ""} complétée
+                {progress.steps.filter((s) => s.status === "done").length !== 1 ? "s" : ""}
+              </span>
+              <span className="font-semibold" style={{ color: "oklch(0.45 0.18 285)" }}>
+                {pct}% du parcours
+              </span>
+            </div>
+          </div>
         </div>
       )}
 
@@ -323,7 +449,6 @@ export default function NavBar() {
           <div className="pt-2 border-t" style={{ borderColor: "oklch(0.92 0.03 260)" }}>
             {isAuthenticated ? (
               <div className="space-y-2">
-                {/* User info strip */}
                 <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-violet-50">
                   <span
                     className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
@@ -352,7 +477,6 @@ export default function NavBar() {
                     <LayoutDashboard className="w-4 h-4 mr-1.5" aria-hidden="true" />
                     Dashboard
                   </Button>
-                  {/* Logout button — red, prominent */}
                   <Button
                     variant="outline"
                     size="sm"

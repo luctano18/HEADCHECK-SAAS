@@ -382,3 +382,14 @@
 - [x] Brancher le contexte dans SevenMirrors.tsx (currentMirror / SEVEN_MIRRORS.length)
 - [x] Réinitialiser le contexte au démontage des pages (useEffect cleanup)
 - [x] 0 erreur TypeScript
+
+## Phase 24: Panneau de résumé des étapes cliquable
+
+- [x] Étendre NavProgressContext avec `steps: StepSummary[]` (id, label, icon, status: done|current|upcoming)
+- [x] Créer le composant `ProgressSummaryPanel` intégré directement dans NavBar
+- [x] Rendre l'indicateur de progression cliquable pour ouvrir/fermer le panneau
+- [x] Afficher chaque étape avec statut visuel (✓ complétée, ● en cours, ○ à venir)
+- [x] Brancher les données d'étapes CheckIn dans CheckIn.tsx (CHECKIN_STEPS → steps)
+- [x] Brancher les données d'étapes Compass dans SevenMirrors.tsx (SEVEN_MIRRORS → steps)
+- [x] Fermer le panneau au clic extérieur ou sur Échap
+- [x] 0 erreur TypeScript
