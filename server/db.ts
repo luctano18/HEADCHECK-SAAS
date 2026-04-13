@@ -763,3 +763,99 @@ export async function getAvailableEmotions(userId: number, days: 30 | 90 = 30) {
     .sort((a, b) => b[1] - a[1])
     .map(([emotion, count]) => ({ emotion, count }));
 }
+
+// ─── Violence Flags ───────────────────────────────────────────────────────────
+
+export async function createViolenceFlag(data: {
+  userId: number;
+  checkInId?: number;
+  triggerText?: string;
+  flagType: "self_harm" | "violence_toward_others" | "crisis";
+  severity: "moderate" | "high" | "critical";
+}) {
+  const db = await getDb();
+  if (!db) return;
+  const { violenceFlags } = await import("../drizzle/schema");
+  await db.insert(violenceFlags).values(data);
+}
+
+export async function getViolenceFlagsByUser(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  const { violenceFlags } = await import("../drizzle/schema");
+  return db
+    .select()
+    .from(violenceFlags)
+    .where(eq(violenceFlags.userId, userId))
+    .orderBy(desc(violenceFlags.createdAt))
+    .limit(50);
+}
+
+export async function getViolenceFlagsByInstitution(institutionId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  const { violenceFlags } = await import("../drizzle/schema");
+  return db
+    .select({
+      id: violenceFlags.id,
+      userId: violenceFlags.userId,
+      flagType: violenceFlags.flagType,
+      severity: violenceFlags.severity,
+      acknowledged: violenceFlags.acknowledged,
+      createdAt: violenceFlags.createdAt,
+    })
+    .from(violenceFlags)
+    .innerJoin(users, eq(violenceFlags.userId, users.id))
+    .where(eq(users.institutionId, institutionId))
+    .orderBy(desc(violenceFlags.createdAt))
+    .limit(50);
+}
+
+export async function acknowledgeViolenceFlag(flagId: number) {
+  const db = await getDb();
+  if (!db) return;
+  const { violenceFlags } = await import("../drizzle/schema");
+  await db.update(violenceFlags).set({ acknowledged: true }).where(eq(violenceFlags.id, flagId));
+}
+
+// ─── Safety Plans ─────────────────────────────────────────────────────────────
+
+export async function getSafetyPlanByUser(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const { safetyPlans } = await import("../drizzle/schema");
+  const results = await db
+    .select()
+    .from(safetyPlans)
+    .where(eq(safetyPlans.userId, userId))
+    .limit(1);
+  return results[0] ?? null;
+}
+
+export async function upsertSafetyPlan(data: {
+  userId: number;
+  trustedContacts?: Array<{ name: string; phone: string; relation: string }>;
+  warningSignals?: string[];
+  copingStrategies?: string[];
+  safeEnvironments?: string[];
+  professionalSupport?: string;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+  const { safetyPlans } = await import("../drizzle/schema");
+  const existing = await getSafetyPlanByUser(data.userId);
+  if (existing) {
+    await db
+      .update(safetyPlans)
+      .set({
+        trustedContacts: data.trustedContacts ?? existing.trustedContacts,
+        warningSignals: data.warningSignals ?? existing.warningSignals,
+        copingStrategies: data.copingStrategies ?? existing.copingStrategies,
+        safeEnvironments: data.safeEnvironments ?? existing.safeEnvironments,
+        professionalSupport: data.professionalSupport ?? existing.professionalSupport,
+      })
+      .where(eq(safetyPlans.userId, data.userId));
+  } else {
+    await db.insert(safetyPlans).values(data);
+  }
+}

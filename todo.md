@@ -416,3 +416,76 @@
 - [x] Protéger les textes dynamiques contre la modification DOM par extensions navigateur (span wrapper)
 - [x] Vérifier les clés de liste dans NavBar, MoodTrendChart, EIQuiz, Dashboard
 - [x] 0 erreur TypeScript
+
+## Phase 28: Module Prévention de la Violence & Alerte de Crise
+
+### Backend
+- [ ] Étendre `detectCrisis()` avec mots-clés de violence envers autrui (menace, agression, arme)
+- [ ] Ajouter table `violence_flags` (userId, checkInId, triggerText, type, severity, acknowledged)
+- [ ] Ajouter table `safety_plans` (userId, trustedContacts JSON, warningSignals, copingStrategies, safeEnvironments)
+- [ ] Ajouter helpers DB: createViolenceFlag, getViolenceFlagsByUser, createSafetyPlan, getSafetyPlan, updateSafetyPlan
+- [ ] Ajouter procédures tRPC: crisis.reportFlag, crisis.getMyFlags, crisis.getSafetyPlan, crisis.saveSafetyPlan
+- [ ] Générer et appliquer la migration SQL
+
+### Frontend — Page CrisisSupport (/crisis-support)
+- [ ] Créer page /crisis-support avec écran d'alerte plein écran (titre "Vous n'êtes pas seul·e")
+- [ ] Boutons d'urgence: Appeler 988, SMS 741741, SOS Amitié 09 72 39 40 50, urgences locales
+- [ ] Carte "Rester avec moi" (reconnexion douce après crise)
+- [ ] Section ressources de crise (liens vérifiés, OMS, UNICEF)
+- [ ] Disclaimer: HeadCheck n'est pas un service de crise
+
+### Frontend — Page ViolencePrevention (/violence-prevention)
+- [ ] Créer page /violence-prevention avec contenu éducatif (signes d'alerte, cycle de la violence, AIEI)
+- [ ] Module "Mon Plan de Sécurité" (contacts de confiance, signaux d'alerte personnels, stratégies d'adaptation)
+- [ ] Ressources AIEI (proverbes africains sur la paix et la résolution de conflits)
+- [ ] Formulaire de plan de sécurité sauvegardé en DB pour utilisateurs connectés
+
+### Intégration
+- [ ] Détecter violence dans CheckIn.tsx et rediriger vers /crisis-support
+- [ ] Ajouter liens "Support de Crise" et "Prévention Violence" dans NavBar
+- [ ] Ajouter onglet "Alertes" dans FacilitatorDashboard (violence_flags + crisis_events)
+- [ ] Ajouter section "Plan de Sécurité" dans Dashboard utilisateur
+- [ ] Ajouter CTA vers /violence-prevention dans Home et LearnEI
+
+### Tests
+- [ ] Tests Vitest pour detectCrisis étendu (violence keywords)
+- [ ] Tests pour safety_plan CRUD
+- [ ] 0 erreur TypeScript
+
+## Phase 16: Violence Prevention & Crisis Alert Modules
+
+### Backend
+- [x] Extend crisis detection: add violence-toward-others keywords (English + French)
+- [x] Add `violence_flags` table (userId, checkInId, flagType, severity, triggerText, acknowledged, institutionId)
+- [x] Add `safety_plans` table (userId, trustedContacts JSON, warningSignals, copingStrategies, safeEnvironments, professionalSupport)
+- [x] tRPC crisis router: detectRealtime, reportFlag, getMyFlags, acknowledgeFlag, getInstitutionFlags, getSafetyPlan, saveSafetyPlan
+- [x] DB helpers: createViolenceFlag, getViolenceFlagsByUser, getViolenceFlagsByInstitution, acknowledgeViolenceFlag, getSafetyPlanByUser, upsertSafetyPlan
+- [x] Vitest tests: violence keyword detection, severity scoring, safety plan CRUD (105 tests passing)
+
+### Frontend — Crisis Support Page (/crisis-support)
+- [x] Full-screen alert with emergency contacts (3114, 988, 741741, 15, 17)
+- [x] Severity-based messaging (self-harm vs. violence-toward-others)
+- [x] Reconnect card with breathing exercise and grounding steps
+- [x] Link to violence prevention plan
+
+### Frontend — Violence Prevention Page (/violence-prevention)
+- [x] Personal safety plan builder (warning signals, coping strategies, safe environments, professional support)
+- [x] Trusted contacts manager (add/remove contacts with name, phone, relation)
+- [x] Educational section: understanding violence signals, de-escalation strategies
+- [x] Save safety plan to backend (authenticated users)
+
+### Frontend — Check-In Flow Integration
+- [x] Extend CRISIS_KEYWORDS with violence-toward-others keywords (English + French)
+- [x] Detect violence type (self vs. toward-others) and set crisisType state
+- [x] Crisis modal: differentiated messaging for self-harm vs. violence-toward-others
+- [x] Add 3114 (France) to emergency contacts in crisis modal
+- [x] Add "Voir les ressources complètes" → /crisis-support button
+- [x] Add "Plan de sécurité" → /violence-prevention button (violence type only)
+- [x] French crisis modal text
+
+### Frontend — Facilitator Dashboard Integration
+- [x] Add "Violence Flags" tab with badge counter (unacknowledged flags)
+- [x] Violence flags list: type badge (self_harm / violence_toward_others / crisis), severity badge, timestamp
+- [x] "Marquer traité" button to acknowledge flags
+- [x] Summary stats cards (Critique / Haute / Modérée counts)
+- [x] Critical alert banner when critical flags exist

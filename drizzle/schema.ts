@@ -267,6 +267,38 @@ export const wellnessResources = mysqlTable("wellness_resources", {
 export type WellnessResource = typeof wellnessResources.$inferSelect;
 export type InsertWellnessResource = typeof wellnessResources.$inferInsert;
 
+// ─── Violence Flags ──────────────────────────────────────────────────────────
+export const violenceFlags = mysqlTable("violence_flags", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  checkInId: int("checkInId"),
+  triggerText: text("triggerText"),
+  flagType: mysqlEnum("flagType", ["self_harm", "violence_toward_others", "crisis"]).notNull(),
+  severity: mysqlEnum("severity", ["moderate", "high", "critical"]).notNull(),
+  acknowledged: boolean("acknowledged").default(false).notNull(),
+  facilitatorNotified: boolean("facilitatorNotified").default(false).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type ViolenceFlag = typeof violenceFlags.$inferSelect;
+export type InsertViolenceFlag = typeof violenceFlags.$inferInsert;
+
+// ─── Safety Plans ─────────────────────────────────────────────────────────────
+export const safetyPlans = mysqlTable("safety_plans", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().unique(),
+  trustedContacts: json("trustedContacts").$type<Array<{ name: string; phone: string; relation: string }>>(),
+  warningSignals: json("warningSignals").$type<string[]>(),
+  copingStrategies: json("copingStrategies").$type<string[]>(),
+  safeEnvironments: json("safeEnvironments").$type<string[]>(),
+  professionalSupport: text("professionalSupport"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type SafetyPlan = typeof safetyPlans.$inferSelect;
+export type InsertSafetyPlan = typeof safetyPlans.$inferInsert;
+
 // ─── EI Quiz Attempts ─────────────────────────────────────────────────────────
 export const quizAttempts = mysqlTable("quiz_attempts", {
   id: int("id").autoincrement().primaryKey(),

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { detectCrisis } from "./routers";
+import { detectCrisis, detectViolence } from "./routers";
 
 describe("detectCrisis", () => {
   it("detects critical crisis keywords", () => {
@@ -69,5 +69,69 @@ describe("auth.logout", () => {
     expect(result).toEqual({ success: true });
     expect(clearedCookies).toHaveLength(1);
     expect(clearedCookies[0]?.name).toBe(COOKIE_NAME);
+  });
+});
+
+describe("detectViolence", () => {
+  it("detects critical violence toward others", () => {
+    const result = detectViolence("I want to kill them all", 5);
+    expect(result.detected).toBe(true);
+    expect(result.severity).toBe("critical");
+    expect(result.type).toBe("violence_toward_others");
+  });
+
+  it("detects high violence toward others", () => {
+    const result = detectViolence("I want to fight and hurt someone", 6);
+    expect(result.detected).toBe(true);
+    expect(result.severity).toBe("high");
+    expect(result.type).toBe("violence_toward_others");
+  });
+
+  it("detects moderate violence with high intensity", () => {
+    const result = detectViolence("I have violent thoughts and can't control my anger", 8);
+    expect(result.detected).toBe(true);
+    expect(result.severity).toBe("moderate");
+    expect(result.type).toBe("violence_toward_others");
+  });
+
+  it("does NOT detect moderate violence with low intensity", () => {
+    const result = detectViolence("I have violent thoughts sometimes", 4);
+    expect(result.detected).toBe(false);
+    expect(result.severity).toBeNull();
+    expect(result.type).toBeNull();
+  });
+
+  it("detects self-harm as type self_harm", () => {
+    const result = detectViolence("I want to end my life and kill myself", 5);
+    expect(result.detected).toBe(true);
+    expect(result.severity).toBe("critical");
+    expect(result.type).toBe("self_harm");
+  });
+
+  it("prioritizes violence_toward_others over self_harm when both present", () => {
+    const result = detectViolence("I want to kill them and hurt myself", 5);
+    expect(result.detected).toBe(true);
+    expect(result.type).toBe("violence_toward_others");
+  });
+
+  it("detects French violence keywords", () => {
+    const result = detectViolence("Je veux les tuer tous", 5);
+    expect(result.detected).toBe(true);
+    expect(result.severity).toBe("critical");
+    expect(result.type).toBe("violence_toward_others");
+  });
+
+  it("does not detect violence for normal text", () => {
+    const result = detectViolence("I had a stressful day at work", 4);
+    expect(result.detected).toBe(false);
+    expect(result.severity).toBeNull();
+    expect(result.type).toBeNull();
+  });
+
+  it("is case-insensitive for violence keywords", () => {
+    const result = detectViolence("I WANT TO KILL HIM", 5);
+    expect(result.detected).toBe(true);
+    expect(result.severity).toBe("critical");
+    expect(result.type).toBe("violence_toward_others");
   });
 });

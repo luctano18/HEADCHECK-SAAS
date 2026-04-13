@@ -22,6 +22,8 @@ import Coaching from "./pages/Coaching";
 import About from "./pages/About";
 import EIQuiz from "./pages/EIQuiz";
 import EIQuizResult from "./pages/EIQuizResult";
+import CrisisSupport from "./pages/CrisisSupport";
+import ViolencePrevention from "./pages/ViolencePrevention";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -56,6 +58,9 @@ function Router() {
       <Route path="/about" component={About} />
       <Route path="/ei-quiz" component={EIQuiz} />
       <Route path="/ei-quiz/result" component={EIQuizResult} />
+      {/* Safety & Crisis routes */}
+      <Route path="/crisis-support" component={CrisisSupport} />
+      <Route path="/violence-prevention" component={ViolencePrevention} />
       {/* Auth routes */}
       <Route path="/login" component={Login} />
       <Route path="/register" component={Register} />

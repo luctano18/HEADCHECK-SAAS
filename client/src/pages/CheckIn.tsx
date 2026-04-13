@@ -17,15 +17,28 @@ import { CHECKIN_STEPS } from "@shared/headcheckData";
 
 // ─── Crisis Detection (client-side real-time) ─────────────────────────────────
 const CRISIS_KEYWORDS = [
+  // Suicidal ideation
   "kill myself", "suicide", "end my life", "want to die", "don't want to live",
   "hurt myself", "self-harm", "cutting myself", "overdose", "jump off",
   "hopeless", "worthless", "can't go on", "no reason to live", "disappear forever",
   "nobody cares", "better off dead", "give up on life", "can't take it anymore",
   "i want to disappear", "i feel unsafe",
+  // French equivalents
+  "me tuer", "je veux mourir", "en finir", "mettre fin à ma vie",
+  "me faire du mal", "me blesser", "sans espoir", "je veux disparaître",
+  // Violence toward others
+  "want to hurt", "want to kill", "going to hurt", "going to attack",
+  "want to harm", "hurt someone", "kill them", "attack them",
+  "faire du mal à", "blesser quelqu'un", "tuer quelqu'un",
 ];
 function detectCrisis(text: string): boolean {
   const lower = text.toLowerCase();
   return CRISIS_KEYWORDS.some((kw) => lower.includes(kw));
+}
+function detectViolenceTowardOthers(text: string): boolean {
+  const lower = text.toLowerCase();
+  const violenceKws = ["want to hurt", "want to kill", "going to hurt", "going to attack", "want to harm", "hurt someone", "kill them", "attack them", "faire du mal à", "blesser quelqu'un", "tuer quelqu'un"];
+  return violenceKws.some((kw) => lower.includes(kw));
 }
 
 type StepAnswer = { selected: string[]; other?: string; journal?: string };
@@ -41,6 +54,7 @@ export default function CheckIn() {
   const [otherText, setOtherText] = useState("");
   const [journalText, setJournalText] = useState("");
   const [showCrisisModal, setShowCrisisModal] = useState(false);
+  const [crisisType, setCrisisType] = useState<"self" | "violence">("self");
   const [showNotYetMessage, setShowNotYetMessage] = useState(false);
 
   const createCheckIn = trpc.checkIns.create.useMutation();
@@ -53,6 +67,7 @@ export default function CheckIn() {
   // Real-time crisis detection on journal text
   useEffect(() => {
     if (journalText.length > 10 && detectCrisis(journalText)) {
+      setCrisisType(detectViolenceTowardOthers(journalText) ? "violence" : "self");
       setShowCrisisModal(true);
     }
   }, [journalText]);
@@ -195,37 +210,67 @@ export default function CheckIn() {
 
   // ─── Crisis Modal ──────────────────────────────────────────────────────────
   if (showCrisisModal) {
+    const isViolence = crisisType === "violence";
     return (
-      <div className="min-h-screen flex items-center justify-center p-4" style={{ background: "linear-gradient(135deg, #fff1f2 0%, #fff 50%, #fff8f0 100%)" }}>
+      <div className="min-h-screen flex items-center justify-center p-4" style={{ background: isViolence ? "linear-gradient(135deg, #fff8f0 0%, #fff 50%, #fff1f2 100%)" : "linear-gradient(135deg, #fff1f2 0%, #fff 50%, #fff8f0 100%)" }}>
         <div className="max-w-md w-full bg-white rounded-3xl shadow-2xl p-8 text-center border border-red-100">
-          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Heart className="w-8 h-8 text-red-500" />
+          <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 ${isViolence ? "bg-orange-100" : "bg-red-100"}`}>
+            {isViolence ? <AlertTriangle className="w-8 h-8 text-orange-500" /> : <Heart className="w-8 h-8 text-red-500" />}
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-3">You are not alone</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-3">
+            {isViolence ? "Pause — parlons de ça" : "Tu n'es pas seul(e)"}
+          </h1>
           <p className="text-gray-600 mb-6 leading-relaxed">
-            Your safety matters. You deserve support right now. Please reach out — help is available.
+            {isViolence
+              ? "Ces pensées sont un signal que quelque chose doit changer. Parler à quelqu'un peut aider — avant que ça aille plus loin."
+              : "Ta sécurité compte. Tu mérites du soutien maintenant. De l'aide est disponible."}
           </p>
           <div className="space-y-3 mb-6">
-            <a href="tel:988" className="flex items-center gap-3 p-4 bg-red-50 rounded-2xl hover:bg-red-100 transition-colors">
+            <a href="tel:3114" className="flex items-center gap-3 p-4 bg-red-50 rounded-2xl hover:bg-red-100 transition-colors">
               <Phone className="w-5 h-5 text-red-500" />
               <div className="text-left">
-                <div className="font-semibold text-gray-900">Call or Text 988</div>
-                <div className="text-sm text-gray-500">Suicide & Crisis Lifeline — 24/7, free</div>
+                <div className="font-semibold text-gray-900">3114 — Numéro National Prévention Suicide</div>
+                <div className="text-sm text-gray-500">France · 24h/24, 7j/7, gratuit</div>
               </div>
             </a>
-            <a href="sms:741741?body=HOME" className="flex items-center gap-3 p-4 bg-orange-50 rounded-2xl hover:bg-orange-100 transition-colors">
-              <AlertTriangle className="w-5 h-5 text-orange-500" />
+            <a href="tel:988" className="flex items-center gap-3 p-4 bg-orange-50 rounded-2xl hover:bg-orange-100 transition-colors">
+              <Phone className="w-5 h-5 text-orange-500" />
+              <div className="text-left">
+                <div className="font-semibold text-gray-900">988 — Suicide & Crisis Lifeline</div>
+                <div className="text-sm text-gray-500">USA · 24/7, free</div>
+              </div>
+            </a>
+            <a href="sms:741741?body=HOME" className="flex items-center gap-3 p-4 bg-purple-50 rounded-2xl hover:bg-purple-100 transition-colors">
+              <AlertTriangle className="w-5 h-5 text-purple-500" />
               <div className="text-left">
                 <div className="font-semibold text-gray-900">Text HOME to 741741</div>
                 <div className="text-sm text-gray-500">Crisis Text Line — Free, 24/7</div>
               </div>
             </a>
           </div>
-          <Button variant="outline" className="w-full rounded-2xl" onClick={() => setShowCrisisModal(false)}>
-            Stay with me — I'm okay for now
+          <div className="flex gap-2 mb-4">
+            <Button
+              variant="outline"
+              className="flex-1 rounded-2xl text-sm"
+              onClick={() => { setShowCrisisModal(false); navigate("/crisis-support"); }}
+            >
+              Voir les ressources complètes
+            </Button>
+            {isViolence && (
+              <Button
+                variant="outline"
+                className="flex-1 rounded-2xl text-sm"
+                onClick={() => { setShowCrisisModal(false); navigate("/violence-prevention"); }}
+              >
+                Plan de sécurité
+              </Button>
+            )}
+          </div>
+          <Button variant="ghost" className="w-full rounded-2xl text-sm text-gray-500" onClick={() => setShowCrisisModal(false)}>
+            Je vais bien pour l'instant — continuer
           </Button>
           <p className="text-xs text-gray-400 mt-4">
-            HeadCheck is not a crisis service. If you are in immediate danger, please call 911.
+            HeadCheck n'est pas un service de crise. En cas de danger immédiat, appelez le 15 (SAMU) ou le 17 (Police).
           </p>
         </div>
       </div>

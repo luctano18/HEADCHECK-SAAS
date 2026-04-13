@@ -45,6 +45,12 @@ import {
   getMoodTrendByUser,
   getMoodStatsByUser,
   getAvailableEmotions,
+  createViolenceFlag,
+  getViolenceFlagsByUser,
+  getViolenceFlagsByInstitution,
+  acknowledgeViolenceFlag,
+  getSafetyPlanByUser,
+  upsertSafetyPlan,
 } from "./db";
 import {
   EI_QUIZ_QUESTIONS,
@@ -53,18 +59,48 @@ import {
 } from "../shared/eiQuizData";
 
 // ─── Crisis Detection ─────────────────────────────────────────────────────────
+// Self-harm / suicidal ideation keywords
 const CRISIS_KEYWORDS_CRITICAL = [
   "kill myself", "suicide", "end my life", "want to die", "don't want to live",
   "hurt myself", "self-harm", "cutting myself", "overdose", "jump off",
+  "me suicider", "me tuer", "en finir", "mettre fin à ma vie",
 ];
 const CRISIS_KEYWORDS_HIGH = [
   "hopeless", "worthless", "can't go on", "no reason to live", "disappear",
   "nobody cares", "better off dead", "give up on life", "can't take it anymore",
+  "sans espoir", "inutile", "plus de raison", "tout abandonner",
 ];
 const CRISIS_KEYWORDS_MODERATE = [
   "depressed", "anxious", "overwhelmed", "can't cope", "breaking down",
   "falling apart", "losing control", "panic", "terrified",
+  "déprimé", "débordé", "plus capable", "effondré",
 ];
+
+// Violence toward others keywords
+export const VIOLENCE_KEYWORDS_CRITICAL = [
+  "kill them", "kill him", "kill her", "murder", "want to hurt", "going to hurt",
+  "attack them", "weapon", "gun", "knife", "stab",
+  "les tuer", "le tuer", "la tuer", "les blesser", "arme", "couteau", "pistolet",
+  "frapper fort", "faire du mal à",
+];
+export const VIOLENCE_KEYWORDS_HIGH = [
+  "want to fight", "going to fight", "hurt someone", "make them pay",
+  "destroy them", "beat them up", "threaten", "revenge",
+  "se battre", "blesser quelqu'un", "leur faire payer", "vengeance", "menacer",
+  "les frapper",
+];
+export const VIOLENCE_KEYWORDS_MODERATE = [
+  "so angry at", "rage toward", "violent thoughts", "can't control my anger",
+  "want to scream at", "furious at",
+  "tellement en colère contre", "pensées violentes", "rage envers",
+  "incontrôlable", "furieux contre",
+];
+
+export type DetectionResult = {
+  detected: boolean;
+  severity: "moderate" | "high" | "critical" | null;
+  type: "self_harm" | "violence_toward_others" | null;
+};
 
 export function detectCrisis(text: string, intensity: number): { detected: boolean; severity: "moderate" | "high" | "critical" | null } {
   const lower = text.toLowerCase();
@@ -72,6 +108,18 @@ export function detectCrisis(text: string, intensity: number): { detected: boole
   if (CRISIS_KEYWORDS_HIGH.some((k) => lower.includes(k)) || intensity >= 9) return { detected: true, severity: "high" };
   if (CRISIS_KEYWORDS_MODERATE.some((k) => lower.includes(k)) && intensity >= 7) return { detected: true, severity: "moderate" };
   return { detected: false, severity: null };
+}
+
+export function detectViolence(text: string, intensity: number): DetectionResult {
+  const lower = text.toLowerCase();
+  // Check violence toward others first
+  if (VIOLENCE_KEYWORDS_CRITICAL.some((k) => lower.includes(k))) return { detected: true, severity: "critical", type: "violence_toward_others" };
+  if (VIOLENCE_KEYWORDS_HIGH.some((k) => lower.includes(k))) return { detected: true, severity: "high", type: "violence_toward_others" };
+  if (VIOLENCE_KEYWORDS_MODERATE.some((k) => lower.includes(k)) && intensity >= 7) return { detected: true, severity: "moderate", type: "violence_toward_others" };
+  // Check self-harm
+  const selfHarm = detectCrisis(text, intensity);
+  if (selfHarm.detected) return { detected: true, severity: selfHarm.severity, type: "self_harm" };
+  return { detected: false, severity: null, type: null };
 }
 
 // ─── AI Response Engine ───────────────────────────────────────────────────────
@@ -558,7 +606,79 @@ export const appRouter = router({
     }),
   }),
 
-  // ─── Coaching ─────────────────────────────────────────────────────────────────────────────────
+  // ─── Crisis & Violence Prevention ─────────────────────────────────────────────────────────────────────────────────────────
+  crisis: router({
+    // Real-time combined detection (crisis + violence)
+    detectRealtime: publicProcedure
+      .input(z.object({ text: z.string(), intensity: z.number() }))
+      .query(({ input }) => {
+        return detectViolence(input.text, input.intensity);
+      }),
+
+    // Report a violence/crisis flag from a check-in
+    reportFlag: protectedProcedure
+      .input(z.object({
+        checkInId: z.number().optional(),
+        triggerText: z.string().optional(),
+        flagType: z.enum(["self_harm", "violence_toward_others", "crisis"]),
+        severity: z.enum(["moderate", "high", "critical"]),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        await createViolenceFlag({
+          userId: ctx.user.id,
+          checkInId: input.checkInId,
+          triggerText: input.triggerText,
+          flagType: input.flagType,
+          severity: input.severity,
+        });
+        return { success: true };
+      }),
+
+    // Get my violence/crisis flags
+    getMyFlags: protectedProcedure.query(async ({ ctx }) => {
+      return getViolenceFlagsByUser(ctx.user.id);
+    }),
+
+    // Acknowledge a flag (facilitator)
+    acknowledgeFlag: protectedProcedure
+      .input(z.object({ flagId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        if (!ctx.user.institutionId) throw new TRPCError({ code: "FORBIDDEN" });
+        await acknowledgeViolenceFlag(input.flagId);
+        return { success: true };
+      }),
+
+    // Get institution-wide violence flags (facilitator)
+    getInstitutionFlags: protectedProcedure.query(async ({ ctx }) => {
+      if (!ctx.user.institutionId) throw new TRPCError({ code: "FORBIDDEN" });
+      return getViolenceFlagsByInstitution(ctx.user.institutionId);
+    }),
+
+    // Get my safety plan
+    getSafetyPlan: protectedProcedure.query(async ({ ctx }) => {
+      return getSafetyPlanByUser(ctx.user.id);
+    }),
+
+    // Save / update my safety plan
+    saveSafetyPlan: protectedProcedure
+      .input(z.object({
+        trustedContacts: z.array(z.object({
+          name: z.string(),
+          phone: z.string(),
+          relation: z.string(),
+        })).optional(),
+        warningSignals: z.array(z.string()).optional(),
+        copingStrategies: z.array(z.string()).optional(),
+        safeEnvironments: z.array(z.string()).optional(),
+        professionalSupport: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        await upsertSafetyPlan({ userId: ctx.user.id, ...input });
+        return { success: true };
+      }),
+  }),
+
+  // ─── Coaching ─────────────────────────────────────────────────────────────────────────────────────────
   coaching: router({
     book: protectedProcedure
       .input(z.object({
