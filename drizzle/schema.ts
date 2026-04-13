@@ -21,6 +21,13 @@ export const users = mysqlTable("users", {
   institutionId: int("institutionId"),
   groupId: int("groupId"),
   onboardingCompleted: boolean("onboardingCompleted").default(false).notNull(),
+  // Extended profile fields
+  bio: text("bio"),
+  phone: varchar("phone", { length: 32 }),
+  timezone: varchar("timezone", { length: 64 }),
+  language: varchar("language", { length: 8 }).default("en"),
+  avatarUrl: text("avatarUrl"),
+  notificationsEnabled: boolean("notificationsEnabled").default(true).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),

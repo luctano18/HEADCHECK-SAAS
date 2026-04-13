@@ -504,3 +504,11 @@
 - [x] Add quick-switch button on /dashboard for admin/superadmin: "Switch to Facilitator View" → /facilitator
 - [x] Add quick-switch button on /facilitator for admin/superadmin: "Switch to My Dashboard" → /dashboard
 - [x] Add toggle link in NavBar dropdown for admin/superadmin users
+
+## Phase 20: My Profile Update
+
+- [x] Extend DB schema: add bio, phone, timezone, language, avatarUrl, notificationsEnabled fields to users table
+- [x] Add tRPC procedures: profile.getMe, profile.update, profile.getStats
+- [x] Create /profile page: avatar, personal info form, stats summary, preferences, account info
+- [x] Add profile stats: total check-ins, current streak, best streak, achievements
+- [x] Register /profile route in App.tsx

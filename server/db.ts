@@ -944,3 +944,37 @@ export async function upsertSafetyPlan(data: {
     await db.insert(safetyPlans).values(data);
   }
 }
+
+// ─── User Profile ─────────────────────────────────────────────────────────────
+export async function updateUserProfile(userId: number, data: {
+  name?: string;
+  bio?: string;
+  phone?: string;
+  timezone?: string;
+  language?: string;
+  avatarUrl?: string;
+  notificationsEnabled?: boolean;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+  await db.update(users).set(data).where(eq(users.id, userId));
+}
+
+export async function getUserProfileStats(userId: number) {
+  const db = await getDb();
+  if (!db) return { totalCheckIns: 0, currentStreak: 0, longestStreak: 0, lastCheckInDate: null, achievements: [] };
+  const achievements = await db
+    .select()
+    .from(userAchievements)
+    .where(eq(userAchievements.userId, userId))
+    .orderBy(desc(userAchievements.earnedAt))
+    .limit(10);
+  const [streak] = await db.select().from(userStreaks).where(eq(userStreaks.userId, userId)).limit(1);
+  return {
+    totalCheckIns: streak?.totalCheckIns ?? 0,
+    currentStreak: streak?.currentStreak ?? 0,
+    longestStreak: streak?.longestStreak ?? 0,
+    lastCheckInDate: streak?.lastCheckInDate ?? null,
+    achievements,
+  };
+}

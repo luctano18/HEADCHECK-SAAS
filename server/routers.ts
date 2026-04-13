@@ -778,5 +778,32 @@ export const appRouter = router({
       return getLatestQuizAttempt(ctx.user.id);
     }),
   }),
+
+  // ─── Profile ──────────────────────────────────────────────────────────────
+  profile: router({
+    getMe: protectedProcedure.query(async ({ ctx }) => {
+      const { getUserByOpenId } = await import("./db");
+      return getUserByOpenId(ctx.user.openId);
+    }),
+    update: protectedProcedure
+      .input(z.object({
+        name: z.string().min(1).max(128).optional(),
+        bio: z.string().max(500).optional(),
+        phone: z.string().max(32).optional(),
+        timezone: z.string().max(64).optional(),
+        language: z.string().max(8).optional(),
+        avatarUrl: z.string().url().optional().or(z.literal("")),
+        notificationsEnabled: z.boolean().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { updateUserProfile } = await import("./db");
+        await updateUserProfile(ctx.user.id, input);
+        return { success: true };
+      }),
+    getStats: protectedProcedure.query(async ({ ctx }) => {
+      const { getUserProfileStats } = await import("./db");
+      return getUserProfileStats(ctx.user.id);
+    }),
+  }),
 });
 export type AppRouter = typeof appRouter;
