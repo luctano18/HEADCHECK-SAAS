@@ -444,6 +444,82 @@ export async function getCohortEngagement(institutionId: number) {
   };
 }
 
+// ─── Global Analytics (superadmin — all institutions) ───────────────────────
+export async function getAllCheckInTrends(days = 30) {
+  const db = await getDb();
+  if (!db) return [];
+  const since = new Date();
+  since.setDate(since.getDate() - days);
+  return db
+    .select({
+      emotion: checkIns.emotion,
+      context: checkIns.context,
+      intensity: checkIns.intensity,
+      createdAt: checkIns.createdAt,
+    })
+    .from(checkIns)
+    .where(gte(checkIns.createdAt, since))
+    .orderBy(desc(checkIns.createdAt))
+    .limit(500);
+}
+
+export async function getAllEngagement() {
+  const db = await getDb();
+  if (!db) return { totalStudents: 0, activeStudents: 0, totalCheckIns: 0 };
+  const since = new Date();
+  since.setDate(since.getDate() - 7);
+  const [totalStudentsResult, activeStudentsResult, totalCheckInsResult] = await Promise.all([
+    db.select({ count: sql<number>`count(*)` }).from(users).where(eq(users.role, "student")),
+    db.select({ count: sql<number>`count(distinct ${checkIns.userId})` }).from(checkIns).where(gte(checkIns.createdAt, since)),
+    db.select({ count: sql<number>`count(*)` }).from(checkIns),
+  ]);
+  return {
+    totalStudents: Number(totalStudentsResult[0]?.count ?? 0),
+    activeStudents: Number(activeStudentsResult[0]?.count ?? 0),
+    totalCheckIns: Number(totalCheckInsResult[0]?.count ?? 0),
+  };
+}
+
+export async function getAllCrisisEvents() {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select({
+      id: crisisEvents.id,
+      userId: crisisEvents.userId,
+      severity: crisisEvents.severity,
+      acknowledged: crisisEvents.acknowledged,
+      createdAt: crisisEvents.createdAt,
+    })
+    .from(crisisEvents)
+    .orderBy(desc(crisisEvents.createdAt))
+    .limit(50);
+}
+
+export async function getAllViolenceFlags() {
+  const db = await getDb();
+  if (!db) return [];
+  const { violenceFlags } = await import("../drizzle/schema");
+  return db
+    .select({
+      id: violenceFlags.id,
+      userId: violenceFlags.userId,
+      flagType: violenceFlags.flagType,
+      severity: violenceFlags.severity,
+      acknowledged: violenceFlags.acknowledged,
+      createdAt: violenceFlags.createdAt,
+    })
+    .from(violenceFlags)
+    .orderBy(desc(violenceFlags.createdAt))
+    .limit(50);
+}
+
+export async function getAllGroups() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(groups).orderBy(desc(groups.id));
+}
+
 // ─── Coaching Sessions ────────────────────────────────────────────────────────
 export async function createCoachingSession(data: {
   userId: number;

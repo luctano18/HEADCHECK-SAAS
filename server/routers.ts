@@ -51,6 +51,11 @@ import {
   acknowledgeViolenceFlag,
   getSafetyPlanByUser,
   upsertSafetyPlan,
+  getAllCheckInTrends,
+  getAllEngagement,
+  getAllCrisisEvents,
+  getAllViolenceFlags,
+  getAllGroups,
 } from "./db";
 import {
   EI_QUIZ_QUESTIONS,
@@ -360,7 +365,11 @@ export const appRouter = router({
         return { success: true };
       }),
     getGroups: protectedProcedure.query(async ({ ctx }) => {
-      if (!ctx.user.institutionId) return [];
+      if (!ctx.user.institutionId) {
+        // Superadmin sees all groups; other users without institution see empty list
+        if (ctx.user.role === "superadmin") return getAllGroups();
+        return [];
+      }
       return getGroupsByInstitution(ctx.user.institutionId);
     }),
     inviteStudent: protectedProcedure
@@ -593,16 +602,25 @@ export const appRouter = router({
     getCohortTrends: protectedProcedure
       .input(z.object({ days: z.number().optional() }))
       .query(async ({ ctx, input }) => {
-        if (!ctx.user.institutionId) throw new TRPCError({ code: "FORBIDDEN" });
-        return getCohortCheckInTrends(ctx.user.institutionId, input.days ?? 30);
+        const isSuperadmin = ctx.user.role === "superadmin";
+        if (!ctx.user.institutionId && !isSuperadmin) throw new TRPCError({ code: "FORBIDDEN" });
+        return isSuperadmin && !ctx.user.institutionId
+          ? getAllCheckInTrends(input.days ?? 30)
+          : getCohortCheckInTrends(ctx.user.institutionId!, input.days ?? 30);
       }),
     getEngagement: protectedProcedure.query(async ({ ctx }) => {
-      if (!ctx.user.institutionId) throw new TRPCError({ code: "FORBIDDEN" });
-      return getCohortEngagement(ctx.user.institutionId);
+      const isSuperadmin = ctx.user.role === "superadmin";
+      if (!ctx.user.institutionId && !isSuperadmin) throw new TRPCError({ code: "FORBIDDEN" });
+      return isSuperadmin && !ctx.user.institutionId
+        ? getAllEngagement()
+        : getCohortEngagement(ctx.user.institutionId!);
     }),
     getCrisisAlerts: protectedProcedure.query(async ({ ctx }) => {
-      if (!ctx.user.institutionId) throw new TRPCError({ code: "FORBIDDEN" });
-      return getCrisisEventsByInstitution(ctx.user.institutionId);
+      const isSuperadmin = ctx.user.role === "superadmin";
+      if (!ctx.user.institutionId && !isSuperadmin) throw new TRPCError({ code: "FORBIDDEN" });
+      return isSuperadmin && !ctx.user.institutionId
+        ? getAllCrisisEvents()
+        : getCrisisEventsByInstitution(ctx.user.institutionId!);
     }),
   }),
 
@@ -639,19 +657,23 @@ export const appRouter = router({
       return getViolenceFlagsByUser(ctx.user.id);
     }),
 
-    // Acknowledge a flag (facilitator)
+    // Acknowledge a flag (facilitator or superadmin)
     acknowledgeFlag: protectedProcedure
       .input(z.object({ flagId: z.number() }))
       .mutation(async ({ ctx, input }) => {
-        if (!ctx.user.institutionId) throw new TRPCError({ code: "FORBIDDEN" });
+        const isSuperadmin = ctx.user.role === "superadmin";
+        if (!ctx.user.institutionId && !isSuperadmin) throw new TRPCError({ code: "FORBIDDEN" });
         await acknowledgeViolenceFlag(input.flagId);
         return { success: true };
       }),
 
-    // Get institution-wide violence flags (facilitator)
+    // Get institution-wide violence flags (facilitator or superadmin)
     getInstitutionFlags: protectedProcedure.query(async ({ ctx }) => {
-      if (!ctx.user.institutionId) throw new TRPCError({ code: "FORBIDDEN" });
-      return getViolenceFlagsByInstitution(ctx.user.institutionId);
+      const isSuperadmin = ctx.user.role === "superadmin";
+      if (!ctx.user.institutionId && !isSuperadmin) throw new TRPCError({ code: "FORBIDDEN" });
+      return isSuperadmin && !ctx.user.institutionId
+        ? getAllViolenceFlags()
+        : getViolenceFlagsByInstitution(ctx.user.institutionId!);
     }),
 
     // Get my safety plan

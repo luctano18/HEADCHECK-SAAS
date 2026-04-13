@@ -489,3 +489,7 @@
 - [x] "Marquer traité" button to acknowledge flags
 - [x] Summary stats cards (Critique / Haute / Modérée counts)
 - [x] Critical alert banner when critical flags exist
+
+## Phase 17: Bug Fixes
+
+- [x] Fix FORBIDDEN error on /facilitator for superadmin (institutionId: null): relax institutionId guard in facilitator and crisis routers to allow superadmin access with global or empty data

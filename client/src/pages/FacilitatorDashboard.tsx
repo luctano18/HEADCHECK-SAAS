@@ -41,6 +41,9 @@ export default function FacilitatorDashboard() {
   const [inviteLink, setInviteLink] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"overview" | "alerts" | "violence" | "groups">("overview");
 
+  const isSuperadmin = user?.role === "superadmin";
+  const hasInstitution = !!user?.institutionId;
+
   const { data: trends, isLoading: trendsLoading } = trpc.facilitator.getCohortTrends.useQuery(
     { days: 30 }, { enabled: isAuthenticated }
   );
@@ -136,7 +139,7 @@ export default function FacilitatorDashboard() {
               <span className="font-semibold text-sidebar-foreground">HeadCheck <span className="text-sidebar-primary">AI</span></span>
             </div>
             <Badge className="mt-2 text-xs bg-sidebar-accent text-sidebar-accent-foreground">
-              <Building2 className="w-3 h-3 mr-1" /> Facilitator View
+              <Building2 className="w-3 h-3 mr-1" /> {isSuperadmin ? "Super Admin" : "Facilitator View"}
             </Badge>
           </div>
           <nav className="flex-1 p-4 space-y-1">
@@ -175,7 +178,7 @@ export default function FacilitatorDashboard() {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-medium text-sidebar-foreground truncate">{user?.name ?? "Facilitator"}</p>
-                <p className="text-xs text-sidebar-foreground/50">Facilitator</p>
+                <p className="text-xs text-sidebar-foreground/50">{isSuperadmin ? "Super Admin" : "Facilitator"}</p>
               </div>
             </div>
             <button onClick={logout} className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/50 transition-colors">
@@ -444,9 +447,10 @@ export default function FacilitatorDashboard() {
                       className="h-10"
                     />
                     <Button
-                      disabled={!groupName.trim() || createGroupMutation.isPending}
+                      disabled={!groupName.trim() || createGroupMutation.isPending || (isSuperadmin && !hasInstitution)}
                       onClick={() => createGroupMutation.mutate({ name: groupName.trim() })}
                       className="flex-shrink-0"
+                      title={isSuperadmin && !hasInstitution ? "Superadmin must be linked to an institution to create groups" : undefined}
                     >
                       {createGroupMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Create"}
                     </Button>
@@ -493,9 +497,10 @@ export default function FacilitatorDashboard() {
                           className="h-10"
                         />
                         <Button
-                          disabled={!inviteEmail.trim() || inviteMutation.isPending}
+                          disabled={!inviteEmail.trim() || inviteMutation.isPending || (isSuperadmin && !hasInstitution)}
                           onClick={() => inviteMutation.mutate({ email: inviteEmail.trim() })}
                           className="flex-shrink-0"
+                          title={isSuperadmin && !hasInstitution ? "Superadmin must be linked to an institution to invite students" : undefined}
                         >
                           {inviteMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : "Generate Link"}
                         </Button>
