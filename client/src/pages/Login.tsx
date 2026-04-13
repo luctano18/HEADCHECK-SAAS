@@ -11,6 +11,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Eye, EyeOff, Mail, Lock, AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
 import { Link } from "wouter";
+import SocialAuthButtons from "@/components/SocialAuthButtons";
 
 export default function Login() {
   const { isAuthenticated, loading } = useAuth();
@@ -164,6 +165,16 @@ export default function Login() {
                     ) : "Sign In"}
                   </Button>
 
+                  {/* Divider */}
+                  <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                    <div className="flex-1 h-px bg-border" />
+                    <span>or continue with</span>
+                    <div className="flex-1 h-px bg-border" />
+                  </div>
+
+                  {/* Social buttons */}
+                  <SocialAuthButtons action="Sign in" />
+
                   <p className="text-center text-sm text-muted-foreground">
                     Don't have an account?{" "}
                     <Link href="/register" className="text-violet-600 font-medium hover:underline">
@@ -176,6 +187,15 @@ export default function Login() {
               {/* ── OAuth Tab ── */}
               <TabsContent value="oauth">
                 <div className="space-y-4 py-2">
+                  {/* Social providers */}
+                  <SocialAuthButtons action="Sign in" />
+
+                  <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                    <div className="flex-1 h-px bg-border" />
+                    <span>or</span>
+                    <div className="flex-1 h-px bg-border" />
+                  </div>
+
                   <p className="text-sm text-muted-foreground text-center leading-relaxed">
                     Sign in with your Manus account using OAuth2. This is the recommended method for users who registered via the Manus platform.
                   </p>

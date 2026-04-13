@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Eye, EyeOff, Mail, Lock, User, AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
+import SocialAuthButtons from "@/components/SocialAuthButtons";
 
 // ── Password strength ─────────────────────────────────────────────────────────
 function getPasswordStrength(password: string): { score: number; label: string; color: string } {
@@ -269,6 +270,15 @@ export default function Register() {
                   <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Creating account…</>
                 ) : "Create Free Account"}
               </Button>
+
+              <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                <div className="flex-1 h-px bg-border" />
+                <span>or sign up with</span>
+                <div className="flex-1 h-px bg-border" />
+              </div>
+
+              {/* Social sign-up buttons */}
+              <SocialAuthButtons action="Sign up" />
 
               <div className="flex items-center gap-3 text-xs text-muted-foreground">
                 <div className="flex-1 h-px bg-border" />

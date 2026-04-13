@@ -297,3 +297,36 @@
 - [x] Hash passwords with bcrypt (cost factor 12)
 - [x] JWT tokens expire in 1 year (session cookie, httpOnly)
 - [x] Password reset tokens expire in 1 hour, single-use
+
+## Phase 18: Social Login (Google OAuth2 + GitHub OAuth2)
+
+### Backend
+- [x] Add GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET secrets
+- [x] Create server/_core/socialAuth.ts with Google and GitHub OAuth2 flows
+- [x] Add GET /api/auth/google → redirect to Google authorization URL
+- [x] Add GET /api/auth/google/callback → exchange code, fetch profile, upsert user, issue JWT session
+- [x] Add GET /api/auth/github → redirect to GitHub authorization URL
+- [x] Add GET /api/auth/github/callback → exchange code, fetch profile, upsert user, issue JWT session
+- [x] Register social auth routes in server/_core/index.ts
+- [x] Social auth URLs are direct /api/auth/{provider} routes (no tRPC needed)
+
+### Frontend
+- [x] Add Google sign-in button to /login page (with Google logo)
+- [x] Add GitHub sign-in button to /login page (with GitHub logo)
+- [x] Add Google sign-in button to /register page
+- [x] Add GitHub sign-in button to /register page
+- [x] Handle OAuth callback success/error redirect (redirect to /dashboard or /login?error=...)
+- [x] Show loading state during social auth redirect (spinner on button click)
+
+### Security & UX
+- [x] Use state parameter (CSRF protection) stored in httpOnly cookie, verified on callback
+- [x] Link social accounts to existing email accounts (same email → reuse existing openId)
+- [x] Store loginMethod as 'google' or 'github' in users table via upsertUser
+- [x] Write Vitest tests for state generation, URL construction, profile mapping (22 tests)
+
+## Phase 18b: Retrait de GitHub OAuth2
+
+- [x] Supprimer les routes GitHub (/api/auth/github et /api/auth/github/callback) de socialAuth.ts
+- [x] Supprimer le bouton GitHub de SocialAuthButtons.tsx
+- [x] Supprimer les tests GitHub de socialAuth.test.ts
+- [x] Mettre à jour todo.md Phase 18 pour refléter le retrait de GitHub
