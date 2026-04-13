@@ -43,6 +43,13 @@
       "when": 1775931538638,
       "tag": "0005_cold_leader",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1776078114384,
+      "tag": "0006_careful_paper_doll",
+      "breakpoints": true
     }
   ]
 }

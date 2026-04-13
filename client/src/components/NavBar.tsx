@@ -83,13 +83,24 @@ export default function NavBar() {
               </Button>
             </>
           ) : (
-            <a
-              href={getLoginUrl()}
-              className="px-4 py-2 rounded-lg text-sm font-semibold text-white"
-              style={{ background: "linear-gradient(135deg, oklch(0.45 0.18 285), oklch(0.65 0.18 340))" }}
-            >
-              Sign In
-            </a>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="rounded-lg font-medium"
+                onClick={() => navigate("/login")}
+              >
+                Sign In
+              </Button>
+              <Button
+                size="sm"
+                className="rounded-lg font-semibold text-white"
+                style={{ background: "linear-gradient(135deg, oklch(0.45 0.18 285), oklch(0.65 0.18 340))" }}
+                onClick={() => navigate("/register")}
+              >
+                Get Started Free
+              </Button>
+            </div>
           )}
         </div>
 
@@ -130,13 +141,24 @@ export default function NavBar() {
                 </Button>
               </div>
             ) : (
-              <a
-                href={getLoginUrl()}
-                className="block w-full text-center px-4 py-2.5 rounded-xl text-sm font-semibold text-white"
-                style={{ background: "linear-gradient(135deg, oklch(0.45 0.18 285), oklch(0.65 0.18 340))" }}
-              >
-                Sign In
-              </a>
+              <div className="flex flex-col gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full rounded-xl"
+                  onClick={() => { navigate("/login"); setMobileOpen(false); }}
+                >
+                  Sign In
+                </Button>
+                <Button
+                  size="sm"
+                  className="w-full rounded-xl font-semibold text-white"
+                  style={{ background: "linear-gradient(135deg, oklch(0.45 0.18 285), oklch(0.65 0.18 340))" }}
+                  onClick={() => { navigate("/register"); setMobileOpen(false); }}
+                >
+                  Get Started Free
+                </Button>
+              </div>
             )}
           </div>
         </div>

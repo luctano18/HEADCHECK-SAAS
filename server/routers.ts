@@ -1,4 +1,5 @@
 import { TRPCError } from "@trpc/server";
+import { authEmailRouter } from "./routers/authEmail";
 import { nanoid } from "nanoid";
 import { z } from "zod";
 import { COOKIE_NAME } from "@shared/const";
@@ -249,6 +250,15 @@ export const appRouter = router({
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
       return { success: true } as const;
     }),
+    // Email/password auth procedures
+    register: authEmailRouter.register,
+    loginEmail: authEmailRouter.loginEmail,
+    forgotPassword: authEmailRouter.forgotPassword,
+    resetPassword: authEmailRouter.resetPassword,
+    changePassword: authEmailRouter.changePassword,
+    verifyEmail: authEmailRouter.verifyEmail,
+    checkEmailAvailable: authEmailRouter.checkEmailAvailable,
+    getEmailVerifiedStatus: authEmailRouter.getEmailVerifiedStatus,
   }),
 
   // ─── Onboarding ─────────────────────────────────────────────────────────────

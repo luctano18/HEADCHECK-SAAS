@@ -263,3 +263,37 @@
 
 - [x] Add elapsed timer display to EIQuiz.tsx (shows time taken during quiz)
 - [x] Add quiz history section to Dashboard (fetch trpc.quiz.getHistory, render recent attempts)
+
+## Phase 17: Authentication & Authorization (OAuth2 + JWT + Email/Password)
+
+### Backend
+- [x] Add `user_credentials` table (userId, passwordHash, emailVerified, emailVerificationToken, emailVerificationExpiry)
+- [x] Add `password_reset_tokens` table (id, userId, token, expiresAt, usedAt)
+- [x] Generate and apply DB migration SQL
+- [x] Install bcryptjs for password hashing
+- [x] Add DB helpers: createCredential, getCredentialByUserId, updatePasswordHash, createPasswordResetToken, getPasswordResetToken, markTokenUsed
+- [x] Add tRPC auth.register procedure (email + password, create user + credential, issue JWT session)
+- [x] Add tRPC auth.loginEmail procedure (verify email + password, issue JWT session)
+- [x] Add tRPC auth.forgotPassword procedure (generate reset token, send email via LLM/notification)
+- [x] Add tRPC auth.resetPassword procedure (validate token, update password hash)
+- [x] Add tRPC auth.changePassword procedure (protected, verify old password, update hash)
+- [x] Add tRPC auth.verifyEmail procedure (validate verification token, mark email verified)
+- [x] Add email sending helper using Manus notification or SMTP
+
+### Frontend
+- [x] Create /register page (email + password + name, form validation, show errors)
+- [x] Create /login page (email/password + OAuth2 button, form validation)
+- [x] Create /forgot-password page (email input, success message)
+- [x] Create /reset-password page (new password + confirm, token from URL)
+- [x] Update NavBar: show Login/Register buttons for guests
+- [x] Update useAuth: expose loginWithEmail, register methods (via tRPC mutations directly)
+- [x] Add "Sign in with HeadCheck" (OAuth2) + "Sign in with Email" tabs on login page
+- [x] Show email verification banner for unverified accounts
+- [x] Add password strength indicator on register page
+
+### Security
+- [x] Rate limit auth endpoints (10 attempts / 15 min per IP, in-memory)
+- [x] Sanitize and validate all auth inputs with Zod
+- [x] Hash passwords with bcrypt (cost factor 12)
+- [x] JWT tokens expire in 1 year (session cookie, httpOnly)
+- [x] Password reset tokens expire in 1 hour, single-use

@@ -22,6 +22,12 @@ import Coaching from "./pages/Coaching";
 import About from "./pages/About";
 import EIQuiz from "./pages/EIQuiz";
 import EIQuizResult from "./pages/EIQuizResult";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
+import VerifyEmail from "./pages/VerifyEmail";
+import EmailVerificationBanner from "./components/EmailVerificationBanner";
 
 function Router() {
   return (
@@ -50,6 +56,12 @@ function Router() {
       <Route path="/about" component={About} />
       <Route path="/ei-quiz" component={EIQuiz} />
       <Route path="/ei-quiz/result" component={EIQuizResult} />
+      {/* Auth routes */}
+      <Route path="/login" component={Login} />
+      <Route path="/register" component={Register} />
+      <Route path="/forgot-password" component={ForgotPassword} />
+      <Route path="/reset-password" component={ResetPassword} />
+      <Route path="/verify-email" component={VerifyEmail} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>
@@ -62,6 +74,7 @@ function App() {
       <ThemeProvider defaultTheme="light">
         <TooltipProvider>
           <Toaster richColors position="top-right" />
+          <EmailVerificationBanner />
           <Router />
         </TooltipProvider>
       </ThemeProvider>

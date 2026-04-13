@@ -525,3 +525,119 @@ export async function getLatestQuizAttempt(userId: number) {
     .limit(1);
   return results[0] ?? null;
 }
+
+// ─── User Credentials (email/password) ───────────────────────────────────────
+export async function getUserByEmail(email: string) {
+  const db = await getDb();
+  if (!db) return null;
+  const results = await db
+    .select()
+    .from(users)
+    .where(eq(users.email, email))
+    .limit(1);
+  return results[0] ?? null;
+}
+
+export async function createUserWithCredential(params: {
+  openId: string;
+  name: string;
+  email: string;
+  passwordHash: string;
+  emailVerificationToken: string;
+  emailVerificationExpiry: Date;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+  const { userCredentials } = await import("../drizzle/schema");
+  // Create user
+  await db.insert(users).values({
+    openId: params.openId,
+    name: params.name,
+    email: params.email,
+    loginMethod: "email",
+    lastSignedIn: new Date(),
+  });
+  const created = await getUserByEmail(params.email);
+  if (!created) throw new Error("Failed to create user");
+  // Create credential
+  await db.insert(userCredentials).values({
+    userId: created.id,
+    passwordHash: params.passwordHash,
+    emailVerified: false,
+    emailVerificationToken: params.emailVerificationToken,
+    emailVerificationExpiry: params.emailVerificationExpiry,
+  });
+  return created;
+}
+
+export async function getCredentialByUserId(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const { userCredentials } = await import("../drizzle/schema");
+  const results = await db
+    .select()
+    .from(userCredentials)
+    .where(eq(userCredentials.userId, userId))
+    .limit(1);
+  return results[0] ?? null;
+}
+
+export async function updatePasswordHash(userId: number, passwordHash: string) {
+  const db = await getDb();
+  if (!db) return;
+  const { userCredentials } = await import("../drizzle/schema");
+  await db
+    .update(userCredentials)
+    .set({ passwordHash })
+    .where(eq(userCredentials.userId, userId));
+}
+
+export async function verifyEmailToken(token: string) {
+  const db = await getDb();
+  if (!db) return false;
+  const { userCredentials } = await import("../drizzle/schema");
+  const results = await db
+    .select()
+    .from(userCredentials)
+    .where(eq(userCredentials.emailVerificationToken, token))
+    .limit(1);
+  const cred = results[0];
+  if (!cred) return false;
+  if (cred.emailVerified) return true;
+  if (cred.emailVerificationExpiry && cred.emailVerificationExpiry < new Date()) return false;
+  await db
+    .update(userCredentials)
+    .set({ emailVerified: true, emailVerificationToken: null, emailVerificationExpiry: null })
+    .where(eq(userCredentials.userId, cred.userId));
+  return true;
+}
+
+// ─── Password Reset Tokens ────────────────────────────────────────────────────
+export async function createPasswordResetToken(userId: number, token: string, expiresAt: Date) {
+  const db = await getDb();
+  if (!db) return;
+  const { passwordResetTokens } = await import("../drizzle/schema");
+  await db.insert(passwordResetTokens).values({ userId, token, expiresAt });
+}
+
+export async function getPasswordResetToken(token: string) {
+  const db = await getDb();
+  if (!db) return null;
+  const { passwordResetTokens } = await import("../drizzle/schema");
+  const results = await db
+    .select()
+    .from(passwordResetTokens)
+    .where(eq(passwordResetTokens.token, token))
+    .limit(1);
+  return results[0] ?? null;
+}
+
+export async function markPasswordResetTokenUsed(token: string) {
+  const db = await getDb();
+  if (!db) return;
+  const { passwordResetTokens } = await import("../drizzle/schema");
+  await db
+    .update(passwordResetTokens)
+    .set({ usedAt: new Date() })
+    .where(eq(passwordResetTokens.token, token));
+}
