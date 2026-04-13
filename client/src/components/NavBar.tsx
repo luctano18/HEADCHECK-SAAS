@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
   Heart, Menu, X, LayoutDashboard, LogOut, ChevronDown, User,
-  CheckCircle2, Circle, ArrowRight, ChevronUp, Loader2,
+  CheckCircle2, Circle, ArrowRight, ChevronUp, Loader2, Shield,
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
@@ -290,13 +290,21 @@ export default function NavBar() {
                 <DropdownMenuSeparator />
 
                 <DropdownMenuItem
-                  onClick={() => navigate(dashboardPath)}
+                  onClick={() => navigate("/dashboard")}
                   className="cursor-pointer rounded-lg"
                 >
                   <LayoutDashboard className="w-4 h-4 mr-2 text-violet-500" aria-hidden="true" />
-                  Dashboard
+                  My Dashboard
                 </DropdownMenuItem>
-
+                {(user?.role === "admin" || user?.role === "superadmin" || user?.role === "facilitator") && (
+                  <DropdownMenuItem
+                    onClick={() => navigate("/facilitator")}
+                    className="cursor-pointer rounded-lg text-purple-600 focus:text-purple-700 focus:bg-purple-50"
+                  >
+                    <Shield className="w-4 h-4 mr-2 text-purple-500" aria-hidden="true" />
+                    Facilitator View
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem
                   onClick={() => navigate("/profile")}
                   className="cursor-pointer rounded-lg"

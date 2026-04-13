@@ -498,3 +498,9 @@
 
 - [x] Fix top navigation: keep horizontal top-nav for all users (logged in or not), never switch to vertical sidebar on public pages
 - [x] Translate entire UI to American English: all pages, components, modals, error messages, labels, placeholders
+
+## Phase 19: Admin View Toggle Button
+
+- [x] Add quick-switch button on /dashboard for admin/superadmin: "Switch to Facilitator View" → /facilitator
+- [x] Add quick-switch button on /facilitator for admin/superadmin: "Switch to My Dashboard" → /dashboard
+- [x] Add toggle link in NavBar dropdown for admin/superadmin users

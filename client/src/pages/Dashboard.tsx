@@ -6,7 +6,7 @@ import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
 import {
   Brain, Heart, Sparkles, ArrowRight, Loader2, LogOut, User,
-  TrendingUp, Calendar, Award, Plus, ChevronRight
+  TrendingUp, Calendar, Award, Plus, ChevronRight, LayoutDashboard
 } from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell } from "recharts";
 import { format } from "date-fns";
@@ -103,6 +103,14 @@ export default function Dashboard() {
                 <p className="text-xs text-sidebar-foreground/50 truncate">{user?.email ?? ""}</p>
               </div>
             </div>
+            {(user?.role === "admin" || user?.role === "superadmin") && (
+              <button
+                onClick={() => navigate("/facilitator")}
+                className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium text-purple-400 hover:text-purple-200 hover:bg-purple-900/30 border border-purple-700/30 transition-colors"
+              >
+                <LayoutDashboard className="w-4 h-4" /> Facilitator View
+              </button>
+            )}
             <button
               onClick={logout}
               className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/50 transition-colors"
@@ -121,7 +129,20 @@ export default function Dashboard() {
                 <Brain className="w-5 h-5 text-primary" />
                 <span className="font-semibold text-sm">HeadCheck AI</span>
               </div>
-              <Button variant="ghost" size="sm" onClick={logout}><LogOut className="w-4 h-4" /></Button>
+              <div className="flex items-center gap-1">
+                {(user?.role === "admin" || user?.role === "superadmin") && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => navigate("/facilitator")}
+                    className="text-purple-400 hover:text-purple-200 text-xs gap-1 px-2"
+                    title="Switch to Facilitator View"
+                  >
+                    <LayoutDashboard className="w-4 h-4" />
+                  </Button>
+                )}
+                <Button variant="ghost" size="sm" onClick={logout}><LogOut className="w-4 h-4" /></Button>
+              </div>
             </div>
           </div>
 

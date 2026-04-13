@@ -165,9 +165,9 @@ export default function FacilitatorDashboard() {
             <div className="pt-2 border-t border-sidebar-border mt-2">
               <button
                 onClick={() => navigate("/dashboard")}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground transition-colors"
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-emerald-400 hover:text-emerald-200 hover:bg-emerald-900/30 border border-emerald-700/30 transition-colors"
               >
-                <Home className="w-4 h-4" /> My Dashboard
+                <Home className="w-4 h-4" /> My Personal Dashboard
               </button>
             </div>
           </nav>
@@ -196,12 +196,21 @@ export default function FacilitatorDashboard() {
                 <Brain className="w-5 h-5 text-primary" />
                 <span className="font-semibold text-sm">Facilitator Dashboard</span>
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-1 items-center">
                 {TABS.map((t) => (
                   <Button key={t.id} variant={activeTab === t.id ? "default" : "ghost"} size="sm" onClick={() => setActiveTab(t.id as any)}>
                     {t.icon}
                   </Button>
                 ))}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate("/dashboard")}
+                  className="text-emerald-400 hover:text-emerald-200 px-2"
+                  title="My Personal Dashboard"
+                >
+                  <Home className="w-4 h-4" />
+                </Button>
               </div>
             </div>
           </div>
