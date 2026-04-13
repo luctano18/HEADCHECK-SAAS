@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -62,7 +62,10 @@ export default function NavBar() {
   const { isAuthenticated, user } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [summaryOpen, setSummaryOpen] = useState(false);
+  const [summaryVisible, setSummaryVisible] = useState(false); // controls DOM presence
   const summaryRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const panelInnerRef = useRef<HTMLDivElement>(null);
   const utils = trpc.useUtils();
   const { progress } = useNavProgress();
 
@@ -90,6 +93,31 @@ export default function NavBar() {
     ? Math.round((progress.current / progress.total) * 100)
     : 0;
 
+  // Animate panel open/close using max-height + opacity
+  useEffect(() => {
+    const panel = panelRef.current;
+    const inner = panelInnerRef.current;
+    if (!panel || !inner) return;
+    if (summaryOpen) {
+      setSummaryVisible(true);
+      // Let DOM render first, then animate in
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          panel.style.maxHeight = inner.scrollHeight + "px";
+          panel.style.opacity = "1";
+          panel.style.transform = "translateY(0)";
+        });
+      });
+    } else {
+      panel.style.maxHeight = "0px";
+      panel.style.opacity = "0";
+      panel.style.transform = "translateY(-8px)";
+      // Remove from DOM after transition ends
+      const tid = setTimeout(() => setSummaryVisible(false), 280);
+      return () => clearTimeout(tid);
+    }
+  }, [summaryOpen]);
+
   // Close summary panel on outside click or Escape
   useEffect(() => {
     if (!summaryOpen) return;
@@ -111,6 +139,16 @@ export default function NavBar() {
   useEffect(() => {
     if (!progress.active) setSummaryOpen(false);
   }, [progress.active]);
+
+  // Recalculate max-height when steps change while panel is open
+  const recalcHeight = useCallback(() => {
+    const panel = panelRef.current;
+    const inner = panelInnerRef.current;
+    if (panel && inner && summaryOpen) {
+      panel.style.maxHeight = inner.scrollHeight + "px";
+    }
+  }, [summaryOpen]);
+  useEffect(() => { recalcHeight(); }, [progress.steps, recalcHeight]);
 
   /** The clickable progress widget (bar + label + counter) */
   const ProgressWidget = ({ mobile = false }: { mobile?: boolean }) => (
@@ -335,15 +373,22 @@ export default function NavBar() {
         </div>
       )}
 
-      {/* ── Step Summary Panel (dropdown below NavBar) ────────── */}
-      {summaryOpen && progress.steps.length > 0 && (
+      {/* ── Step Summary Panel (animated dropdown below NavBar) ── */}
+      {summaryVisible && progress.steps.length > 0 && (
         <div
-          className="absolute left-0 right-0 top-full z-40 bg-white border-b shadow-xl"
-          style={{ borderColor: "oklch(0.92 0.03 260)" }}
+          ref={panelRef}
+          className="absolute left-0 right-0 top-full z-40 bg-white border-b shadow-xl overflow-hidden"
+          style={{
+            borderColor: "oklch(0.92 0.03 260)",
+            maxHeight: "0px",
+            opacity: 0,
+            transform: "translateY(-8px)",
+            transition: "max-height 280ms cubic-bezier(0.4,0,0.2,1), opacity 220ms ease, transform 220ms ease",
+          }}
           role="region"
           aria-label="Résumé des étapes du parcours"
         >
-          <div className="max-w-3xl mx-auto px-4 py-4">
+          <div ref={panelInnerRef} className="max-w-3xl mx-auto px-4 py-4">
             {/* Panel header */}
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-sm font-bold" style={{ color: "oklch(0.25 0.04 260)" }}>

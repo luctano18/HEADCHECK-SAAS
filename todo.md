@@ -393,3 +393,10 @@
 - [x] Brancher les données d'étapes Compass dans SevenMirrors.tsx (SEVEN_MIRRORS → steps)
 - [x] Fermer le panneau au clic extérieur ou sur Échap
 - [x] 0 erreur TypeScript
+
+## Phase 25: Animation fluide du panneau de résumé
+
+- [x] Ajouter animation d'entrée/sortie (opacity + translateY + max-height) sur le panneau de résumé
+- [x] Utiliser CSS transitions natives (pas de librairie externe) pour la fluidité
+- [x] Animer aussi les items de la liste (stagger delay via CSS transition-delay)
+- [x] 0 erreur TypeScript
