@@ -408,3 +408,11 @@
 - [x] Brancher `isLoadingSteps` dans CheckIn.tsx (true pendant le chargement initial des données)
 - [x] Brancher `isLoadingSteps` dans SevenMirrors.tsx (true pendant le chargement initial)
 - [x] 0 erreur TypeScript
+
+## Phase 27: Correction erreur removeChild
+
+- [x] Identifier les composants avec rendu conditionnel instable (texte brut, nœuds sans clé)
+- [x] Ajouter ErrorBoundary global dans App.tsx pour capturer les erreurs React silencieuses
+- [x] Protéger les textes dynamiques contre la modification DOM par extensions navigateur (span wrapper)
+- [x] Vérifier les clés de liste dans NavBar, MoodTrendChart, EIQuiz, Dashboard
+- [x] 0 erreur TypeScript

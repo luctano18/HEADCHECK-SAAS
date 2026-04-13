@@ -70,15 +70,17 @@ function Router() {
 
 function App() {
   return (
-    <ErrorBoundary>
-      <ThemeProvider defaultTheme="light">
-        <TooltipProvider>
-          <Toaster richColors position="top-right" />
-          <EmailVerificationBanner />
+    <ThemeProvider defaultTheme="light">
+      <TooltipProvider>
+        <Toaster richColors position="top-right" />
+        <EmailVerificationBanner />
+        {/* ErrorBoundary wraps Router to auto-recover from DOM mutation errors
+            caused by browser extensions (Google Translate, Grammarly, etc.) */}
+        <ErrorBoundary>
           <Router />
-        </TooltipProvider>
-      </ThemeProvider>
-    </ErrorBoundary>
+        </ErrorBoundary>
+      </TooltipProvider>
+    </ThemeProvider>
   );
 }
 

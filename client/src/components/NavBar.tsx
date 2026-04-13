@@ -223,7 +223,7 @@ export default function NavBar() {
           aria-label="HeadCheck — Retour à l'accueil"
         >
           <Heart className="w-5 h-5" style={{ fill: "oklch(0.45 0.18 285)" }} />
-          HeadCheck
+          <span>HeadCheck</span>
         </button>
 
         {/* Desktop nav links — hidden when progress bar is active */}
@@ -314,7 +314,7 @@ export default function NavBar() {
                   aria-label="Se déconnecter de HeadCheck"
                 >
                   <LogOut className="w-4 h-4 mr-2" aria-hidden="true" />
-                  {logoutMutation.isPending ? "Déconnexion…" : "Se déconnecter"}
+                  <span>{logoutMutation.isPending ? "Déconnexion…" : "Se déconnecter"}</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -476,12 +476,10 @@ export default function NavBar() {
               style={{ borderColor: "oklch(0.92 0.03 260)" }}
             >
               <span style={{ color: "oklch(0.50 0.03 260)" }}>
-                {progress.steps.filter((s) => s.status === "done").length} étape
-                {progress.steps.filter((s) => s.status === "done").length !== 1 ? "s" : ""} complétée
-                {progress.steps.filter((s) => s.status === "done").length !== 1 ? "s" : ""}
+                <span>{progress.steps.filter((s) => s.status === "done").length} étape{progress.steps.filter((s) => s.status === "done").length !== 1 ? "s" : ""} complétée{progress.steps.filter((s) => s.status === "done").length !== 1 ? "s" : ""}</span>
               </span>
               <span className="font-semibold" style={{ color: "oklch(0.45 0.18 285)" }}>
-                {pct}% du parcours
+                <span>{pct}% du parcours</span>
               </span>
             </div>
           </div>
@@ -506,7 +504,7 @@ export default function NavBar() {
               }}
               aria-current={isActive(link.href) ? "page" : undefined}
             >
-              <span aria-hidden="true">{link.emoji}</span> {link.label}
+              <span aria-hidden="true">{link.emoji}</span><span>{link.label}</span>
             </button>
           ))}
 
@@ -550,7 +548,7 @@ export default function NavBar() {
                     aria-label="Se déconnecter de HeadCheck"
                   >
                     <LogOut className="w-4 h-4 mr-1.5" aria-hidden="true" />
-                    {logoutMutation.isPending ? "…" : "Sign Out"}
+                    <span>{logoutMutation.isPending ? "…" : "Sign Out"}</span>
                   </Button>
                 </div>
               </div>
