@@ -18,11 +18,7 @@ import { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 import * as db from "../db";
 import { getSessionCookieOptions } from "./cookies";
 import { sdk } from "./sdk";
-
-// ── Env helpers ───────────────────────────────────────────────────────────────
-function env(key: string): string {
-  return process.env[key] ?? "";
-}
+import { ENV } from "./env";
 
 /**
  * Derive the public origin from the incoming request.
@@ -35,7 +31,7 @@ function env(key: string): string {
  */
 function getPublicOrigin(req: Request): string {
   // 1. Explicit env override (set GOOGLE_REDIRECT_BASE=https://headcheckai-2dnc5dxi.manus.space)
-  const envBase = env("GOOGLE_REDIRECT_BASE");
+  const envBase = ENV.googleRedirectBase;
   if (envBase) return envBase.replace(/\/$/, "");
 
   // 2. Referer header (browser always sends the public URL)
@@ -94,8 +90,8 @@ function redirectWithError(res: Response, message: string) {
 async function exchangeGoogleCode(code: string, redirectUri: string) {
   const body = new URLSearchParams({
     code,
-    client_id: env("GOOGLE_CLIENT_ID"),
-    client_secret: env("GOOGLE_CLIENT_SECRET"),
+    client_id: ENV.googleClientId,
+    client_secret: ENV.googleClientSecret,
     redirect_uri: redirectUri,
     grant_type: "authorization_code",
   });
@@ -161,7 +157,7 @@ async function issueSessionAndRedirect(
 export function registerSocialAuthRoutes(app: Express) {
   // ── Google: initiate ────────────────────────────────────────────────────────
   app.get("/api/auth/google", (req: Request, res: Response) => {
-    const clientId = env("GOOGLE_CLIENT_ID");
+    const clientId = ENV.googleClientId;
     if (!clientId) {
       return redirectWithError(res, "Google sign-in is not configured.");
     }
