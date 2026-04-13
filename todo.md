@@ -338,3 +338,15 @@
 - [x] Ajouter confirmation visuelle de déconnexion (toast avec message de confirmation)
 - [x] Vérifier accessibilité : focus visible, aria-label, keyboard navigation, aria-current
 - [x] 0 erreur TypeScript
+
+## Phase 20: Graphiques de suivi de l'humeur (30j / 90j)
+
+- [x] Analyser le schéma DB (checkIns, emotionScores) et les helpers existants
+- [x] Ajouter tRPC procedure `dashboard.getMoodTrend(days: 30|90)` avec agrégation quotidienne
+- [x] Ajouter tRPC procedure `dashboard.getMoodStats(days)` (moyenne, min, max, tendance)
+- [x] Créer composant `MoodTrendChart.tsx` avec AreaChart Recharts, onglets 30j/90j
+- [x] Afficher les statistiques clés : score moyen, meilleur jour, pire jour, tendance (+/-)
+- [x] Afficher un état vide engageant si moins de 3 check-ins
+- [x] Intégrer le composant dans le Dashboard après la section streak
+- [x] Écrire tests Vitest pour l'agrégation quotidienne et le calcul de tendance (16/16)
+- [x] 0 erreur TypeScript

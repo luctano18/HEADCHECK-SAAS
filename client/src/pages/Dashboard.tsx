@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell } from "recharts";
 import { format } from "date-fns";
+import MoodTrendChart from "@/components/MoodTrendChart";
 
 const EMOTION_COLORS: Record<string, string> = {
   Happy: "#f59e0b", Calm: "#06b6d4", Grateful: "#10b981", Sad: "#6366f1",
@@ -330,6 +331,9 @@ export default function Dashboard() {
                 </CardContent>
               </Card>
             )}
+
+            {/* Mood Trend Chart — 30 / 90 days */}
+            <MoodTrendChart />
 
             {/* EI Quiz Widget */}
             <Card className="border shadow-sm bg-gradient-to-br from-violet-50 to-amber-50">

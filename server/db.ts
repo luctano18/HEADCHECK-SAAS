@@ -641,3 +641,91 @@ export async function markPasswordResetTokenUsed(token: string) {
     .set({ usedAt: new Date() })
     .where(eq(passwordResetTokens.token, token));
 }
+
+// ─── Mood Trend Analytics ─────────────────────────────────────────────────────
+
+/**
+ * Returns daily aggregated mood data for the given user over the last `days` days.
+ * Each row: date (YYYY-MM-DD), avgIntensity, checkInCount, dominantEmotion.
+ */
+export async function getMoodTrendByUser(userId: number, days: 30 | 90 = 30) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const since = new Date();
+  since.setDate(since.getDate() - days);
+
+  const rows = await db
+    .select({
+      intensity: checkIns.intensity,
+      emotion: checkIns.emotion,
+      createdAt: checkIns.createdAt,
+    })
+    .from(checkIns)
+    .where(and(eq(checkIns.userId, userId), gte(checkIns.createdAt, since)))
+    .orderBy(checkIns.createdAt);
+
+  if (rows.length === 0) return [];
+
+  // Aggregate by day in JS (avoids MySQL DATE_FORMAT dialect issues)
+  const dayMap = new Map<string, { intensities: number[]; emotions: Record<string, number> }>();
+
+  for (const row of rows) {
+    const d = row.createdAt;
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    if (!dayMap.has(key)) dayMap.set(key, { intensities: [], emotions: {} });
+    const entry = dayMap.get(key)!;
+    entry.intensities.push(row.intensity);
+    entry.emotions[row.emotion] = (entry.emotions[row.emotion] ?? 0) + 1;
+  }
+
+  const result: { date: string; avgIntensity: number; checkInCount: number; dominantEmotion: string }[] = [];
+
+  for (const [date, { intensities, emotions }] of Array.from(dayMap.entries())) {
+    const avgIntensity =
+      Math.round((intensities.reduce((s: number, v: number) => s + v, 0) / intensities.length) * 10) / 10;
+    const dominantEmotion = (Object.entries(emotions) as [string, number][]).sort((a, b) => b[1] - a[1])[0][0];
+    result.push({ date, avgIntensity, checkInCount: intensities.length, dominantEmotion });
+  }
+
+  return result.sort((a, b) => a.date.localeCompare(b.date));
+}
+
+/**
+ * Returns summary statistics for the user's mood over the last `days` days.
+ */
+export async function getMoodStatsByUser(userId: number, days: 30 | 90 = 30) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const since = new Date();
+  since.setDate(since.getDate() - days);
+
+  const rows = await db
+    .select({ intensity: checkIns.intensity, emotion: checkIns.emotion })
+    .from(checkIns)
+    .where(and(eq(checkIns.userId, userId), gte(checkIns.createdAt, since)));
+
+  if (rows.length === 0) return null;
+
+  const intensities = rows.map((r) => r.intensity);
+  const avg = Math.round((intensities.reduce((s: number, v: number) => s + v, 0) / intensities.length) * 10) / 10;
+  const max = Math.max(...intensities);
+  const min = Math.min(...intensities);
+
+  const emotionCounts: Record<string, number> = {};
+  for (const r of rows) {
+    emotionCounts[r.emotion] = (emotionCounts[r.emotion] ?? 0) + 1;
+  }
+  const topEmotion = (Object.entries(emotionCounts) as [string, number][]).sort((a, b) => b[1] - a[1])[0][0];
+
+  // Trend: compare first half vs second half average
+  const mid = Math.floor(intensities.length / 2);
+  const firstHalfAvg = mid > 0 ? intensities.slice(0, mid).reduce((s: number, v: number) => s + v, 0) / mid : avg;
+  const secondHalfLen = intensities.length - mid;
+  const secondHalfAvg = secondHalfLen > 0 ? intensities.slice(mid).reduce((s: number, v: number) => s + v, 0) / secondHalfLen : avg;
+  const trend: "up" | "down" | "stable" =
+    secondHalfAvg - firstHalfAvg > 0.5 ? "up" : secondHalfAvg - firstHalfAvg < -0.5 ? "down" : "stable";
+
+  return { totalCheckIns: rows.length, avgIntensity: avg, maxIntensity: max, minIntensity: min, topEmotion, trend };
+}

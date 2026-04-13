@@ -42,6 +42,8 @@ import {
   createQuizAttempt,
   getQuizAttemptsByUser,
   getLatestQuizAttempt,
+  getMoodTrendByUser,
+  getMoodStatsByUser,
 } from "./db";
 import {
   EI_QUIZ_QUESTIONS,
@@ -505,6 +507,16 @@ export const appRouter = router({
   }),
   // ─── User Dashboard ─────────────────────────────────────────────────────────────
   dashboard: router({
+    getMoodTrend: protectedProcedure
+      .input(z.object({ days: z.union([z.literal(30), z.literal(90)]).default(30) }))
+      .query(async ({ ctx, input }) => {
+        return getMoodTrendByUser(ctx.user.id, input.days);
+      }),
+    getMoodStats: protectedProcedure
+      .input(z.object({ days: z.union([z.literal(30), z.literal(90)]).default(30) }))
+      .query(async ({ ctx, input }) => {
+        return getMoodStatsByUser(ctx.user.id, input.days);
+      }),
     getHistory: protectedProcedure.query(async ({ ctx }) => {
       const [checkInList, aiResponseList, mirrorSessions, streak, achievements] = await Promise.all([
         getCheckInsByUser(ctx.user.id, 30),
