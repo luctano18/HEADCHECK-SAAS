@@ -60,26 +60,32 @@ export default function CheckIn() {
   // Sync progress with NavBar (including step summaries)
   useEffect(() => {
     if (currentStep > 0) {
-      const steps = CHECKIN_STEPS.map((s) => ({
-        id: s.step,
-        label: s.question.length > 40 ? s.question.substring(0, 38) + "…" : s.question,
-        description: (s as Record<string, unknown>).helper as string | undefined
-          ?? (s as Record<string, unknown>).guidance as string | undefined
-          ?? (s as Record<string, unknown>).reflection as string | undefined,
-        status: (
-          s.step < currentStep ? "done" :
-          s.step === currentStep ? "current" :
-          "upcoming"
-        ) as import("@/contexts/NavProgressContext").StepStatus,
-      }));
-      setProgress({
-        current: currentStep,
-        total: totalSteps,
-        label: "Check-In",
-        color: "linear-gradient(90deg, #7c3aed, #ec4899)",
-        active: true,
-        steps,
-      });
+      // Show loading spinner while step data is being computed
+      setProgress({ isLoadingSteps: true });
+      const tid = setTimeout(() => {
+        const steps = CHECKIN_STEPS.map((s) => ({
+          id: s.step,
+          label: s.question.length > 40 ? s.question.substring(0, 38) + "…" : s.question,
+          description: (s as Record<string, unknown>).helper as string | undefined
+            ?? (s as Record<string, unknown>).guidance as string | undefined
+            ?? (s as Record<string, unknown>).reflection as string | undefined,
+          status: (
+            s.step < currentStep ? "done" :
+            s.step === currentStep ? "current" :
+            "upcoming"
+          ) as import("@/contexts/NavProgressContext").StepStatus,
+        }));
+        setProgress({
+          current: currentStep,
+          total: totalSteps,
+          label: "Check-In",
+          color: "linear-gradient(90deg, #7c3aed, #ec4899)",
+          active: true,
+          steps,
+          isLoadingSteps: false,
+        });
+      }, 350);
+      return () => { clearTimeout(tid); clearProgress(); };
     } else {
       clearProgress();
     }

@@ -400,3 +400,11 @@
 - [x] Utiliser CSS transitions natives (pas de librairie externe) pour la fluidité
 - [x] Animer aussi les items de la liste (stagger delay via CSS transition-delay)
 - [x] 0 erreur TypeScript
+
+## Phase 26: Icône de chargement dans le panneau de résumé
+
+- [x] Ajouter `isLoadingSteps` dans NavProgressContext
+- [x] Afficher un spinner centré dans le panneau quand `isLoadingSteps === true`
+- [x] Brancher `isLoadingSteps` dans CheckIn.tsx (true pendant le chargement initial des données)
+- [x] Brancher `isLoadingSteps` dans SevenMirrors.tsx (true pendant le chargement initial)
+- [x] 0 erreur TypeScript

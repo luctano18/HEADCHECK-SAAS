@@ -10,12 +10,13 @@ export interface StepSummary {
 }
 
 export interface NavProgress {
-  current: number;       // current step (0 = not started / intro)
-  total: number;         // total steps
-  label: string;         // e.g. "Check-In" or "Compass"
-  color: string;         // CSS gradient string
-  active: boolean;       // whether to show the indicator
-  steps: StepSummary[];  // ordered list of all steps for the summary panel
+  current: number;          // current step (0 = not started / intro)
+  total: number;            // total steps
+  label: string;            // e.g. "Check-In" or "Compass"
+  color: string;            // CSS gradient string
+  active: boolean;          // whether to show the indicator
+  steps: StepSummary[];     // ordered list of all steps for the summary panel
+  isLoadingSteps: boolean;  // true while step metadata is being prepared
 }
 
 interface NavProgressContextValue {
@@ -31,6 +32,7 @@ const DEFAULT: NavProgress = {
   color: "linear-gradient(90deg, #7c3aed, #ec4899)",
   active: false,
   steps: [],
+  isLoadingSteps: false,
 };
 
 const NavProgressContext = createContext<NavProgressContextValue>({

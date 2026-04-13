@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
   Heart, Menu, X, LayoutDashboard, LogOut, ChevronDown, User,
-  CheckCircle2, Circle, ArrowRight, ChevronUp,
+  CheckCircle2, Circle, ArrowRight, ChevronUp, Loader2,
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
@@ -403,53 +403,72 @@ export default function NavBar() {
               </button>
             </div>
 
-            {/* Step list — responsive grid */}
-            <ol className="grid grid-cols-1 sm:grid-cols-2 gap-2" aria-label="Liste des étapes">
-              {progress.steps.map((step, idx) => (
-                <li
-                  key={step.id}
-                  className={[
-                    "flex items-start gap-2.5 px-3 py-2.5 rounded-xl border transition-colors",
-                    step.status === "current"
-                      ? "border-violet-300 bg-violet-50"
-                      : step.status === "done"
-                        ? "border-emerald-200 bg-emerald-50/60"
-                        : "border-gray-100 bg-gray-50/60",
-                  ].join(" ")}
-                >
-                  <span className="mt-0.5">
-                    <StepIcon status={step.status} />
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p
-                      className="text-xs font-semibold leading-tight"
-                      style={{
-                        color: step.status === "upcoming"
-                          ? "oklch(0.60 0.02 260)"
-                          : "oklch(0.25 0.04 260)",
-                      }}
-                    >
-                      {idx + 1}. {step.label}
-                    </p>
-                    {step.description && (
+            {/* Loading state */}
+            {progress.isLoadingSteps ? (
+              <div
+                className="flex flex-col items-center justify-center gap-3 py-8"
+                role="status"
+                aria-label="Chargement des étapes en cours"
+              >
+                <Loader2
+                  className="w-7 h-7 animate-spin"
+                  style={{ color: "oklch(0.55 0.18 285)" }}
+                  aria-hidden="true"
+                />
+                <p className="text-xs" style={{ color: "oklch(0.55 0.04 260)" }}>
+                  Chargement des étapes…
+                </p>
+              </div>
+            ) : (
+              /* Step list — responsive grid */
+              <ol className="grid grid-cols-1 sm:grid-cols-2 gap-2" aria-label="Liste des étapes">
+                {progress.steps.map((step, idx) => (
+                  <li
+                    key={step.id}
+                    className={[
+                      "flex items-start gap-2.5 px-3 py-2.5 rounded-xl border transition-colors",
+                      step.status === "current"
+                        ? "border-violet-300 bg-violet-50"
+                        : step.status === "done"
+                          ? "border-emerald-200 bg-emerald-50/60"
+                          : "border-gray-100 bg-gray-50/60",
+                    ].join(" ")}
+                    style={{ animationDelay: `${idx * 30}ms` }}
+                  >
+                    <span className="mt-0.5">
+                      <StepIcon status={step.status} />
+                    </span>
+                    <div className="min-w-0 flex-1">
                       <p
-                        className="text-xs mt-0.5 leading-snug line-clamp-2"
-                        style={{ color: "oklch(0.50 0.03 260)" }}
+                        className="text-xs font-semibold leading-tight"
+                        style={{
+                          color: step.status === "upcoming"
+                            ? "oklch(0.60 0.02 260)"
+                            : "oklch(0.25 0.04 260)",
+                        }}
                       >
-                        {step.description}
+                        {idx + 1}. {step.label}
                       </p>
+                      {step.description && (
+                        <p
+                          className="text-xs mt-0.5 leading-snug line-clamp-2"
+                          style={{ color: "oklch(0.50 0.03 260)" }}
+                        >
+                          {step.description}
+                        </p>
+                      )}
+                    </div>
+                    {step.status === "current" && (
+                      <ArrowRight
+                        className="w-3.5 h-3.5 mt-0.5 flex-shrink-0"
+                        style={{ color: "oklch(0.45 0.18 285)" }}
+                        aria-hidden="true"
+                      />
                     )}
-                  </div>
-                  {step.status === "current" && (
-                    <ArrowRight
-                      className="w-3.5 h-3.5 mt-0.5 flex-shrink-0"
-                      style={{ color: "oklch(0.45 0.18 285)" }}
-                      aria-hidden="true"
-                    />
-                  )}
-                </li>
-              ))}
-            </ol>
+                  </li>
+                ))}
+              </ol>
+            )}
 
             {/* Progress summary footer */}
             <div

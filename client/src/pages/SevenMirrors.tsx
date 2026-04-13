@@ -39,26 +39,32 @@ export default function SevenMirrors() {
   // Sync progress with NavBar (including step summaries)
   useEffect(() => {
     if (phase === "mirror" || phase === "complete") {
-      const activeMirrorIdx = phase === "complete" ? SEVEN_MIRRORS.length : currentMirror;
-      const steps = SEVEN_MIRRORS.map((m) => ({
-        id: m.id,
-        label: m.theme,
-        description: m.question.length > 55 ? m.question.substring(0, 53) + "…" : m.question,
-        status: (
-          m.id - 1 < activeMirrorIdx ? "done" :
-          m.id - 1 === activeMirrorIdx && phase !== "complete" ? "current" :
-          phase === "complete" ? "done" :
-          "upcoming"
-        ) as import("@/contexts/NavProgressContext").StepStatus,
-      }));
-      setProgress({
-        current: phase === "complete" ? SEVEN_MIRRORS.length : currentMirror + 1,
-        total: SEVEN_MIRRORS.length,
-        label: "Compass",
-        color: "linear-gradient(90deg, #6d28d9, #f59e0b)",
-        active: true,
-        steps,
-      });
+      // Show loading spinner while step data is being computed
+      setProgress({ isLoadingSteps: true });
+      const tid = setTimeout(() => {
+        const activeMirrorIdx = phase === "complete" ? SEVEN_MIRRORS.length : currentMirror;
+        const steps = SEVEN_MIRRORS.map((m) => ({
+          id: m.id,
+          label: m.theme,
+          description: m.question.length > 55 ? m.question.substring(0, 53) + "…" : m.question,
+          status: (
+            m.id - 1 < activeMirrorIdx ? "done" :
+            m.id - 1 === activeMirrorIdx && phase !== "complete" ? "current" :
+            phase === "complete" ? "done" :
+            "upcoming"
+          ) as import("@/contexts/NavProgressContext").StepStatus,
+        }));
+        setProgress({
+          current: phase === "complete" ? SEVEN_MIRRORS.length : currentMirror + 1,
+          total: SEVEN_MIRRORS.length,
+          label: "Compass",
+          color: "linear-gradient(90deg, #6d28d9, #f59e0b)",
+          active: true,
+          steps,
+          isLoadingSteps: false,
+        });
+      }, 350);
+      return () => { clearTimeout(tid); clearProgress(); };
     } else {
       clearProgress();
     }
