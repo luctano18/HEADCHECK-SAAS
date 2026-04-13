@@ -24,6 +24,42 @@ function env(key: string): string {
   return process.env[key] ?? "";
 }
 
+/**
+ * Derive the public origin from the incoming request.
+ * Priority:
+ *  1. GOOGLE_REDIRECT_BASE env var (explicit override, most reliable)
+ *  2. `Referer` header — always the browser's public URL
+ *  3. `Origin` header — sent on XHR/fetch requests
+ *  4. x-forwarded-proto + x-forwarded-host (reverse proxy headers)
+ *  5. req.protocol + req.host (fallback)
+ */
+function getPublicOrigin(req: Request): string {
+  // 1. Explicit env override (set GOOGLE_REDIRECT_BASE=https://headcheckai-2dnc5dxi.manus.space)
+  const envBase = env("GOOGLE_REDIRECT_BASE");
+  if (envBase) return envBase.replace(/\/$/, "");
+
+  // 2. Referer header (browser always sends the public URL)
+  const referer = req.headers["referer"] as string | undefined;
+  if (referer) {
+    try {
+      const u = new URL(referer);
+      return `${u.protocol}//${u.host}`;
+    } catch { /* ignore */ }
+  }
+
+  // 3. Origin header
+  const origin = req.headers["origin"] as string | undefined;
+  if (origin && origin !== "null") return origin;
+
+  // 4. x-forwarded-proto + x-forwarded-host
+  const proto = (req.headers["x-forwarded-proto"] as string | undefined)?.split(",")[0]?.trim() ?? req.protocol;
+  const host = req.headers["x-forwarded-host"] as string | undefined;
+  if (host) return `${proto}://${host}`;
+
+  // 5. Fallback
+  return `${proto}://${req.headers.host}`;
+}
+
 // ── State cookie (CSRF protection) ───────────────────────────────────────────
 const STATE_COOKIE = "social_oauth_state";
 const STATE_EXPIRY_MS = 10 * 60 * 1000; // 10 minutes
@@ -132,10 +168,7 @@ export function registerSocialAuthRoutes(app: Express) {
     const state = nanoid(32);
     setStateCookie(res, state, req);
 
-    const origin = req.headers["x-forwarded-host"]
-      ? `${req.protocol}://${req.headers["x-forwarded-host"]}`
-      : `${req.protocol}://${req.headers.host}`;
-
+    const origin = getPublicOrigin(req);
     const redirectUri = `${origin}/api/auth/google/callback`;
     const params = new URLSearchParams({
       client_id: clientId,
@@ -158,9 +191,7 @@ export function registerSocialAuthRoutes(app: Express) {
     if (!code) return redirectWithError(res, "No authorization code received from Google.");
 
     try {
-      const origin = req.headers["x-forwarded-host"]
-        ? `${req.protocol}://${req.headers["x-forwarded-host"]}`
-        : `${req.protocol}://${req.headers.host}`;
+      const origin = getPublicOrigin(req);
       const redirectUri = `${origin}/api/auth/google/callback`;
 
       const tokens = await exchangeGoogleCode(code, redirectUri);
