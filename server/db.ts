@@ -53,13 +53,22 @@ export async function upsertUser(user: InsertUser): Promise<void> {
     values.lastSignedIn = user.lastSignedIn;
     updateSet.lastSignedIn = user.lastSignedIn;
   }
-  if (user.role !== undefined) {
-    values.role = user.role;
-    updateSet.role = user.role;
-  } else if (user.openId === ENV.ownerOpenId) {
+  // Role assignment logic:
+  // 1. Owner openId always gets superadmin (on insert only; not overwritten on update).
+  // 2. Explicit role passed → set it on insert; but NEVER overwrite in the UPDATE clause
+  //    to avoid downgrading a manually-elevated user (e.g., superadmin) on next login.
+  // 3. No role passed + not owner → role stays as-is in DB (not included in updateSet).
+  if (user.openId === ENV.ownerOpenId) {
     values.role = "superadmin";
-    updateSet.role = "superadmin";
+    // Only set on insert (ON DUPLICATE KEY UPDATE does NOT include role for owner
+    // because the owner is already superadmin and we don't want to touch it).
+  } else if (user.role !== undefined) {
+    values.role = user.role;
+    // Do NOT add role to updateSet — this prevents downgrading an elevated role
+    // (e.g., superadmin manually set via DB) when the user logs in again.
   }
+  // role is intentionally excluded from updateSet for all non-owner users
+  // so that manually-assigned elevated roles (superadmin, admin) are preserved.
 
   if (!values.lastSignedIn) values.lastSignedIn = new Date();
   if (Object.keys(updateSet).length === 0) updateSet.lastSignedIn = new Date();
