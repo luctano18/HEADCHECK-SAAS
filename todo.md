@@ -350,3 +350,16 @@
 - [x] Intégrer le composant dans le Dashboard après la section streak
 - [x] Écrire tests Vitest pour l'agrégation quotidienne et le calcul de tendance (16/16)
 - [x] 0 erreur TypeScript
+
+## Phase 21: Filtrage par émotion sur les graphiques d'humeur
+
+- [x] Étendre `getMoodTrendByUser(userId, days, emotion?)` pour filtrer par émotion
+- [x] Étendre `getMoodStatsByUser(userId, days, emotion?)` pour filtrer par émotion
+- [x] Ajouter `getAvailableEmotions(userId, days)` helper pour lister les émotions présentes
+- [x] Mettre à jour les procédures tRPC `dashboard.getMoodTrend` et `dashboard.getMoodStats` avec input `emotion` optionnel
+- [x] Ajouter procédure tRPC `dashboard.getAvailableEmotions` pour alimenter le sélecteur
+- [x] Ajouter chips de sélection d'émotion dans `MoodTrendChart.tsx` (colorisées, "Toutes" par défaut)
+- [x] Mettre à jour les requêtes tRPC dans `MoodTrendChart.tsx` pour passer le filtre émotion
+- [x] Afficher le nom de l'émotion filtrée dans le titre du graphique
+- [x] Écrire tests Vitest pour le filtrage par émotion (29/29)
+- [x] 0 erreur TypeScript

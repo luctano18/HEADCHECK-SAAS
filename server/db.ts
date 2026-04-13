@@ -648,12 +648,16 @@ export async function markPasswordResetTokenUsed(token: string) {
  * Returns daily aggregated mood data for the given user over the last `days` days.
  * Each row: date (YYYY-MM-DD), avgIntensity, checkInCount, dominantEmotion.
  */
-export async function getMoodTrendByUser(userId: number, days: 30 | 90 = 30) {
+export async function getMoodTrendByUser(userId: number, days: 30 | 90 = 30, emotion?: string) {
   const db = await getDb();
   if (!db) return [];
 
   const since = new Date();
   since.setDate(since.getDate() - days);
+
+  const conditions = emotion
+    ? and(eq(checkIns.userId, userId), gte(checkIns.createdAt, since), eq(checkIns.emotion, emotion))
+    : and(eq(checkIns.userId, userId), gte(checkIns.createdAt, since));
 
   const rows = await db
     .select({
@@ -662,7 +666,7 @@ export async function getMoodTrendByUser(userId: number, days: 30 | 90 = 30) {
       createdAt: checkIns.createdAt,
     })
     .from(checkIns)
-    .where(and(eq(checkIns.userId, userId), gte(checkIns.createdAt, since)))
+    .where(conditions)
     .orderBy(checkIns.createdAt);
 
   if (rows.length === 0) return [];
@@ -694,17 +698,21 @@ export async function getMoodTrendByUser(userId: number, days: 30 | 90 = 30) {
 /**
  * Returns summary statistics for the user's mood over the last `days` days.
  */
-export async function getMoodStatsByUser(userId: number, days: 30 | 90 = 30) {
+export async function getMoodStatsByUser(userId: number, days: 30 | 90 = 30, emotion?: string) {
   const db = await getDb();
   if (!db) return null;
 
   const since = new Date();
   since.setDate(since.getDate() - days);
 
+  const conditions = emotion
+    ? and(eq(checkIns.userId, userId), gte(checkIns.createdAt, since), eq(checkIns.emotion, emotion))
+    : and(eq(checkIns.userId, userId), gte(checkIns.createdAt, since));
+
   const rows = await db
     .select({ intensity: checkIns.intensity, emotion: checkIns.emotion })
     .from(checkIns)
-    .where(and(eq(checkIns.userId, userId), gte(checkIns.createdAt, since)));
+    .where(conditions);
 
   if (rows.length === 0) return null;
 
@@ -728,4 +736,30 @@ export async function getMoodStatsByUser(userId: number, days: 30 | 90 = 30) {
     secondHalfAvg - firstHalfAvg > 0.5 ? "up" : secondHalfAvg - firstHalfAvg < -0.5 ? "down" : "stable";
 
   return { totalCheckIns: rows.length, avgIntensity: avg, maxIntensity: max, minIntensity: min, topEmotion, trend };
+}
+
+/**
+ * Returns the list of distinct emotions the user has logged in the last `days` days,
+ * along with the count of check-ins per emotion (sorted by frequency descending).
+ */
+export async function getAvailableEmotions(userId: number, days: 30 | 90 = 30) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const since = new Date();
+  since.setDate(since.getDate() - days);
+
+  const rows = await db
+    .select({ emotion: checkIns.emotion })
+    .from(checkIns)
+    .where(and(eq(checkIns.userId, userId), gte(checkIns.createdAt, since)));
+
+  const counts: Record<string, number> = {};
+  for (const r of rows) {
+    counts[r.emotion] = (counts[r.emotion] ?? 0) + 1;
+  }
+
+  return (Object.entries(counts) as [string, number][])
+    .sort((a, b) => b[1] - a[1])
+    .map(([emotion, count]) => ({ emotion, count }));
 }
