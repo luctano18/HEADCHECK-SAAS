@@ -194,15 +194,13 @@ export default function CheckIn() {
     );
   }
 
-  // ─── Intro Screen ──────────────────────────────────────────────────────────
+   // ─── Intro Screen ────────────────────────────────────────────────────────
   if (currentStep === 0) {
     return (
       <div className="min-h-screen" style={{ background: "linear-gradient(135deg, #f5f0ff 0%, #fff5f5 50%, #fff8f0 100%)" }}>
-        <div className="max-w-lg mx-auto px-4 py-12">
-          <div className="flex items-center justify-between mb-10">
-            <a href="/" className="text-xl font-bold" style={{ background: "linear-gradient(135deg, #7c3aed, #ec4899)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-              HeadCheck
-            </a>
+        <NavBar />
+        <div className="max-w-lg mx-auto px-4 pt-24 pb-12">
+          <div className="flex justify-end mb-6">
             <button onClick={() => setShowCrisisModal(true)} className="text-xs text-gray-400 hover:text-red-500 transition-colors flex items-center gap-1">
               <Phone className="w-3 h-3" /> Crisis Support
             </button>
@@ -257,12 +255,9 @@ export default function CheckIn() {
   return (
     <div className="min-h-screen" style={{ background: "linear-gradient(135deg, #f5f0ff 0%, #fff5f5 50%, #fff8f0 100%)" }}>
       <NavBar />
-      <div className="max-w-lg mx-auto px-4 py-8">
-        {/* Top Nav */}
-        <div className="flex items-center justify-between mb-6">
-          <a href="/" className="text-lg font-bold" style={{ background: "linear-gradient(135deg, #7c3aed, #ec4899)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-            HeadCheck
-          </a>
+      <div className="max-w-lg mx-auto px-4 pt-24 pb-8">
+        {/* Crisis Support link */}
+        <div className="flex justify-end mb-4">
           <button onClick={() => setShowCrisisModal(true)} className="text-xs text-gray-400 hover:text-red-500 transition-colors flex items-center gap-1">
             <Phone className="w-3 h-3" /> Crisis Support
           </button>

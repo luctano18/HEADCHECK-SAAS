@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
+import NavBar from "@/components/NavBar";
 import { Heart, ArrowRight, ArrowLeft, Loader2, Sparkles, CheckCircle2, LogIn, Info } from "lucide-react";
 import { getLoginUrl } from "@/const";
 import { SEVEN_MIRRORS, REFLECTION_BADGES } from "@shared/headcheckData";
@@ -147,22 +148,11 @@ export default function SevenMirrors() {
     </div>
   );
 
-  // ─── INTRO ──────────────────────────────────────────────────────────────────
+  // ─── INTRO ────────────────────────────────────────────────────────
   if (phase === "intro") {
     return (
       <div className="min-h-screen" style={{ background: "linear-gradient(135deg, oklch(0.97 0.03 285) 0%, oklch(0.98 0.02 340) 50%, oklch(0.98 0.02 48) 100%)" }}>
-        <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b" style={{ borderColor: "oklch(0.92 0.03 260)" }}>
-          <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-            <button onClick={() => navigate("/")} className="flex items-center gap-2 font-bold text-xl" style={{ color: "oklch(0.45 0.18 285)" }}>
-              <Heart className="w-5 h-5" style={{ fill: "oklch(0.45 0.18 285)" }} />
-              HeadCheck
-            </button>
-            <span className="text-sm font-medium px-3 py-1 rounded-full" style={{ background: "oklch(0.95 0.04 285)", color: "oklch(0.45 0.18 285)" }}>
-              Self Trust Compass
-            </span>
-          </div>
-        </nav>
-
+        <NavBar />
         <div className="max-w-lg mx-auto px-6 pt-28 pb-16">
           <div className="text-center mb-8">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium mb-6 bg-white shadow-sm border" style={{ borderColor: "oklch(0.88 0.06 285)", color: "oklch(0.45 0.18 285)" }}>
@@ -237,22 +227,11 @@ export default function SevenMirrors() {
     );
   }
 
-  // ─── MIRROR STEP ────────────────────────────────────────────────────────────
+  //  // ─── MIRROR STEP ────────────────────────────────────────────────────────
   if (phase === "mirror" && mirror) {
     return (
       <div className="min-h-screen" style={{ background: "linear-gradient(135deg, oklch(0.97 0.03 285) 0%, oklch(0.98 0.02 340) 50%, oklch(0.98 0.02 48) 100%)" }}>
-        <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b" style={{ borderColor: "oklch(0.92 0.03 260)" }}>
-          <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-            <button onClick={() => navigate("/")} className="flex items-center gap-2 font-bold text-xl" style={{ color: "oklch(0.45 0.18 285)" }}>
-              <Heart className="w-5 h-5" style={{ fill: "oklch(0.45 0.18 285)" }} />
-              HeadCheck
-            </button>
-            <span className="text-sm font-medium" style={{ color: "oklch(0.55 0.04 260)" }}>
-              Mirror {currentMirror + 1} of {SEVEN_MIRRORS.length}
-            </span>
-          </div>
-        </nav>
-
+        <NavBar />
         <div className="max-w-lg mx-auto px-6 pt-24 pb-12">
           {/* Progress bar */}
           <div className="mb-6">
@@ -401,23 +380,13 @@ export default function SevenMirrors() {
         </div>
       </div>
     );
-  }
-
-  // ─── COMPLETION ─────────────────────────────────────────────────────────────
+  }  // ─── COMPLETION ────────────────────────────────────────────────────────────────
   if (phase === "complete") {
     const earnedBadgeObjects = REFLECTION_BADGES.filter(b => earnedBadges.includes(b.id));
 
     return (
       <div className="min-h-screen" style={{ background: "linear-gradient(135deg, oklch(0.97 0.03 285) 0%, oklch(0.98 0.02 340) 50%, oklch(0.98 0.02 48) 100%)" }}>
-        <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b" style={{ borderColor: "oklch(0.92 0.03 260)" }}>
-          <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-            <button onClick={() => navigate("/")} className="flex items-center gap-2 font-bold text-xl" style={{ color: "oklch(0.45 0.18 285)" }}>
-              <Heart className="w-5 h-5" style={{ fill: "oklch(0.45 0.18 285)" }} />
-              HeadCheck
-            </button>
-          </div>
-        </nav>
-
+        <NavBar />
         <div className="max-w-lg mx-auto px-6 pt-24 pb-16">
           {/* Hero */}
           <div className="text-center mb-8">

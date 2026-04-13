@@ -363,3 +363,12 @@
 - [x] Afficher le nom de l'émotion filtrée dans le titre du graphique
 - [x] Écrire tests Vitest pour le filtrage par émotion (29/29)
 - [x] 0 erreur TypeScript
+
+## Phase 22: NavBar persistante sur /checkin et /compass
+
+- [x] Analyser App.tsx pour voir comment la NavBar est montée
+- [x] Ajouter NavBar sur /checkin (page CheckIn) — intro screen (step 0) + step screen
+- [x] Ajouter NavBar sur /compass (page Compass / Seven Mirrors) — intro, mirror, complete phases
+- [x] Supprimer les 3 headers maison de SevenMirrors.tsx et remplacer par NavBar
+- [x] Ajuster pt-24/pt-28 pour compenser la hauteur de la NavBar fixe
+- [x] 0 erreur TypeScript
