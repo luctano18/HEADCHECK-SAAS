@@ -493,3 +493,8 @@
 ## Phase 17: Bug Fixes
 
 - [x] Fix FORBIDDEN error on /facilitator for superadmin (institutionId: null): relax institutionId guard in facilitator and crisis routers to allow superadmin access with global or empty data
+
+## Phase 18: Nav Fix & English Translation
+
+- [x] Fix top navigation: keep horizontal top-nav for all users (logged in or not), never switch to vertical sidebar on public pages
+- [x] Translate entire UI to American English: all pages, components, modals, error messages, labels, placeholders

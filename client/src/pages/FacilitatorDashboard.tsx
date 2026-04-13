@@ -55,7 +55,7 @@ export default function FacilitatorDashboard() {
     undefined, { enabled: isAuthenticated }
   );
   const acknowledgeFlagMutation = trpc.crisis.acknowledgeFlag.useMutation({
-    onSuccess: () => { toast.success("Alerte marquée comme traitée."); refetchViolenceFlags(); },
+    onSuccess: () => { toast.success("Alert marked as resolved."); refetchViolenceFlags(); },
     onError: (err) => toast.error(err.message),
   });
   const { data: groups, refetch: refetchGroups } = trpc.institutions.getGroups.useQuery(
@@ -335,16 +335,16 @@ export default function FacilitatorDashboard() {
             {activeTab === "violence" && (
               <>
                 <div>
-                  <h1 className="font-serif text-2xl font-bold text-foreground">Alertes de Violence</h1>
-                  <p className="text-muted-foreground text-sm mt-1">Signaux de violence (auto-destruction ou envers autrui) détectés dans les entrées. Identités anonymisées.</p>
+                  <h1 className="font-serif text-2xl font-bold text-foreground">Violence Alerts</h1>
+                  <p className="text-muted-foreground text-sm mt-1">Violence signals (self-harm or toward others) detected in entries. Identities are anonymized.</p>
                 </div>
 
                 {violenceCriticalCount > 0 && (
                   <div className="bg-red-50 border border-red-200 rounded-2xl p-4 flex items-start gap-3">
                     <AlertTriangle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
                     <div>
-                      <p className="font-semibold text-destructive text-sm">{violenceCriticalCount} alerte{violenceCriticalCount > 1 ? "s" : ""} critique{violenceCriticalCount > 1 ? "s" : ""} nécessite{violenceCriticalCount > 1 ? "nt" : ""} une action immédiate</p>
-                      <p className="text-xs text-muted-foreground mt-1">Suivez le protocole d'intervention de votre établissement. Les ressources de crise (3114, 988) ont été affichées à ces étudiants.</p>
+                      <p className="font-semibold text-destructive text-sm">{violenceCriticalCount} critical alert{violenceCriticalCount > 1 ? "s" : ""} require{violenceCriticalCount > 1 ? "" : "s"} immediate action</p>
+                      <p className="text-xs text-muted-foreground mt-1">Follow your institution's intervention protocol. Crisis resources (988, 741741) have been shown to these students.</p>
                     </div>
                   </div>
                 )}
@@ -352,9 +352,9 @@ export default function FacilitatorDashboard() {
                 {/* Summary stats */}
                 <div className="grid grid-cols-3 gap-4">
                   {[
-                    { label: "Critique", count: violenceFlags?.filter((f: any) => f.severity === "critical").length ?? 0, color: "text-red-600", bg: "bg-red-50" },
-                    { label: "Haute", count: violenceFlags?.filter((f: any) => f.severity === "high").length ?? 0, color: "text-orange-600", bg: "bg-orange-50" },
-                    { label: "Modérée", count: violenceFlags?.filter((f: any) => f.severity === "moderate").length ?? 0, color: "text-yellow-600", bg: "bg-yellow-50" },
+                    { label: "Critical", count: violenceFlags?.filter((f: any) => f.severity === "critical").length ?? 0, color: "text-red-600", bg: "bg-red-50" },
+                    { label: "High", count: violenceFlags?.filter((f: any) => f.severity === "high").length ?? 0, color: "text-orange-600", bg: "bg-orange-50" },
+                    { label: "Moderate", count: violenceFlags?.filter((f: any) => f.severity === "moderate").length ?? 0, color: "text-yellow-600", bg: "bg-yellow-50" },
                   ].map((stat) => (
                     <Card key={stat.label} className="border shadow-sm">
                       <CardContent className="p-4 text-center">
@@ -369,7 +369,7 @@ export default function FacilitatorDashboard() {
                   {!violenceFlags || violenceFlags.length === 0 ? (
                     <div className="text-center py-12 space-y-3">
                       <div className="text-4xl">✅</div>
-                      <p className="text-muted-foreground">Aucun signal de violence détecté.</p>
+                      <p className="text-muted-foreground">No violence signals detected.</p>
                     </div>
                   ) : (
                     violenceFlags.map((flag: any) => (
@@ -397,12 +397,12 @@ export default function FacilitatorDashboard() {
                           <div className="flex items-center gap-2 flex-wrap mb-1">
                             <Badge className={`text-xs ${SEVERITY_BADGES[flag.severity]}`}>{flag.severity?.toUpperCase()}</Badge>
                             <Badge variant="outline" className="text-xs">
-                              {flag.flagType === "self_harm" ? "🔴 Auto-destruction" : flag.flagType === "violence_toward_others" ? "⚠️ Violence envers autrui" : "🚨 Crise"}
+                              {flag.flagType === "self_harm" ? "🔴 Self-Harm" : flag.flagType === "violence_toward_others" ? "⚠️ Violence Toward Others" : "🚨 Crisis"}
                             </Badge>
-                            {flag.acknowledged && <Badge variant="outline" className="text-xs text-emerald-600 border-emerald-300">✓ Traité</Badge>}
+                            {flag.acknowledged && <Badge variant="outline" className="text-xs text-emerald-600 border-emerald-300">✓ Resolved</Badge>}
                             <span className="text-xs text-muted-foreground">{format(new Date(flag.createdAt), "d MMM yyyy · HH:mm")}</span>
                           </div>
-                          <p className="text-sm text-foreground font-medium">Étudiant anonyme</p>
+                          <p className="text-sm text-foreground font-medium">Anonymous Student</p>
                         </div>
                         {!flag.acknowledged && (
                           <Button
@@ -412,7 +412,7 @@ export default function FacilitatorDashboard() {
                             disabled={acknowledgeFlagMutation.isPending}
                             className="flex-shrink-0 text-xs"
                           >
-                            Marquer traité
+                            Mark Resolved
                           </Button>
                         )}
                       </div>

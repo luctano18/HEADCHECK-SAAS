@@ -72,11 +72,11 @@ export default function NavBar() {
   const logoutMutation = trpc.auth.logout.useMutation({
     onSuccess: async () => {
       await utils.auth.me.invalidate();
-      toast.success("Vous avez été déconnecté.", { description: "À bientôt sur HeadCheck !" });
+      toast.success("You've been signed out.", { description: "See you soon on HeadCheck!" });
       navigate("/");
     },
     onError: () => {
-      toast.error("Erreur lors de la déconnexion. Veuillez réessayer.");
+      toast.error("Sign-out failed. Please try again.");
     },
   });
 
@@ -161,8 +161,8 @@ export default function NavBar() {
       ].join(" ")}
       aria-expanded={summaryOpen}
       aria-haspopup={progress.steps.length > 0 ? "true" : undefined}
-      aria-label={`${progress.label} — étape ${progress.current} sur ${progress.total}. ${progress.steps.length > 0 ? "Cliquez pour voir le résumé des étapes." : ""}`}
-      title={progress.steps.length > 0 ? "Voir le résumé des étapes" : undefined}
+      aria-label={`${progress.label} — step ${progress.current} of ${progress.total}. ${progress.steps.length > 0 ? "Click to view step summary." : ""}`}
+      title={progress.steps.length > 0 ? "View step summary" : undefined}
     >
       {/* Journey label */}
       <span
@@ -211,7 +211,7 @@ export default function NavBar() {
       className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b"
       style={{ borderColor: "oklch(0.92 0.03 260)" }}
       role="navigation"
-      aria-label="Navigation principale"
+      aria-label="Main navigation"
     >
       {/* ── Main bar ─────────────────────────────────────────────── */}
       <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
@@ -220,7 +220,7 @@ export default function NavBar() {
           onClick={() => navigate("/")}
           className="flex items-center gap-2 font-black text-xl flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 rounded-lg"
           style={{ color: "oklch(0.45 0.18 285)" }}
-          aria-label="HeadCheck — Retour à l'accueil"
+          aria-label="HeadCheck — Back to home"
         >
           <Heart className="w-5 h-5" style={{ fill: "oklch(0.45 0.18 285)" }} />
           <span>HeadCheck</span>
@@ -260,7 +260,7 @@ export default function NavBar() {
               <DropdownMenuTrigger asChild>
                 <button
                   className="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-violet-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
-                  aria-label="Menu utilisateur"
+                  aria-label="User menu"
                 >
                   <span
                     className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
@@ -273,7 +273,7 @@ export default function NavBar() {
                     className="hidden xl:block text-sm font-medium max-w-[120px] truncate"
                     style={{ color: "oklch(0.25 0.04 260)" }}
                   >
-                    {user?.name ?? user?.email ?? "Mon compte"}
+                    {user?.name ?? user?.email ?? "My account"}
                   </span>
                   <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" aria-hidden="true" />
                 </button>
@@ -281,7 +281,7 @@ export default function NavBar() {
 
               <DropdownMenuContent align="end" className="w-56 rounded-xl shadow-lg">
                 <DropdownMenuLabel className="pb-1">
-                  <p className="text-sm font-semibold truncate">{user?.name ?? "Mon compte"}</p>
+                  <p className="text-sm font-semibold truncate">{user?.name ?? "My account"}</p>
                   {user?.email && (
                     <p className="text-xs text-muted-foreground font-normal truncate">{user.email}</p>
                   )}
@@ -294,7 +294,7 @@ export default function NavBar() {
                   className="cursor-pointer rounded-lg"
                 >
                   <LayoutDashboard className="w-4 h-4 mr-2 text-violet-500" aria-hidden="true" />
-                  Tableau de bord
+                  Dashboard
                 </DropdownMenuItem>
 
                 <DropdownMenuItem
@@ -302,7 +302,7 @@ export default function NavBar() {
                   className="cursor-pointer rounded-lg"
                 >
                   <User className="w-4 h-4 mr-2 text-muted-foreground" aria-hidden="true" />
-                  Mon profil
+                  My Profile
                 </DropdownMenuItem>
 
                 <DropdownMenuSeparator />
@@ -311,10 +311,10 @@ export default function NavBar() {
                   onClick={handleLogout}
                   disabled={logoutMutation.isPending}
                   className="cursor-pointer rounded-lg text-red-600 focus:text-red-600 focus:bg-red-50"
-                  aria-label="Se déconnecter de HeadCheck"
+                  aria-label="Sign out of HeadCheck"
                 >
                   <LogOut className="w-4 h-4 mr-2" aria-hidden="true" />
-                  <span>{logoutMutation.isPending ? "Déconnexion…" : "Se déconnecter"}</span>
+                  <span>{logoutMutation.isPending ? "Signing out…" : "Sign Out"}</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -345,7 +345,7 @@ export default function NavBar() {
           className="lg:hidden p-2 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
           onClick={() => setMobileOpen(!mobileOpen)}
           style={{ color: "oklch(0.45 0.18 285)" }}
-          aria-label={mobileOpen ? "Fermer le menu" : "Ouvrir le menu"}
+          aria-label={mobileOpen ? "Close menu" : "Open menu"}
           aria-expanded={mobileOpen}
           aria-controls="mobile-menu"
         >
@@ -386,18 +386,18 @@ export default function NavBar() {
             transition: "max-height 280ms cubic-bezier(0.4,0,0.2,1), opacity 220ms ease, transform 220ms ease",
           }}
           role="region"
-          aria-label="Résumé des étapes du parcours"
+          aria-label="Journey step summary"
         >
           <div ref={panelInnerRef} className="max-w-3xl mx-auto px-4 py-4">
             {/* Panel header */}
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-sm font-bold" style={{ color: "oklch(0.25 0.04 260)" }}>
-                {progress.label} — Résumé des étapes
+                {progress.label} — Step Summary
               </h2>
               <button
                 onClick={() => setSummaryOpen(false)}
                 className="p-1 rounded-lg hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
-                aria-label="Fermer le résumé"
+                aria-label="Close summary"
               >
                 <X className="w-4 h-4 text-muted-foreground" />
               </button>
@@ -408,7 +408,7 @@ export default function NavBar() {
               <div
                 className="flex flex-col items-center justify-center gap-3 py-8"
                 role="status"
-                aria-label="Chargement des étapes en cours"
+                aria-label="Loading steps"
               >
                 <Loader2
                   className="w-7 h-7 animate-spin"
@@ -416,12 +416,12 @@ export default function NavBar() {
                   aria-hidden="true"
                 />
                 <p className="text-xs" style={{ color: "oklch(0.55 0.04 260)" }}>
-                  Chargement des étapes…
+                  Loading steps…
                 </p>
               </div>
             ) : (
               /* Step list — responsive grid */
-              <ol className="grid grid-cols-1 sm:grid-cols-2 gap-2" aria-label="Liste des étapes">
+              <ol className="grid grid-cols-1 sm:grid-cols-2 gap-2" aria-label="Step list">
                 {progress.steps.map((step, idx) => (
                   <li
                     key={step.id}
@@ -476,10 +476,10 @@ export default function NavBar() {
               style={{ borderColor: "oklch(0.92 0.03 260)" }}
             >
               <span style={{ color: "oklch(0.50 0.03 260)" }}>
-                <span>{progress.steps.filter((s) => s.status === "done").length} étape{progress.steps.filter((s) => s.status === "done").length !== 1 ? "s" : ""} complétée{progress.steps.filter((s) => s.status === "done").length !== 1 ? "s" : ""}</span>
+                <span>{progress.steps.filter((s) => s.status === "done").length} step{progress.steps.filter((s) => s.status === "done").length !== 1 ? "s" : ""} completed</span>
               </span>
               <span className="font-semibold" style={{ color: "oklch(0.45 0.18 285)" }}>
-                <span>{pct}% du parcours</span>
+                <span>{pct}% of journey</span>
               </span>
             </div>
           </div>
@@ -521,7 +521,7 @@ export default function NavBar() {
                   </span>
                   <div className="min-w-0">
                     <p className="text-sm font-semibold truncate" style={{ color: "oklch(0.25 0.04 260)" }}>
-                      {user?.name ?? "Mon compte"}
+                      {user?.name ?? "My account"}
                     </p>
                     {user?.email && (
                       <p className="text-xs text-muted-foreground truncate">{user.email}</p>
@@ -545,7 +545,7 @@ export default function NavBar() {
                     className="flex-1 rounded-xl border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 focus-visible:ring-red-400"
                     onClick={() => { handleLogout(); setMobileOpen(false); }}
                     disabled={logoutMutation.isPending}
-                    aria-label="Se déconnecter de HeadCheck"
+                    aria-label="Sign out of HeadCheck"
                   >
                     <LogOut className="w-4 h-4 mr-1.5" aria-hidden="true" />
                     <span>{logoutMutation.isPending ? "…" : "Sign Out"}</span>

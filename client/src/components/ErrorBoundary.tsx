@@ -69,11 +69,11 @@ class ErrorBoundary extends Component<Props, State> {
               className="text-destructive mb-6 flex-shrink-0"
             />
 
-            <h2 className="text-xl mb-4">Une erreur inattendue s&apos;est produite.</h2>
+            <h2 className="text-xl mb-4">An unexpected error occurred.</h2>
 
             <p className="text-muted-foreground text-sm mb-6 text-center max-w-md">
-              Cela peut être causé par une extension de navigateur (traducteur automatique, correcteur orthographique).
-              Essayez de désactiver vos extensions ou d&apos;utiliser une fenêtre de navigation privée.
+              This may be caused by a browser extension (auto-translator, spell checker, etc.).
+              Try disabling your extensions or opening a private/incognito window.
             </p>
 
             <div className="p-4 w-full rounded bg-muted overflow-auto mb-6 max-h-40">
@@ -94,7 +94,7 @@ class ErrorBoundary extends Component<Props, State> {
               )}
             >
               <RotateCcw size={16} />
-              Réessayer
+              Try Again
             </button>
           </div>
         </div>

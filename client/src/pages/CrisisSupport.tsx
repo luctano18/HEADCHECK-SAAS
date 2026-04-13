@@ -9,40 +9,40 @@ const EMERGENCY_RESOURCES = [
   {
     region: "International",
     lines: [
-      { name: "Ligne de crise internationale", number: "988", type: "call", description: "Disponible 24h/24 — États-Unis, Canada" },
-      { name: "SMS de crise (Crisis Text Line)", number: "741741", type: "sms", description: "Envoyer HOME au 741741" },
+      { name: "Suicide & Crisis Lifeline", number: "988", type: "call", description: "Available 24/7 — USA & Canada" },
+      { name: "Crisis Text Line", number: "741741", type: "sms", description: "Text HOME to 741741 — Free, 24/7" },
     ],
   },
   {
     region: "France",
     lines: [
-      { name: "SOS Amitié", number: "09 72 39 40 50", type: "call", description: "Disponible 24h/24, 7j/7" },
-      { name: "Numéro national de prévention du suicide", number: "3114", type: "call", description: "Disponible 24h/24, 7j/7 — Gratuit" },
-      { name: "Urgences médicales", number: "15", type: "call", description: "SAMU — Urgences médicales" },
+      { name: "SOS Amitié", number: "09 72 39 40 50", type: "call", description: "Available 24/7" },
+      { name: "National Suicide Prevention Line", number: "3114", type: "call", description: "Available 24/7 — Free" },
+      { name: "Medical Emergency", number: "15", type: "call", description: "SAMU — Medical Emergency" },
     ],
   },
   {
-    region: "Belgique",
+    region: "Belgium",
     lines: [
-      { name: "Centre de Prévention du Suicide", number: "0800 32 123", type: "call", description: "Gratuit, 24h/24" },
-      { name: "Urgences", number: "112", type: "call", description: "Urgences générales" },
+      { name: "Suicide Prevention Center", number: "0800 32 123", type: "call", description: "Free, 24/7" },
+      { name: "Emergency Services", number: "112", type: "call", description: "General Emergency" },
     ],
   },
   {
     region: "Côte d'Ivoire",
     lines: [
-      { name: "SAMU social", number: "185", type: "call", description: "Aide sociale d'urgence" },
-      { name: "Urgences", number: "185", type: "call", description: "Urgences générales" },
+      { name: "SAMU Social", number: "185", type: "call", description: "Emergency Social Services" },
+      { name: "Emergency Services", number: "185", type: "call", description: "General Emergency" },
     ],
   },
 ];
 
 // ─── Grounding Techniques ─────────────────────────────────────────────────────
 const GROUNDING_STEPS = [
-  { step: "1", title: "Respire", description: "Inspire 4 secondes, retiens 4 secondes, expire 6 secondes. Répète 3 fois." },
-  { step: "2", title: "Nomme", description: "Dis à voix haute 5 choses que tu vois autour de toi en ce moment." },
-  { step: "3", title: "Touche", description: "Pose les deux mains à plat sur une surface. Sens sa texture, sa température." },
-  { step: "4", title: "Reste", description: "Tu n'as pas besoin de résoudre quoi que ce soit maintenant. Tu as juste besoin d'être là." },
+  { step: "1", title: "Breathe", description: "Inhale for 4 seconds, hold for 4 seconds, exhale for 6 seconds. Repeat 3 times." },
+  { step: "2", title: "Name", description: "Say out loud 5 things you can see around you right now." },
+  { step: "3", title: "Touch", description: "Place both hands flat on a surface. Feel its texture and temperature." },
+  { step: "4", title: "Stay", description: "You don't need to solve anything right now. You just need to be here." },
 ];
 
 export default function CrisisSupport() {
@@ -57,12 +57,12 @@ export default function CrisisSupport() {
         <Link href="/">
           <button className="flex items-center gap-2 text-purple-300 hover:text-white transition-colors text-sm">
             <ArrowLeft className="w-4 h-4" />
-            <span>Retour</span>
+            <span>Back</span>
           </button>
         </Link>
         <div className="flex items-center gap-2">
           <Shield className="w-4 h-4 text-purple-400" />
-          <span className="text-sm text-purple-300">Support de Crise</span>
+          <span className="text-sm text-purple-300">Crisis Support</span>
         </div>
       </div>
 
@@ -76,11 +76,11 @@ export default function CrisisSupport() {
             </div>
           </div>
           <h1 className="text-3xl font-bold tracking-tight">
-            Vous n'êtes pas seul·e
+            You Are Not Alone
           </h1>
           <p className="text-lg text-purple-200 leading-relaxed max-w-md mx-auto">
-            Votre sécurité compte. Vous méritez du soutien en ce moment.
-            Ce que vous ressentez est réel, et de l'aide est disponible.
+            Your safety matters. You deserve support right now.
+            What you're feeling is real, and help is available.
           </p>
         </div>
 
@@ -89,28 +89,28 @@ export default function CrisisSupport() {
           <CardContent className="p-6 space-y-4">
             <div className="flex items-center gap-2 mb-2">
               <AlertTriangle className="w-5 h-5 text-rose-400" />
-              <h2 className="text-lg font-semibold text-rose-200">Aide immédiate</h2>
+              <h2 className="text-lg font-semibold text-rose-200">Immediate Help</h2>
             </div>
 
-            {/* France 3114 — most prominent */}
-            <a href="tel:3114" className="block">
+            {/* 988 — most prominent */}
+            <a href="tel:988" className="block">
               <Button
                 className="w-full h-14 text-base font-bold bg-rose-600 hover:bg-rose-500 text-white border-0 rounded-2xl shadow-lg shadow-rose-500/30 transition-all hover:scale-[1.02]"
                 size="lg"
               >
                 <Phone className="w-5 h-5 mr-3" />
-                Appeler le 3114 — France (Gratuit 24h/24)
+                Call 988 — Suicide & Crisis Lifeline (Free 24/7)
               </Button>
             </a>
 
-            {/* 988 */}
-            <a href="tel:988" className="block">
+            {/* 3114 France */}
+            <a href="tel:3114" className="block">
               <Button
                 variant="outline"
                 className="w-full h-12 text-sm font-semibold bg-purple-900/60 hover:bg-purple-800/60 text-white border-purple-600/50 rounded-2xl transition-all hover:scale-[1.02]"
               >
                 <Phone className="w-4 h-4 mr-2" />
-                Appeler le 988 — International
+                Call 3114 — France (Free 24/7)
               </Button>
             </a>
 
@@ -121,19 +121,19 @@ export default function CrisisSupport() {
                 className="w-full h-12 text-sm font-semibold bg-purple-900/60 hover:bg-purple-800/60 text-white border-purple-600/50 rounded-2xl transition-all hover:scale-[1.02]"
               >
                 <MessageSquare className="w-4 h-4 mr-2" />
-                Envoyer HOME au 741741 (SMS)
+                Text HOME to 741741 (Crisis Text Line)
               </Button>
             </a>
 
             {/* Emergency services */}
             <div className="grid grid-cols-2 gap-3">
-              <a href="tel:15" className="block">
+              <a href="tel:911" className="block">
                 <Button
                   variant="outline"
                   className="w-full h-11 text-sm bg-purple-900/40 hover:bg-purple-800/40 text-white border-purple-700/40 rounded-xl"
                 >
                   <Phone className="w-4 h-4 mr-2" />
-                  SAMU — 15
+                  911 — US Emergency
                 </Button>
               </a>
               <a href="tel:112" className="block">
@@ -142,7 +142,7 @@ export default function CrisisSupport() {
                   className="w-full h-11 text-sm bg-purple-900/40 hover:bg-purple-800/40 text-white border-purple-700/40 rounded-xl"
                 >
                   <Phone className="w-4 h-4 mr-2" />
-                  Urgences — 112
+                  112 — EU Emergency
                 </Button>
               </a>
             </div>
@@ -161,8 +161,8 @@ export default function CrisisSupport() {
                   <span className="text-xl">🌬️</span>
                 </div>
                 <div>
-                  <h3 className="font-semibold text-indigo-200">Technique d'ancrage rapide</h3>
-                  <p className="text-sm text-indigo-400">Revenir à soi en 2 minutes</p>
+                  <h3 className="font-semibold text-indigo-200">Quick Grounding Technique</h3>
+                  <p className="text-sm text-indigo-400">Come back to yourself in 2 minutes</p>
                 </div>
               </div>
               {showGrounding ? (
@@ -195,15 +195,15 @@ export default function CrisisSupport() {
           <Card className="bg-purple-900/40 border-purple-600/30">
             <CardContent className="p-6 text-center space-y-4">
               <p className="text-purple-200 leading-relaxed">
-                Si vous n'êtes pas en danger immédiat mais que vous avez besoin d'un espace pour souffler,
-                HeadCheck est là pour vous accompagner.
+                If you're not in immediate danger but need a moment to breathe,
+                HeadCheck is here to support you.
               </p>
               <Button
                 onClick={() => setReconnected(true)}
                 className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white border-0 rounded-2xl px-8 py-3 font-semibold transition-all hover:scale-[1.02]"
               >
                 <Heart className="w-4 h-4 mr-2" />
-                Rester avec moi
+                Stay With Me
               </Button>
             </CardContent>
           </Card>
@@ -215,20 +215,20 @@ export default function CrisisSupport() {
                   <Heart className="w-5 h-5 text-emerald-400" fill="currentColor" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-emerald-200">Vous êtes ici. C'est suffisant.</h3>
-                  <p className="text-sm text-emerald-400">Prenez le temps qu'il vous faut.</p>
+                  <h3 className="font-semibold text-emerald-200">You're here. That's enough.</h3>
+                  <p className="text-sm text-emerald-400">Take all the time you need.</p>
                 </div>
               </div>
               <p className="text-emerald-200 text-sm leading-relaxed">
-                Vous n'avez pas besoin de tout résoudre maintenant. Vous avez juste besoin de nommer
-                ce qui est réel, de choisir ce qui est possible, et de laisser le soutien vous rejoindre là où vous êtes.
+                You don't need to solve everything right now. You just need to name
+                what is real, choose what is possible, and let support meet you where you are.
               </p>
               <div className="flex flex-col sm:flex-row gap-3 pt-2">
                 <Link href="/checkin" className="flex-1">
                   <Button
                     className="w-full bg-emerald-700/60 hover:bg-emerald-600/60 text-white border-0 rounded-xl"
                   >
-                    Faire un check-in
+                    Do a Check-In
                   </Button>
                 </Link>
                 <Link href="/" className="flex-1">
@@ -236,7 +236,7 @@ export default function CrisisSupport() {
                     variant="outline"
                     className="w-full bg-transparent hover:bg-emerald-900/40 text-emerald-300 border-emerald-700/40 rounded-xl"
                   >
-                    Retourner à l'accueil
+                    Go Back Home
                   </Button>
                 </Link>
               </div>
@@ -253,12 +253,12 @@ export default function CrisisSupport() {
             {showAllResources ? (
               <>
                 <ChevronUp className="w-4 h-4" />
-                Masquer les ressources supplémentaires
+                Hide additional resources
               </>
             ) : (
               <>
                 <ChevronDown className="w-4 h-4" />
-                Voir toutes les ressources par région
+                View all resources by region
               </>
             )}
           </button>
@@ -305,12 +305,12 @@ export default function CrisisSupport() {
         {/* ─── External Resources ────────────────────────────────────────────── */}
         <Card className="bg-purple-900/20 border-purple-800/20">
           <CardContent className="p-5 space-y-3">
-            <h3 className="text-sm font-semibold text-purple-300 uppercase tracking-wider">Ressources en ligne</h3>
+            <h3 className="text-sm font-semibold text-purple-300 uppercase tracking-wider">Online Resources</h3>
             <div className="space-y-2">
               {[
-                { name: "OMS — Santé mentale", url: "https://www.who.int/fr/health-topics/mental-health" },
-                { name: "UNICEF — Bien-être émotionnel", url: "https://www.unicef.org/mental-health" },
-                { name: "Psycom — Ressources francophones", url: "https://www.psycom.org" },
+                { name: "WHO — Mental Health", url: "https://www.who.int/health-topics/mental-health" },
+                { name: "UNICEF — Emotional Well-being", url: "https://www.unicef.org/mental-health" },
+                { name: "NAMI — National Alliance on Mental Illness", url: "https://www.nami.org" },
               ].map((link) => (
                 <a
                   key={link.url}
@@ -330,8 +330,8 @@ export default function CrisisSupport() {
         {/* ─── Disclaimer ────────────────────────────────────────────────────── */}
         <div className="text-center pb-8">
           <p className="text-xs text-purple-500 leading-relaxed max-w-sm mx-auto">
-            HeadCheck AI est un outil de soutien émotionnel, non un service de crise.
-            En cas d'urgence, contactez les services d'urgence de votre région.
+            HeadCheck AI is an emotional support tool, not a crisis service.
+            In case of emergency, contact your local emergency services.
           </p>
         </div>
 

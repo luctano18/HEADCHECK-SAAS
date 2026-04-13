@@ -15,46 +15,46 @@ import { toast } from "sonner";
 
 // ─── Default suggestions ──────────────────────────────────────────────────────
 const DEFAULT_WARNING_SIGNALS = [
-  "Pensées de blesser quelqu'un",
-  "Sentiment de rage incontrôlable",
-  "Isolement soudain",
-  "Difficulté à dormir",
-  "Pensées répétitives de vengeance",
+  "Thoughts of hurting someone",
+  "Feeling of uncontrollable rage",
+  "Sudden withdrawal",
+  "Difficulty sleeping",
+  "Repetitive thoughts of revenge",
 ];
 const DEFAULT_COPING = [
-  "Respiration profonde (4-4-6)",
-  "Marcher 10 minutes à l'extérieur",
-  "Appeler un ami de confiance",
-  "Écrire dans mon journal",
-  "Écouter de la musique apaisante",
-  "Méditation guidée",
+  "Deep breathing (4-4-6)",
+  "Walk outside for 10 minutes",
+  "Call a trusted friend",
+  "Write in my journal",
+  "Listen to calming music",
+  "Guided meditation",
 ];
 const DEFAULT_SAFE_PLACES = [
-  "Ma chambre avec la porte fermée",
-  "Le parc près de chez moi",
-  "La bibliothèque",
-  "Le cabinet de mon thérapeute",
+  "My room with the door closed",
+  "The park near my home",
+  "The library",
+  "My therapist's office",
 ];
 
 // ─── Info sections ────────────────────────────────────────────────────────────
 const INFO_SECTIONS = [
   {
     icon: "🧠",
-    title: "Comprendre les pensées violentes",
+    title: "Understanding Violent Thoughts",
     content:
-      "Avoir des pensées violentes ne fait pas de vous une mauvaise personne. Ces pensées sont souvent le signe d'une douleur profonde, d'une frustration intense ou d'un besoin non satisfait. Ce qui compte, c'est ce que vous faites avec ces pensées.",
+      "Having violent thoughts does not make you a bad person. These thoughts are often a sign of deep pain, intense frustration, or an unmet need. What matters is what you do with those thoughts.",
   },
   {
     icon: "🔄",
-    title: "Le cycle de l'escalade",
+    title: "The Escalation Cycle",
     content:
-      "Les émotions intenses suivent souvent un cycle : déclencheur → montée de tension → pic → descente. Reconnaître les signaux d'alerte précoces vous permet d'intervenir avant d'atteindre le pic.",
+      "Intense emotions often follow a cycle: trigger → rising tension → peak → de-escalation. Recognizing early warning signals allows you to intervene before reaching the peak.",
   },
   {
     icon: "💬",
-    title: "Demander de l'aide n'est pas une faiblesse",
+    title: "Asking for Help Is Not Weakness",
     content:
-      "Parler à quelqu'un de confiance, un professionnel ou un proche, est l'un des actes les plus courageux que vous puissiez poser. HeadCheck est là pour vous aider à faire ce premier pas.",
+      "Talking to a trusted person — a professional or a loved one — is one of the most courageous acts you can take. HeadCheck is here to help you take that first step.",
   },
 ];
 
@@ -100,15 +100,15 @@ export default function ViolencePrevention() {
   const saveMutation = trpc.crisis.saveSafetyPlan.useMutation({
     onSuccess: () => {
       setSaved(true);
-      toast.success("Plan de sécurité sauvegardé !");
+      toast.success("Safety plan saved!");
       setTimeout(() => setSaved(false), 3000);
     },
-    onError: () => toast.error("Erreur lors de la sauvegarde."),
+    onError: () => toast.error("Failed to save. Please try again."),
   });
 
   const handleSave = () => {
     if (!user) {
-      toast.error("Connectez-vous pour sauvegarder votre plan de sécurité.");
+      toast.error("Please sign in to save your safety plan.");
       return;
     }
     saveMutation.mutate({ warningSignals, copingStrategies, safeEnvironments, professionalSupport, trustedContacts });
@@ -141,12 +141,12 @@ export default function ViolencePrevention() {
         <Link href="/">
           <button className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors text-sm">
             <ArrowLeft className="w-4 h-4" />
-            <span>Retour</span>
+            <span>Back</span>
           </button>
         </Link>
         <div className="flex items-center gap-2">
           <Shield className="w-4 h-4 text-purple-400" />
-          <span className="text-sm text-slate-300">Prévention de la Violence</span>
+          <span className="text-sm text-slate-300">Violence Prevention</span>
         </div>
         <Button
           onClick={handleSave}
@@ -159,9 +159,9 @@ export default function ViolencePrevention() {
           }`}
         >
           {saved ? (
-            <><CheckCircle2 className="w-3 h-3 mr-1" /> Sauvegardé</>
+            <><CheckCircle2 className="w-3 h-3 mr-1" /> Saved</>
           ) : (
-            <><Save className="w-3 h-3 mr-1" /> Sauvegarder</>
+            <><Save className="w-3 h-3 mr-1" /> Save</>
           )}
         </Button>
       </div>
@@ -175,15 +175,15 @@ export default function ViolencePrevention() {
               <Shield className="w-8 h-8 text-white" />
             </div>
           </div>
-          <h1 className="text-2xl font-bold tracking-tight">Mon Plan de Sécurité</h1>
+          <h1 className="text-2xl font-bold tracking-tight">My Safety Plan</h1>
           <p className="text-slate-400 text-sm leading-relaxed max-w-sm mx-auto">
-            Un plan de sécurité personnel vous aide à identifier vos signaux d'alerte et à agir
-            avant que la situation ne s'intensifie.
+            A personal safety plan helps you identify your warning signals and take action
+            before the situation escalates.
           </p>
           {!user && (
             <div className="inline-flex items-center gap-2 bg-amber-900/40 border border-amber-700/40 rounded-xl px-4 py-2 text-amber-300 text-xs">
               <Info className="w-3 h-3" />
-              Connectez-vous pour sauvegarder votre plan
+              Sign in to save your plan
             </div>
           )}
         </div>
@@ -217,9 +217,9 @@ export default function ViolencePrevention() {
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-base text-amber-300">
               <AlertTriangle className="w-5 h-5" />
-              Mes signaux d'alerte
+              My Warning Signals
             </CardTitle>
-            <p className="text-xs text-slate-500">Pensées, émotions ou comportements qui signalent que la tension monte</p>
+            <p className="text-xs text-slate-500">Thoughts, emotions, or behaviors that signal rising tension</p>
           </CardHeader>
           <CardContent className="space-y-3">
             {/* Suggestions */}
@@ -253,7 +253,7 @@ export default function ViolencePrevention() {
                 value={newSignal}
                 onChange={(e) => setNewSignal(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && addItem(warningSignals, setWarningSignals, newSignal, setNewSignal)}
-                placeholder="Ajouter un signal d'alerte..."
+                placeholder="Add a warning signal..."
                 className="bg-slate-800/60 border-slate-700/40 text-white placeholder:text-slate-500 text-sm rounded-xl"
               />
               <Button
@@ -272,9 +272,9 @@ export default function ViolencePrevention() {
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-base text-emerald-300">
               <Lightbulb className="w-5 h-5" />
-              Mes stratégies d'adaptation
+              My Coping Strategies
             </CardTitle>
-            <p className="text-xs text-slate-500">Ce que je peux faire seul·e pour réduire la tension</p>
+            <p className="text-xs text-slate-500">What I can do on my own to reduce tension</p>
           </CardHeader>
           <CardContent className="space-y-3">
             {copingStrategies.length === 0 && (
@@ -305,7 +305,7 @@ export default function ViolencePrevention() {
                 value={newCoping}
                 onChange={(e) => setNewCoping(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && addItem(copingStrategies, setCopingStrategies, newCoping, setNewCoping)}
-                placeholder="Ajouter une stratégie..."
+                placeholder="Add a coping strategy..."
                 className="bg-slate-800/60 border-slate-700/40 text-white placeholder:text-slate-500 text-sm rounded-xl"
               />
               <Button
@@ -324,9 +324,9 @@ export default function ViolencePrevention() {
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-base text-blue-300">
               <MapPin className="w-5 h-5" />
-              Mes environnements sécurisants
+              My Safe Environments
             </CardTitle>
-            <p className="text-xs text-slate-500">Endroits où je me sens en sécurité et calme</p>
+            <p className="text-xs text-slate-500">Places where I feel safe and calm</p>
           </CardHeader>
           <CardContent className="space-y-3">
             {safeEnvironments.length === 0 && (
@@ -376,9 +376,9 @@ export default function ViolencePrevention() {
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-base text-purple-300">
               <User className="w-5 h-5" />
-              Mes contacts de confiance
+              My Trusted Contacts
             </CardTitle>
-            <p className="text-xs text-slate-500">Personnes que je peux appeler en cas de besoin</p>
+            <p className="text-xs text-slate-500">People I can call when I need support</p>
           </CardHeader>
           <CardContent className="space-y-4">
             {/* Existing contacts */}
@@ -422,7 +422,7 @@ export default function ViolencePrevention() {
                 <Input
                   value={newContact.relation}
                   onChange={(e) => setNewContact({ ...newContact, relation: e.target.value })}
-                  placeholder="Relation (ami, parent…)"
+                  placeholder="Relationship (friend, parent…)"
                   className="bg-slate-800/60 border-slate-700/40 text-white placeholder:text-slate-500 text-sm rounded-xl"
                 />
               </div>
@@ -430,7 +430,7 @@ export default function ViolencePrevention() {
                 <Input
                   value={newContact.phone}
                   onChange={(e) => setNewContact({ ...newContact, phone: e.target.value })}
-                  placeholder="Numéro de téléphone"
+                  placeholder="Phone number"
                   type="tel"
                   className="bg-slate-800/60 border-slate-700/40 text-white placeholder:text-slate-500 text-sm rounded-xl"
                 />
@@ -452,15 +452,15 @@ export default function ViolencePrevention() {
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-base text-rose-300">
               <Heart className="w-5 h-5" />
-              Soutien professionnel
+              Professional Support
             </CardTitle>
-            <p className="text-xs text-slate-500">Thérapeute, médecin, service de crise que je peux contacter</p>
+            <p className="text-xs text-slate-500">Therapist, doctor, or crisis service I can contact</p>
           </CardHeader>
           <CardContent>
             <Textarea
               value={professionalSupport}
               onChange={(e) => setProfessionalSupport(e.target.value)}
-              placeholder="Ex : Dr. Martin — 01 23 45 67 89 · Service de crise local — 3114"
+              placeholder="e.g. Dr. Smith — (555) 123-4567 · Local crisis line — 988"
               className="bg-slate-800/60 border-slate-700/40 text-white placeholder:text-slate-500 text-sm rounded-xl resize-none min-h-[80px]"
             />
           </CardContent>
@@ -475,19 +475,19 @@ export default function ViolencePrevention() {
               className="w-full h-12 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white border-0 rounded-2xl font-semibold transition-all hover:scale-[1.02] shadow-lg shadow-purple-500/20"
             >
               {saved ? (
-                <><CheckCircle2 className="w-4 h-4 mr-2" /> Plan sauvegardé !</>
+                <><CheckCircle2 className="w-4 h-4 mr-2" /> Plan Saved!</>
               ) : saveMutation.isPending ? (
-                "Sauvegarde en cours..."
+                "Saving..."
               ) : (
-                <><Save className="w-4 h-4 mr-2" /> Sauvegarder mon plan de sécurité</>
+                <><Save className="w-4 h-4 mr-2" /> Save My Safety Plan</>
               )}
             </Button>
           ) : (
             <div className="text-center space-y-3">
-              <p className="text-sm text-slate-400">Connectez-vous pour sauvegarder votre plan</p>
+              <p className="text-sm text-slate-400">Sign in to save your plan</p>
               <Link href="/">
                 <Button className="bg-purple-700 hover:bg-purple-600 text-white border-0 rounded-2xl px-8">
-                  Se connecter
+                  Sign In
                 </Button>
               </Link>
             </div>
@@ -496,10 +496,10 @@ export default function ViolencePrevention() {
 
         {/* ─── Crisis Link ───────────────────────────────────────────────────── */}
         <div className="text-center pb-4">
-          <p className="text-xs text-slate-600 mb-2">En cas de crise immédiate :</p>
+          <p className="text-xs text-slate-600 mb-2">If you're in immediate crisis:</p>
           <Link href="/crisis-support">
             <button className="text-sm text-rose-400 hover:text-rose-300 underline transition-colors">
-              Accéder au support de crise →
+              Access Crisis Support →
             </button>
           </Link>
         </div>

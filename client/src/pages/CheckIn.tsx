@@ -218,19 +218,19 @@ export default function CheckIn() {
             {isViolence ? <AlertTriangle className="w-8 h-8 text-orange-500" /> : <Heart className="w-8 h-8 text-red-500" />}
           </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-3">
-            {isViolence ? "Pause — parlons de ça" : "Tu n'es pas seul(e)"}
+            {isViolence ? "Let's Talk About This" : "You Are Not Alone"}
           </h1>
           <p className="text-gray-600 mb-6 leading-relaxed">
             {isViolence
-              ? "Ces pensées sont un signal que quelque chose doit changer. Parler à quelqu'un peut aider — avant que ça aille plus loin."
-              : "Ta sécurité compte. Tu mérites du soutien maintenant. De l'aide est disponible."}
+              ? "These thoughts are a signal that something needs to change. Talking to someone can help — before things escalate."
+              : "Your safety matters. You deserve support right now. Help is available."}
           </p>
           <div className="space-y-3 mb-6">
             <a href="tel:3114" className="flex items-center gap-3 p-4 bg-red-50 rounded-2xl hover:bg-red-100 transition-colors">
               <Phone className="w-5 h-5 text-red-500" />
               <div className="text-left">
-                <div className="font-semibold text-gray-900">3114 — Numéro National Prévention Suicide</div>
-                <div className="text-sm text-gray-500">France · 24h/24, 7j/7, gratuit</div>
+                <div className="font-semibold text-gray-900">3114 — National Suicide Prevention (France)</div>
+                <div className="text-sm text-gray-500">France · 24/7, free</div>
               </div>
             </a>
             <a href="tel:988" className="flex items-center gap-3 p-4 bg-orange-50 rounded-2xl hover:bg-orange-100 transition-colors">
@@ -254,7 +254,7 @@ export default function CheckIn() {
               className="flex-1 rounded-2xl text-sm"
               onClick={() => { setShowCrisisModal(false); navigate("/crisis-support"); }}
             >
-              Voir les ressources complètes
+              View Full Resources
             </Button>
             {isViolence && (
               <Button
@@ -262,15 +262,15 @@ export default function CheckIn() {
                 className="flex-1 rounded-2xl text-sm"
                 onClick={() => { setShowCrisisModal(false); navigate("/violence-prevention"); }}
               >
-                Plan de sécurité
+                Safety Plan
               </Button>
             )}
           </div>
           <Button variant="ghost" className="w-full rounded-2xl text-sm text-gray-500" onClick={() => setShowCrisisModal(false)}>
-            Je vais bien pour l'instant — continuer
+            I'm okay for now — continue
           </Button>
           <p className="text-xs text-gray-400 mt-4">
-            HeadCheck n'est pas un service de crise. En cas de danger immédiat, appelez le 15 (SAMU) ou le 17 (Police).
+            HeadCheck is not a crisis service. If you are in immediate danger, call 911 (US) or your local emergency number.
           </p>
         </div>
       </div>

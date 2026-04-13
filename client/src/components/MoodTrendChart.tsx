@@ -47,7 +47,7 @@ function emotionStyle(emotion: string) {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function fmtDate(dateStr: string, days: Days): string {
   const d = new Date(dateStr + "T00:00:00");
-  return d.toLocaleDateString("fr-FR", { month: "short", day: "numeric" });
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
 // ─── Custom Tooltip ───────────────────────────────────────────────────────────
@@ -72,7 +72,7 @@ function CustomTooltip({
         {label}
       </p>
       <p style={{ color: style.stroke }}>
-        Intensité : <span className="font-bold">{point.avgIntensity}/10</span>
+        Intensity: <span className="font-bold">{point.avgIntensity}/10</span>
       </p>
       <p className="text-muted-foreground">
         {point.checkInCount} check-in{point.checkInCount > 1 ? "s" : ""}
@@ -174,13 +174,13 @@ function EmptyState({ days, filtered }: { days: Days; filtered: boolean }) {
       </div>
       <p className="font-semibold text-sm mb-1" style={{ color: "oklch(0.35 0.04 260)" }}>
         {filtered
-          ? "Aucun check-in pour cette émotion sur cette période"
-          : `Pas encore de données sur ${days} jours`}
+          ? "No check-ins for this emotion in this period"
+          : `No data yet for the last ${days} days`}
       </p>
       <p className="text-xs text-muted-foreground max-w-xs">
         {filtered
-          ? "Essayez une autre émotion ou élargissez la période."
-          : "Faites au moins 3 check-ins pour voir votre courbe d'humeur apparaître ici."}
+          ? "Try a different emotion or expand the time period."
+          : "Complete at least 3 check-ins to see your mood trend here."}
       </p>
     </div>
   );
@@ -231,7 +231,7 @@ export default function MoodTrendChart() {
       ? "oklch(0.55 0.22 25)"
       : "oklch(0.55 0.04 260)";
   const trendLabel =
-    stats?.trend === "up" ? "En hausse" : stats?.trend === "down" ? "En baisse" : "Stable";
+    stats?.trend === "up" ? "Trending Up" : stats?.trend === "down" ? "Trending Down" : "Stable";
 
   const tickInterval = days === 90 ? Math.max(1, Math.floor(chartData.length / 12)) - 1 : 0;
 
@@ -253,7 +253,7 @@ export default function MoodTrendChart() {
       >
         <div>
           <h2 className="text-base font-bold flex items-center gap-2" style={{ color: "oklch(0.25 0.04 260)" }}>
-            Suivi de l'humeur
+            Mood Tracker
             {selectedEmotion && (
               <span
                 className="text-xs font-semibold px-2 py-0.5 rounded-full"
@@ -267,7 +267,7 @@ export default function MoodTrendChart() {
             )}
           </h2>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Intensité émotionnelle quotidienne (1–10)
+            Daily emotional intensity (1–10)
           </p>
         </div>
 
@@ -276,7 +276,7 @@ export default function MoodTrendChart() {
           className="flex items-center gap-1 p-1 rounded-xl"
           style={{ background: "oklch(0.92 0.03 260)" }}
           role="group"
-          aria-label="Période d'affichage"
+          aria-label="Display period"
         >
           {([30, 90] as Days[]).map((d) => (
             <button
@@ -290,7 +290,7 @@ export default function MoodTrendChart() {
               }}
               aria-pressed={days === d}
             >
-              {d} jours
+              {d} days
             </button>
           ))}
         </div>
@@ -301,7 +301,7 @@ export default function MoodTrendChart() {
         {(availableEmotions?.length ?? 0) > 0 && (
           <div className="mt-4 flex flex-wrap gap-2 items-center">
             <span className="flex items-center gap-1 text-xs text-muted-foreground font-medium">
-              <Filter className="w-3 h-3" /> Filtrer :
+              <Filter className="w-3 h-3" /> Filter:
             </span>
             {/* "Toutes" chip */}
             <button
@@ -315,7 +315,7 @@ export default function MoodTrendChart() {
                 boxShadow: selectedEmotion === undefined ? "0 2px 8px oklch(0.55 0.18 285 / 0.3)" : "none",
               }}
             >
-              Toutes
+              All
             </button>
             {availableEmotions?.map(({ emotion, count }) => (
               <EmotionChip
@@ -379,7 +379,7 @@ export default function MoodTrendChart() {
                     stroke="oklch(0.75 0.04 260)"
                     strokeDasharray="4 4"
                     label={{
-                      value: "Neutre",
+                      value: "Neutral",
                       position: "insideTopRight",
                       fontSize: 9,
                       fill: "oklch(0.65 0.04 260)",
@@ -408,28 +408,28 @@ export default function MoodTrendChart() {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <StatCard
                   icon={Activity}
-                  label="Intensité moyenne"
+                  label="Avg Intensity"
                   value={`${stats.avgIntensity}/10`}
                   color={activeStroke}
                 />
                 <StatCard
                   icon={TrendIcon}
-                  label="Tendance"
+                  label="Trend"
                   value={trendLabel}
                   color={trendColor}
                 />
                 <StatCard
                   icon={Smile}
-                  label={selectedEmotion ? "Émotion filtrée" : "Émotion dominante"}
+                  label={selectedEmotion ? "Filtered Emotion" : "Top Emotion"}
                   value={selectedEmotion ?? stats.topEmotion}
                   sub={`${stats.totalCheckIns} check-in${stats.totalCheckIns > 1 ? "s" : ""}`}
                   color={emotionStyle(selectedEmotion ?? stats.topEmotion).stroke}
                 />
                 <StatCard
                   icon={Zap}
-                  label="Pic / Creux"
+                  label="Peak / Low"
                   value={`${stats.maxIntensity} / ${stats.minIntensity}`}
-                  sub="sur 10"
+                  sub="out of 10"
                   color="oklch(0.55 0.22 25)"
                 />
               </div>
