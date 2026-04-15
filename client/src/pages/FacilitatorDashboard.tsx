@@ -41,6 +41,8 @@ export default function FacilitatorDashboard() {
   const [inviteLink, setInviteLink] = useState<string | null>(null);
   const [selectedGroupId, setSelectedGroupId] = useState<number | "">("");
   const [activeTab, setActiveTab] = useState<"overview" | "alerts" | "violence" | "groups">("overview");
+  const [crisisFilterUnresolved, setCrisisFilterUnresolved] = useState(true);
+  const [violenceFilterUnresolved, setViolenceFilterUnresolved] = useState(true);
 
   const isSuperadmin = user?.role === "superadmin";
   const hasInstitution = !!user?.institutionId;
@@ -118,11 +120,17 @@ export default function FacilitatorDashboard() {
       ).map(([date, { sum, count }]) => ({ date, avg: parseFloat((sum / count).toFixed(1)) }))
     : [];
 
-  const criticalCount = crisisAlerts?.filter((a: any) => a.severity === "critical").length ?? 0;
-  const highCount = crisisAlerts?.filter((a: any) => a.severity === "high").length ?? 0;
+  const criticalCount = crisisAlerts?.filter((a: any) => a.severity === "critical" && !a.acknowledged).length ?? 0;
+  const highCount = crisisAlerts?.filter((a: any) => a.severity === "high" && !a.acknowledged).length ?? 0;
   const violenceCriticalCount = violenceFlags?.filter((f: any) => f.severity === "critical" && !f.acknowledged).length ?? 0;
   const violenceHighCount = violenceFlags?.filter((f: any) => f.severity === "high" && !f.acknowledged).length ?? 0;
   const unacknowledgedViolence = violenceCriticalCount + violenceHighCount;
+  const filteredCrisisAlerts = crisisFilterUnresolved
+    ? (crisisAlerts ?? []).filter((a: any) => !a.acknowledged)
+    : (crisisAlerts ?? []);
+  const filteredViolenceFlags = violenceFilterUnresolved
+    ? (violenceFlags ?? []).filter((f: any) => !f.acknowledged)
+    : (violenceFlags ?? []);
 
   const TABS = [
     { id: "overview", label: "Overview", icon: <BarChart3 className="w-4 h-4" /> },
@@ -303,9 +311,29 @@ export default function FacilitatorDashboard() {
             {/* ── ALERTS TAB ── */}
             {activeTab === "alerts" && (
               <>
-                <div>
-                  <h1 className="font-serif text-2xl font-bold text-foreground">Crisis Alerts</h1>
-                  <p className="text-muted-foreground text-sm mt-1">Anonymized alerts — identities are protected. Contact students through official channels.</p>
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <h1 className="font-serif text-2xl font-bold text-foreground">Crisis Alerts</h1>
+                    <p className="text-muted-foreground text-sm mt-1">Anonymized alerts — identities are protected. Contact students through official channels.</p>
+                  </div>
+                  <div className="flex items-center gap-1 bg-muted rounded-xl p-1 flex-shrink-0">
+                    <button
+                      onClick={() => setCrisisFilterUnresolved(true)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                        crisisFilterUnresolved ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      Unresolved
+                    </button>
+                    <button
+                      onClick={() => setCrisisFilterUnresolved(false)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                        !crisisFilterUnresolved ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      All
+                    </button>
+                  </div>
                 </div>
                 {criticalCount > 0 && (
                   <div className="bg-red-50 border border-red-200 rounded-2xl p-4 flex items-start gap-3">
@@ -317,13 +345,15 @@ export default function FacilitatorDashboard() {
                   </div>
                 )}
                 <div className="space-y-3">
-                  {!crisisAlerts || crisisAlerts.length === 0 ? (
+                  {filteredCrisisAlerts.length === 0 ? (
                     <div className="text-center py-12 space-y-3">
                       <div className="text-4xl">✅</div>
-                      <p className="text-muted-foreground">No crisis alerts at this time.</p>
+                      <p className="text-muted-foreground">
+                        {crisisFilterUnresolved ? "No unresolved crisis alerts." : "No crisis alerts at this time."}
+                      </p>
                     </div>
                   ) : (
-                    crisisAlerts.map((alert: any) => (
+                    filteredCrisisAlerts.map((alert: any) => (
                       <div key={alert.id} className={`rounded-2xl p-4 border flex items-start gap-4 ${
                         alert.acknowledged ? "opacity-50 bg-muted/20 border-border" :
                         alert.severity === "critical" ? "bg-red-50 border-red-200" :
@@ -371,9 +401,29 @@ export default function FacilitatorDashboard() {
             {/* ── VIOLENCE FLAGS TAB ── */}
             {activeTab === "violence" && (
               <>
-                <div>
-                  <h1 className="font-serif text-2xl font-bold text-foreground">Violence Alerts</h1>
-                  <p className="text-muted-foreground text-sm mt-1">Violence signals (self-harm or toward others) detected in entries. Identities are anonymized.</p>
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <h1 className="font-serif text-2xl font-bold text-foreground">Violence Alerts</h1>
+                    <p className="text-muted-foreground text-sm mt-1">Violence signals (self-harm or toward others) detected in entries. Identities are anonymized.</p>
+                  </div>
+                  <div className="flex items-center gap-1 bg-muted rounded-xl p-1 flex-shrink-0">
+                    <button
+                      onClick={() => setViolenceFilterUnresolved(true)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                        violenceFilterUnresolved ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      Unresolved
+                    </button>
+                    <button
+                      onClick={() => setViolenceFilterUnresolved(false)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                        !violenceFilterUnresolved ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      All
+                    </button>
+                  </div>
                 </div>
 
                 {violenceCriticalCount > 0 && (
@@ -403,13 +453,15 @@ export default function FacilitatorDashboard() {
                 </div>
 
                 <div className="space-y-3">
-                  {!violenceFlags || violenceFlags.length === 0 ? (
+                  {filteredViolenceFlags.length === 0 ? (
                     <div className="text-center py-12 space-y-3">
                       <div className="text-4xl">✅</div>
-                      <p className="text-muted-foreground">No violence signals detected.</p>
+                      <p className="text-muted-foreground">
+                        {violenceFilterUnresolved ? "No unresolved violence alerts." : "No violence signals detected."}
+                      </p>
                     </div>
                   ) : (
-                    violenceFlags.map((flag: any) => (
+                    filteredViolenceFlags.map((flag: any) => (
                       <div
                         key={flag.id}
                         className={`rounded-2xl p-4 border flex items-start gap-4 ${

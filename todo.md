@@ -518,3 +518,8 @@
 - [x] Groups & Invitations: activate full group management UI (create group, list groups, invite students, copy invite link, view member count, group selector for invitations)
 - [x] Violence Alerts: activate with anonymized identities, correct description banner, severity badges, Mark Resolved button
 - [x] Crisis Alerts: activate with anonymized identities, correct description banner, severity badges, Mark Resolved button (resolveCrisisAlert tRPC mutation)
+
+## Phase 22: Alert Filters
+
+- [x] Add "Unresolved / All" toggle filter in Violence Alerts section
+- [x] Add "Unresolved / All" toggle filter in Crisis Alerts section
