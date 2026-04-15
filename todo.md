@@ -550,3 +550,15 @@
 - [x] Add AlertCommentsSection component in AlertDetail.tsx: avatar initials, author name/role, timestamps, edit/delete own comments, Ctrl+Enter shortcut
 - [x] Integrate AlertCommentsSection in both CrisisAlertDetail and ViolenceAlertDetail
 - [x] Auto-refresh via trpc.useUtils().comments.getComments.invalidate on add/edit/delete
+
+## Phase 26: Real-Time Notifications + Resend Email
+
+- [ ] Configure RESEND_API_KEY secret
+- [ ] Add notifications table to DB schema (userId, type, title, body, link, read, createdAt)
+- [ ] Add DB helpers: createNotification, getNotificationsForUser, markNotificationRead, markAllRead
+- [ ] Create server/resend.ts email service with HTML templates for each event type
+- [ ] Add tRPC procedures: notifications.list, notifications.markRead, notifications.markAllRead, notifications.getUnreadCount
+- [ ] Trigger notifications on: new crisis alert, new violence flag, alert assigned, new comment, new student check-in
+- [ ] Create NotificationBell component in NavBar: badge with unread count, dropdown with recent notifications, polling every 15s
+- [ ] Create /notifications page with full history, read/unread filter, mark all read button
+- [ ] Register /notifications route in App.tsx

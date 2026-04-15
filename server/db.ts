@@ -17,6 +17,7 @@ import {
   userAchievements,
   violenceFlags,
   alertComments,
+  notifications,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -1197,7 +1198,7 @@ export async function getUserById(userId: number) {
   const db = await getDb();
   if (!db) return null;
   const rows = await db
-    .select({ id: users.id, name: users.name, email: users.email, role: users.role })
+    .select({ id: users.id, name: users.name, email: users.email, role: users.role, notificationsEnabled: users.notificationsEnabled })
     .from(users)
     .where(eq(users.id, userId));
   return rows[0] ?? null;
@@ -1253,4 +1254,80 @@ export async function editAlertComment(commentId: number, authorId: number, cont
     .update(alertComments)
     .set({ content, editedAt: new Date() })
     .where(and(eq(alertComments.id, commentId), eq(alertComments.authorId, authorId)));
+}
+
+// ─── Notifications ────────────────────────────────────────────────────────────
+export async function createNotification(data: {
+  userId: number;
+  type: "crisis_alert" | "violence_flag" | "alert_assigned" | "new_comment" | "new_checkin";
+  title: string;
+  body: string;
+  link?: string;
+}) {
+  const db = await getDb();
+  if (!db) return;
+  await db.insert(notifications).values({ ...data, read: false, emailSent: false });
+}
+
+export async function getNotificationsForUser(userId: number, limit = 50) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(notifications)
+    .where(eq(notifications.userId, userId))
+    .orderBy(desc(notifications.createdAt))
+    .limit(limit);
+}
+
+export async function getUnreadCountForUser(userId: number): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+  const result = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(notifications)
+    .where(and(eq(notifications.userId, userId), eq(notifications.read, false)));
+  return result[0]?.count ?? 0;
+}
+
+export async function markNotificationRead(notifId: number, userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db
+    .update(notifications)
+    .set({ read: true })
+    .where(and(eq(notifications.id, notifId), eq(notifications.userId, userId)));
+}
+
+export async function markAllNotificationsRead(userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db
+    .update(notifications)
+    .set({ read: true })
+    .where(and(eq(notifications.userId, userId), eq(notifications.read, false)));
+}
+
+export async function markNotificationEmailSent(notifId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(notifications).set({ emailSent: true }).where(eq(notifications.id, notifId));
+}
+
+/** Returns all admin/superadmin users (optionally filtered by institutionId) */
+export async function getAdminUsers(institutionId?: number) {
+  const db = await getDb();
+  if (!db) return [];
+  const rows = await db
+    .select({ id: users.id, name: users.name, email: users.email, notificationsEnabled: users.notificationsEnabled })
+    .from(users)
+    .where(
+      institutionId
+        ? and(
+            sql`${users.role} IN ('admin','superadmin','facilitator')`,
+            eq(users.institutionId, institutionId)
+          )
+        : sql`${users.role} IN ('admin','superadmin')`
+    );
+  return rows;
 }

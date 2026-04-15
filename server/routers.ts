@@ -72,12 +72,63 @@ import {
   addAlertComment,
   deleteAlertComment,
   editAlertComment,
+  createNotification,
+  getNotificationsForUser,
+  getUnreadCountForUser,
+  markNotificationRead,
+  markAllNotificationsRead,
+  getAdminUsers,
+  markNotificationEmailSent,
 } from "./db";
+import { sendNotificationEmail } from "./notificationEmail";
 import {
   EI_QUIZ_QUESTIONS,
   calculatePillarScores,
   getEILevel,
 } from "../shared/eiQuizData";
+
+// ─── Notification Helper ────────────────────────────────────────────────────
+/**
+ * Creates in-app notifications for all admin/superadmin users and sends emails
+ * to those who have notificationsEnabled = true.
+ */
+async function notifyAdmins(params: {
+  type: "crisis_alert" | "violence_flag" | "alert_assigned" | "new_comment" | "new_checkin";
+  title: string;
+  body: string;
+  link?: string;
+  institutionId?: number;
+  excludeUserId?: number; // don't notify the actor themselves
+}) {
+  try {
+    const admins = await getAdminUsers(params.institutionId);
+    for (const admin of admins) {
+      if (params.excludeUserId && admin.id === params.excludeUserId) continue;
+      // Create in-app notification
+      await createNotification({
+        userId: admin.id,
+        type: params.type,
+        title: params.title,
+        body: params.body,
+        link: params.link,
+      });
+      // Send email if notifications are enabled
+      if (admin.notificationsEnabled && admin.email) {
+        const sent = await sendNotificationEmail({
+          to: admin.email,
+          type: params.type,
+          title: params.title,
+          body: params.body,
+          link: params.link,
+          recipientName: admin.name ?? undefined,
+        });
+        if (sent) await markNotificationEmailSent(0); // emailSent tracked per notification row
+      }
+    }
+  } catch (err) {
+    console.error("[notifyAdmins] Failed to send notifications:", err);
+  }
+}
 
 // ─── Crisis Detection ─────────────────────────────────────────────────────────
 // Self-harm / suicidal ideation keywords
@@ -483,6 +534,15 @@ export const appRouter = router({
             triggerText: input.journalEntry,
             severity: crisis.severity,
           });
+          // Notify admins of new crisis alert (fire-and-forget)
+          notifyAdmins({
+            type: "crisis_alert",
+            title: `⚠️ Crisis Alert Detected (${crisis.severity.toUpperCase()})`,
+            body: `A ${crisis.severity} crisis signal was detected in a student check-in. Identities are anonymized.`,
+            link: `/facilitator`,
+            institutionId: ctx.user.institutionId ?? undefined,
+            excludeUserId: undefined,
+          }).catch(() => {});
         }
 
         // Generate AI response
@@ -684,6 +744,15 @@ export const appRouter = router({
           flagType: input.flagType,
           severity: input.severity,
         });
+        // Notify admins of new safety/violence flag (fire-and-forget)
+        notifyAdmins({
+          type: "violence_flag",
+          title: `🚨 Safety Flag Raised (${input.severity.toUpperCase()})`,
+          body: `A ${input.severity} ${input.flagType.replace(/_/g, " ")} flag was raised. Identities are anonymized.`,
+          link: `/facilitator`,
+          institutionId: ctx.user.institutionId ?? undefined,
+          excludeUserId: undefined,
+        }).catch(() => {});
         return { success: true };
       }),
 
@@ -803,6 +872,26 @@ export const appRouter = router({
           actionType: "assigned",
           note: input.note ?? `Assigned to ${assignee.name ?? assignee.email}`,
         });
+        // Notify the assignee (fire-and-forget)
+        if (assignee.id !== ctx.user.id) {
+          createNotification({
+            userId: assignee.id,
+            type: "alert_assigned",
+            title: `📋 Alert Assigned to You`,
+            body: `A ${input.alertType} alert has been assigned to you by ${ctx.user.name ?? ctx.user.email}.`,
+            link: `/alert/${input.alertType}/${input.alertId}`,
+          }).catch(() => {});
+          if (assignee.notificationsEnabled && assignee.email) {
+            sendNotificationEmail({
+              to: assignee.email,
+              type: "alert_assigned",
+              title: `Alert Assigned to You`,
+              body: `A ${input.alertType} alert has been assigned to you by ${ctx.user.name ?? ctx.user.email}.`,
+              link: `/alert/${input.alertType}/${input.alertId}`,
+              recipientName: assignee.name ?? undefined,
+            }).catch(() => {});
+          }
+        }
         return { success: true, assignee };
       }),
 
@@ -978,6 +1067,15 @@ export const appRouter = router({
           authorId: ctx.user.id,
           content: input.content,
         });
+        // Notify all admins about the new comment (fire-and-forget)
+        notifyAdmins({
+          type: "new_comment",
+          title: `💬 New Comment on ${input.alertType === "crisis" ? "Crisis" : "Safety"} Alert`,
+          body: `${ctx.user.name ?? ctx.user.email} added a comment to alert #${input.alertId}.`,
+          link: `/alert/${input.alertType}/${input.alertId}`,
+          institutionId: ctx.user.institutionId ?? undefined,
+          excludeUserId: ctx.user.id,
+        }).catch(() => {});
         return { success: true, id };
       }),
 
@@ -999,6 +1097,33 @@ export const appRouter = router({
       }))
       .mutation(async ({ ctx, input }) => {
         await deleteAlertComment(input.commentId, ctx.user.id);
+        return { success: true };
+      }),
+  }),
+  // ─── Notifications ────────────────────────────────────────────────────────────
+  notifications: router({
+    // Get all notifications for the current user
+    getAll: protectedProcedure
+      .query(async ({ ctx }) => {
+        return getNotificationsForUser(ctx.user.id);
+      }),
+    // Get unread count (for the bell badge)
+    getUnreadCount: protectedProcedure
+      .query(async ({ ctx }) => {
+        const count = await getUnreadCountForUser(ctx.user.id);
+        return { count };
+      }),
+    // Mark a single notification as read
+    markRead: protectedProcedure
+      .input(z.object({ id: z.number().int().positive() }))
+      .mutation(async ({ ctx, input }) => {
+        await markNotificationRead(input.id, ctx.user.id);
+        return { success: true };
+      }),
+    // Mark all notifications as read
+    markAllRead: protectedProcedure
+      .mutation(async ({ ctx }) => {
+        await markAllNotificationsRead(ctx.user.id);
         return { success: true };
       }),
   }),

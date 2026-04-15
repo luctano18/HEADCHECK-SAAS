@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
   Heart, Menu, X, LayoutDashboard, LogOut, ChevronDown, User,
-  CheckCircle2, Circle, ArrowRight, ChevronUp, Loader2, Shield,
+  CheckCircle2, Circle, ArrowRight, ChevronUp, Loader2, Shield, Bell,
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
@@ -68,6 +68,37 @@ export default function NavBar() {
   const panelInnerRef = useRef<HTMLDivElement>(null);
   const utils = trpc.useUtils();
   const { progress } = useNavProgress();
+  const [bellOpen, setBellOpen] = useState(false);
+  const bellRef = useRef<HTMLDivElement>(null);
+
+  // Notification bell: only visible to admin/superadmin/facilitator
+  const isAdminRole = user?.role === "admin" || user?.role === "superadmin" || user?.role === "facilitator";
+  const { data: unreadData } = trpc.notifications.getUnreadCount.useQuery(undefined, {
+    enabled: isAuthenticated && isAdminRole,
+    refetchInterval: 30_000, // poll every 30 seconds
+    staleTime: 25_000,
+  });
+  const { data: notifData, refetch: refetchNotifs } = trpc.notifications.getAll.useQuery(undefined, {
+    enabled: isAuthenticated && isAdminRole && bellOpen,
+    staleTime: 10_000,
+  });
+  const markReadMutation = trpc.notifications.markRead.useMutation({
+    onSuccess: () => { utils.notifications.getUnreadCount.invalidate(); utils.notifications.getAll.invalidate(); },
+  });
+  const markAllReadMutation = trpc.notifications.markAllRead.useMutation({
+    onSuccess: () => { utils.notifications.getUnreadCount.invalidate(); utils.notifications.getAll.invalidate(); },
+  });
+  const unreadCount = unreadData?.count ?? 0;
+
+  // Close bell dropdown on outside click
+  useEffect(() => {
+    if (!bellOpen) return;
+    const handleClick = (e: MouseEvent) => {
+      if (bellRef.current && !bellRef.current.contains(e.target as Node)) setBellOpen(false);
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [bellOpen]);
 
   const logoutMutation = trpc.auth.logout.useMutation({
     onSuccess: async () => {
@@ -255,6 +286,84 @@ export default function NavBar() {
 
         {/* Right side — desktop */}
         <div className="hidden lg:flex items-center gap-2">
+          {/* Notification Bell — admin/superadmin/facilitator only */}
+          {isAuthenticated && isAdminRole && (
+            <div className="relative" ref={bellRef}>
+              <button
+                onClick={() => { setBellOpen((o) => !o); if (!bellOpen) refetchNotifs(); }}
+                className="relative p-2 rounded-xl hover:bg-violet-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
+                aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ""}`}
+              >
+                <Bell className="w-5 h-5" style={{ color: unreadCount > 0 ? "oklch(0.45 0.18 285)" : "oklch(0.55 0.04 260)" }} />
+                {unreadCount > 0 && (
+                  <span
+                    className="absolute top-1 right-1 min-w-[18px] h-[18px] rounded-full text-white text-[10px] font-bold flex items-center justify-center px-1"
+                    style={{ background: "oklch(0.55 0.22 25)", lineHeight: 1 }}
+                  >
+                    {unreadCount > 99 ? "99+" : unreadCount}
+                  </span>
+                )}
+              </button>
+              {/* Bell dropdown panel */}
+              {bellOpen && (
+                <div
+                  className="absolute right-0 top-full mt-2 w-80 rounded-2xl border bg-white shadow-xl z-50 overflow-hidden"
+                  style={{ borderColor: "oklch(0.92 0.03 260)" }}
+                  role="dialog"
+                  aria-label="Notifications"
+                >
+                  {/* Header */}
+                  <div className="flex items-center justify-between px-4 py-3 border-b" style={{ borderColor: "oklch(0.93 0.02 260)" }}>
+                    <h3 className="text-sm font-bold" style={{ color: "oklch(0.25 0.04 260)" }}>Notifications</h3>
+                    {unreadCount > 0 && (
+                      <button
+                        onClick={() => markAllReadMutation.mutate()}
+                        className="text-xs font-medium hover:underline"
+                        style={{ color: "oklch(0.45 0.18 285)" }}
+                      >
+                        Mark all as read
+                      </button>
+                    )}
+                  </div>
+                  {/* List */}
+                  <div className="max-h-80 overflow-y-auto divide-y" style={{ borderColor: "oklch(0.95 0.02 260)" }}>
+                    {!notifData || notifData.length === 0 ? (
+                      <div className="px-4 py-8 text-center">
+                        <Bell className="w-8 h-8 mx-auto mb-2 text-muted-foreground opacity-30" />
+                        <p className="text-sm text-muted-foreground">No notifications yet</p>
+                      </div>
+                    ) : (
+                      notifData.map((n) => (
+                        <div
+                          key={n.id}
+                          className={[
+                            "flex items-start gap-3 px-4 py-3 cursor-pointer hover:bg-violet-50/60 transition-colors",
+                            !n.read ? "bg-violet-50/40" : "",
+                          ].join(" ")}
+                          onClick={() => {
+                            if (!n.read) markReadMutation.mutate({ id: n.id });
+                            if (n.link) { navigate(n.link); setBellOpen(false); }
+                          }}
+                        >
+                          <span className="mt-0.5 text-base flex-shrink-0">
+                            {n.type === "crisis_alert" ? "⚠️" : n.type === "violence_flag" ? "🚨" : n.type === "alert_assigned" ? "📋" : n.type === "new_comment" ? "💬" : "🔔"}
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <p className={["text-xs font-semibold truncate", !n.read ? "text-violet-700" : "text-gray-800"].join(" ")}>{n.title}</p>
+                            <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{n.body}</p>
+                            <p className="text-[10px] text-muted-foreground mt-1">{new Date(n.createdAt).toLocaleString()}</p>
+                          </div>
+                          {!n.read && (
+                            <span className="w-2 h-2 rounded-full flex-shrink-0 mt-1" style={{ background: "oklch(0.55 0.22 25)" }} />
+                          )}
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
           {isAuthenticated ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

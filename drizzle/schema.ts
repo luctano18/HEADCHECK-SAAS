@@ -367,3 +367,24 @@ export const alertComments = mysqlTable("alert_comments", {
 });
 export type AlertComment = typeof alertComments.$inferSelect;
 export type InsertAlertComment = typeof alertComments.$inferInsert;
+
+// ─── Notifications ────────────────────────────────────────────────────────────
+export const notifications = mysqlTable("notifications", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(), // recipient (admin/superadmin)
+  type: mysqlEnum("notif_type", [
+    "crisis_alert",
+    "violence_flag",
+    "alert_assigned",
+    "new_comment",
+    "new_checkin",
+  ]).notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  body: text("body").notNull(),
+  link: varchar("link", { length: 512 }),
+  read: boolean("read").default(false).notNull(),
+  emailSent: boolean("emailSent").default(false).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type Notification = typeof notifications.$inferSelect;
+export type InsertNotification = typeof notifications.$inferInsert;
