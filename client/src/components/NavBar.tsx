@@ -360,6 +360,16 @@ export default function NavBar() {
                       ))
                     )}
                   </div>
+                  {/* Footer link */}
+                  <div className="px-4 py-2.5 border-t" style={{ borderColor: "oklch(0.93 0.02 260)" }}>
+                    <button
+                      onClick={() => { setBellOpen(false); navigate("/notifications"); }}
+                      className="text-xs font-medium w-full text-center hover:underline"
+                      style={{ color: "oklch(0.45 0.18 285)" }}
+                    >
+                      View all notifications
+                    </button>
+                  </div>
                 </div>
               )}
             </div>

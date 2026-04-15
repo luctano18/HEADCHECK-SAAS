@@ -26,6 +26,7 @@ import CrisisSupport from "./pages/CrisisSupport";
 import ViolencePrevention from "./pages/ViolencePrevention";
 import Profile from "./pages/Profile";
 import AlertDetail from "./pages/AlertDetail";
+import Notifications from "./pages/Notifications";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -65,6 +66,8 @@ function Router() {
       <Route path="/violence-prevention" component={ViolencePrevention} />
       {/* Profile */}
       <Route path="/profile" component={Profile} />
+      {/* Notifications */}
+      <Route path="/notifications" component={Notifications} />
       {/* Alert Detail pages (admin/facilitator only) */}
       <Route path="/alert/crisis/:id" component={AlertDetail} />
       <Route path="/alert/violence/:id" component={AlertDetail} />

@@ -554,11 +554,11 @@
 ## Phase 26: Real-Time Notifications + Resend Email
 
 - [ ] Configure RESEND_API_KEY secret
-- [ ] Add notifications table to DB schema (userId, type, title, body, link, read, createdAt)
-- [ ] Add DB helpers: createNotification, getNotificationsForUser, markNotificationRead, markAllRead
-- [ ] Create server/resend.ts email service with HTML templates for each event type
-- [ ] Add tRPC procedures: notifications.list, notifications.markRead, notifications.markAllRead, notifications.getUnreadCount
-- [ ] Trigger notifications on: new crisis alert, new violence flag, alert assigned, new comment, new student check-in
-- [ ] Create NotificationBell component in NavBar: badge with unread count, dropdown with recent notifications, polling every 15s
-- [ ] Create /notifications page with full history, read/unread filter, mark all read button
-- [ ] Register /notifications route in App.tsx
+- [x] Add notifications table to DB schema (userId, type, title, body, link, read, createdAt)
+- [x] Add DB helpers: createNotification, getNotificationsForUser, markNotificationRead, markAllRead
+- [x] Create server/resend.ts email service with HTML templates for each event type
+- [x] Add tRPC procedures: notifications.list, notifications.markRead, notifications.markAllRead, notifications.getUnreadCount
+- [x] Trigger notifications on: new crisis alert, new violence flag, alert assigned, new comment, new student check-in
+- [x] Create NotificationBell component in NavBar: badge with unread count, dropdown with recent notifications, polling every 30s
+- [x] Create /notifications page with full history, read/unread filter, mark all read button
+- [x] Register /notifications route in App.tsx
