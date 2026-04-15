@@ -306,6 +306,28 @@ export const safetyPlans = mysqlTable("safety_plans", {
 export type SafetyPlan = typeof safetyPlans.$inferSelect;
 export type InsertSafetyPlan = typeof safetyPlans.$inferInsert;
 
+// ─── Alert Actions (Admin history log) ───────────────────────────────────
+export const alertActions = mysqlTable("alert_actions", {
+  id: int("id").autoincrement().primaryKey(),
+  adminUserId: int("adminUserId").notNull(),
+  alertType: mysqlEnum("alertType", ["crisis", "violence"]).notNull(),
+  crisisEventId: int("crisisEventId"),
+  violenceFlagId: int("violenceFlagId"),
+  actionType: mysqlEnum("actionType", [
+    "acknowledged",
+    "contacted_student",
+    "escalated",
+    "referred_to_counselor",
+    "resolved",
+    "note_added",
+    "protocol_initiated"
+  ]).notNull(),
+  note: text("note"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type AlertAction = typeof alertActions.$inferSelect;
+export type InsertAlertAction = typeof alertActions.$inferInsert;
+
 // ─── EI Quiz Attempts ─────────────────────────────────────────────────────────
 export const quizAttempts = mysqlTable("quiz_attempts", {
   id: int("id").autoincrement().primaryKey(),

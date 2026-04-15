@@ -4,6 +4,7 @@ import {
   InsertCheckIn,
   InsertUser,
   aiResponses,
+  alertActions,
   checkIns,
   crisisEvents,
   groups,
@@ -14,6 +15,7 @@ import {
   users,
   userStreaks,
   userAchievements,
+  violenceFlags,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -1000,4 +1002,103 @@ export async function getGroupMemberCounts(institutionId: number): Promise<Recor
     if (row.groupId != null) map[row.groupId] = Number(row.count);
   }
   return map;
+}
+
+// ─── Alert Detail Helpers ─────────────────────────────────────────────────────
+export async function getCrisisEventById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db
+    .select({
+      id: crisisEvents.id,
+      userId: crisisEvents.userId,
+      checkInId: crisisEvents.checkInId,
+      triggerText: crisisEvents.triggerText,
+      severity: crisisEvents.severity,
+      acknowledged: crisisEvents.acknowledged,
+      facilitatorNotified: crisisEvents.facilitatorNotified,
+      createdAt: crisisEvents.createdAt,
+    })
+    .from(crisisEvents)
+    .where(eq(crisisEvents.id, id))
+    .limit(1);
+  return result[0];
+}
+
+export async function getViolenceFlagById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db
+    .select({
+      id: violenceFlags.id,
+      userId: violenceFlags.userId,
+      checkInId: violenceFlags.checkInId,
+      triggerText: violenceFlags.triggerText,
+      flagType: violenceFlags.flagType,
+      severity: violenceFlags.severity,
+      acknowledged: violenceFlags.acknowledged,
+      facilitatorNotified: violenceFlags.facilitatorNotified,
+      createdAt: violenceFlags.createdAt,
+    })
+    .from(violenceFlags)
+    .where(eq(violenceFlags.id, id))
+    .limit(1);
+  return result[0];
+}
+
+export async function getAlertActions(alertType: "crisis" | "violence", alertId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  const condition =
+    alertType === "crisis"
+      ? eq(alertActions.crisisEventId, alertId)
+      : eq(alertActions.violenceFlagId, alertId);
+  const rows = await db
+    .select({
+      id: alertActions.id,
+      adminUserId: alertActions.adminUserId,
+      actionType: alertActions.actionType,
+      note: alertActions.note,
+      createdAt: alertActions.createdAt,
+      adminName: users.name,
+    })
+    .from(alertActions)
+    .leftJoin(users, eq(alertActions.adminUserId, users.id))
+    .where(and(eq(alertActions.alertType, alertType), condition))
+    .orderBy(desc(alertActions.createdAt));
+  return rows;
+}
+
+export async function addAlertAction(data: {
+  adminUserId: number;
+  alertType: "crisis" | "violence";
+  crisisEventId?: number;
+  violenceFlagId?: number;
+  actionType:
+    | "acknowledged"
+    | "contacted_student"
+    | "escalated"
+    | "referred_to_counselor"
+    | "resolved"
+    | "note_added"
+    | "protocol_initiated";
+  note?: string;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+  await db.insert(alertActions).values(data);
+  // If action is "resolved", mark the alert as acknowledged
+  if (data.actionType === "resolved" || data.actionType === "acknowledged") {
+    if (data.alertType === "crisis" && data.crisisEventId) {
+      await db
+        .update(crisisEvents)
+        .set({ acknowledged: true })
+        .where(eq(crisisEvents.id, data.crisisEventId));
+    } else if (data.alertType === "violence" && data.violenceFlagId) {
+      await db
+        .update(violenceFlags)
+        .set({ acknowledged: true })
+        .where(eq(violenceFlags.id, data.violenceFlagId));
+    }
+  }
 }

@@ -523,3 +523,12 @@
 
 - [x] Add "Unresolved / All" toggle filter in Violence Alerts section
 - [x] Add "Unresolved / All" toggle filter in Crisis Alerts section
+
+## Phase 23: Alert Detail Pages
+
+- [x] Add alert_actions table to DB schema (crisis_event_id or violence_flag_id, admin user, action type, note, timestamp)
+- [x] Add DB helpers: getAlertActions, addAlertAction, getCrisisAlertById, getViolenceFlagById
+- [x] Add tRPC procedures: crisis.getAlertDetail, crisis.addAction
+- [x] Create /alert/crisis/:id and /alert/violence/:id pages (shared AlertDetail component) with full details, timeline, admin action form
+- [x] Add "View Details" button from FacilitatorDashboard alert cards to detail pages
+- [x] Register new routes in App.tsx

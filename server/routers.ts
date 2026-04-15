@@ -58,6 +58,10 @@ import {
   getAllGroups,
   resolveCrisisEvent,
   getGroupMemberCounts,
+  getCrisisEventById,
+  getViolenceFlagById,
+  getAlertActions,
+  addAlertAction,
 } from "./db";
 import {
   EI_QUIZ_QUESTIONS,
@@ -701,6 +705,63 @@ export const appRouter = router({
     getSafetyPlan: protectedProcedure.query(async ({ ctx }) => {
       return getSafetyPlanByUser(ctx.user.id);
     }),
+
+    // Get a single crisis event detail (facilitator/admin/superadmin)
+    getCrisisDetail: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ ctx, input }) => {
+        const isSuperadmin = ctx.user.role === "superadmin";
+        const isAdmin = ctx.user.role === "admin" || ctx.user.role === "facilitator";
+        if (!isSuperadmin && !isAdmin) throw new TRPCError({ code: "FORBIDDEN" });
+        const event = await getCrisisEventById(input.id);
+        if (!event) throw new TRPCError({ code: "NOT_FOUND" });
+        const actions = await getAlertActions("crisis", input.id);
+        return { event, actions };
+      }),
+
+    // Get a single violence flag detail (facilitator/admin/superadmin)
+    getViolenceDetail: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ ctx, input }) => {
+        const isSuperadmin = ctx.user.role === "superadmin";
+        const isAdmin = ctx.user.role === "admin" || ctx.user.role === "facilitator";
+        if (!isSuperadmin && !isAdmin) throw new TRPCError({ code: "FORBIDDEN" });
+        const flag = await getViolenceFlagById(input.id);
+        if (!flag) throw new TRPCError({ code: "NOT_FOUND" });
+        const actions = await getAlertActions("violence", input.id);
+        return { flag, actions };
+      }),
+
+    // Add an action to an alert (facilitator/admin/superadmin)
+    addAction: protectedProcedure
+      .input(z.object({
+        alertType: z.enum(["crisis", "violence"]),
+        alertId: z.number(),
+        actionType: z.enum([
+          "acknowledged",
+          "contacted_student",
+          "escalated",
+          "referred_to_counselor",
+          "resolved",
+          "note_added",
+          "protocol_initiated",
+        ]),
+        note: z.string().max(1000).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const isSuperadmin = ctx.user.role === "superadmin";
+        const isAdmin = ctx.user.role === "admin" || ctx.user.role === "facilitator";
+        if (!isSuperadmin && !isAdmin) throw new TRPCError({ code: "FORBIDDEN" });
+        await addAlertAction({
+          adminUserId: ctx.user.id,
+          alertType: input.alertType,
+          crisisEventId: input.alertType === "crisis" ? input.alertId : undefined,
+          violenceFlagId: input.alertType === "violence" ? input.alertId : undefined,
+          actionType: input.actionType,
+          note: input.note,
+        });
+        return { success: true };
+      }),
 
     // Save / update my safety plan
     saveSafetyPlan: protectedProcedure

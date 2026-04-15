@@ -380,17 +380,27 @@ export default function FacilitatorDashboard() {
                           <p className="text-sm text-foreground font-medium">Anonymous Student</p>
                           <p className="text-xs text-muted-foreground mt-0.5">Trigger detected in journal entry</p>
                         </div>
-                        {!alert.acknowledged && (
+                        <div className="flex flex-col gap-1.5 flex-shrink-0">
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => resolveCrisisAlertMutation.mutate({ alertId: alert.id })}
-                            disabled={resolveCrisisAlertMutation.isPending}
-                            className="flex-shrink-0 text-xs"
+                            onClick={() => navigate(`/alert/crisis/${alert.id}`)}
+                            className="text-xs"
                           >
-                            Mark Resolved
+                            View Details
                           </Button>
-                        )}
+                          {!alert.acknowledged && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => resolveCrisisAlertMutation.mutate({ alertId: alert.id })}
+                              disabled={resolveCrisisAlertMutation.isPending}
+                              className="text-xs"
+                            >
+                              Mark Resolved
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     ))
                   )}
@@ -493,17 +503,27 @@ export default function FacilitatorDashboard() {
                           </div>
                           <p className="text-sm text-foreground font-medium">Anonymous Student</p>
                         </div>
-                        {!flag.acknowledged && (
+                        <div className="flex flex-col gap-1.5 flex-shrink-0">
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => acknowledgeFlagMutation.mutate({ flagId: flag.id })}
-                            disabled={acknowledgeFlagMutation.isPending}
-                            className="flex-shrink-0 text-xs"
+                            onClick={() => navigate(`/alert/violence/${flag.id}`)}
+                            className="text-xs"
                           >
-                            Mark Resolved
+                            View Details
                           </Button>
-                        )}
+                          {!flag.acknowledged && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => acknowledgeFlagMutation.mutate({ flagId: flag.id })}
+                              disabled={acknowledgeFlagMutation.isPending}
+                              className="text-xs"
+                            >
+                              Mark Resolved
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     ))
                   )}
