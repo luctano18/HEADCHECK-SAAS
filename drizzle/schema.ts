@@ -140,6 +140,8 @@ export const crisisEvents = mysqlTable("crisis_events", {
   severity: mysqlEnum("severity", ["moderate", "high", "critical"]).notNull(),
   acknowledged: boolean("acknowledged").default(false).notNull(),
   facilitatorNotified: boolean("facilitatorNotified").default(false).notNull(),
+  assignedToId: int("assignedToId"),
+  assignedAt: timestamp("assignedAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
@@ -284,6 +286,8 @@ export const violenceFlags = mysqlTable("violence_flags", {
   severity: mysqlEnum("severity", ["moderate", "high", "critical"]).notNull(),
   acknowledged: boolean("acknowledged").default(false).notNull(),
   facilitatorNotified: boolean("facilitatorNotified").default(false).notNull(),
+  assignedToId: int("assignedToId"),
+  assignedAt: timestamp("assignedAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
@@ -320,8 +324,10 @@ export const alertActions = mysqlTable("alert_actions", {
     "referred_to_counselor",
     "resolved",
     "note_added",
-    "protocol_initiated"
+    "protocol_initiated",
+    "assigned"
   ]).notNull(),
+  assignedToId: int("assignedToId"),
   note: text("note"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });

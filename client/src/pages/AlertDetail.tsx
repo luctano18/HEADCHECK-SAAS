@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { toast } from "sonner";
 import {
   AlertTriangle,
   ArrowLeft,
@@ -18,6 +19,7 @@ import {
   Shield,
   TrendingUp,
   User,
+  UserPlus,
   Zap,
 } from "lucide-react";
 
@@ -31,6 +33,7 @@ const ACTION_LABELS: Record<string, string> = {
   resolved: "Resolved",
   note_added: "Note Added",
   protocol_initiated: "Protocol Initiated",
+  assigned: "Assigned to Team Member",
 };
 
 const ACTION_ICONS: Record<string, React.ReactNode> = {
@@ -41,6 +44,7 @@ const ACTION_ICONS: Record<string, React.ReactNode> = {
   resolved: <CheckCircle className="w-4 h-4 text-emerald-500" />,
   note_added: <FileText className="w-4 h-4 text-gray-500" />,
   protocol_initiated: <Shield className="w-4 h-4 text-red-500" />,
+  assigned: <UserPlus className="w-4 h-4 text-violet-500" />,
 };
 
 const SEVERITY_COLORS: Record<string, string> = {
@@ -72,6 +76,83 @@ function AnonymizedId({ userId }: { userId: number }) {
     <span className="font-mono text-sm bg-gray-100 px-2 py-0.5 rounded text-gray-600">
       {code}
     </span>
+  );
+}
+
+// ─── Assign Alert Card ────────────────────────────────────────────────────────
+function AssignAlertCard({ alertType, alertId, currentAssigneeId, onAssigned }: {
+  alertType: "crisis" | "violence";
+  alertId: number;
+  currentAssigneeId?: number | null;
+  onAssigned: () => void;
+}) {
+  const [selectedUserId, setSelectedUserId] = useState<string>("");
+  const [assigning, setAssigning] = useState(false);
+  const { data: teamMembers = [] } = trpc.crisis.getTeamMembers.useQuery();
+
+  const assignMutation = trpc.crisis.assignAlert.useMutation({
+    onSuccess: (result) => {
+      setAssigning(false);
+      setSelectedUserId("");
+      toast.success(`Alert assigned to ${result.assignee.name ?? result.assignee.email}`);
+      onAssigned();
+    },
+    onError: () => setAssigning(false),
+  });
+
+  const currentAssignee = currentAssigneeId
+    ? teamMembers.find((m) => m.id === currentAssigneeId)
+    : null;
+
+  return (
+    <Card className="border-violet-100">
+      <CardHeader>
+        <CardTitle className="text-base flex items-center gap-2">
+          <UserPlus className="w-4 h-4 text-violet-500" />
+          Assign for Follow-Up
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {currentAssignee && (
+          <div className="flex items-center gap-2 p-2 bg-violet-50 rounded-lg border border-violet-100 text-sm">
+            <User className="w-4 h-4 text-violet-500" />
+            <span className="text-violet-700">Currently assigned to:</span>
+            <span className="font-medium text-violet-900">{currentAssignee.name ?? currentAssignee.email}</span>
+            <Badge variant="outline" className="ml-auto text-xs text-violet-600 border-violet-300">
+              {currentAssignee.role}
+            </Badge>
+          </div>
+        )}
+        <div className="flex gap-2">
+          <Select value={selectedUserId} onValueChange={setSelectedUserId}>
+            <SelectTrigger className="flex-1">
+              <SelectValue placeholder="Select a team member…" />
+            </SelectTrigger>
+            <SelectContent>
+              {teamMembers.map((member) => (
+                <SelectItem key={member.id} value={String(member.id)}>
+                  <span className="flex items-center gap-2">
+                    {member.name ?? member.email}
+                    <span className="text-xs text-gray-400">({member.role})</span>
+                  </span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button
+            onClick={() => {
+              if (!selectedUserId) return;
+              setAssigning(true);
+              assignMutation.mutate({ alertType, alertId, assignedToId: parseInt(selectedUserId, 10) });
+            }}
+            disabled={!selectedUserId || assigning}
+            className="bg-violet-600 hover:bg-violet-700 text-white"
+          >
+            {assigning ? "Assigning…" : "Assign"}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -229,6 +310,14 @@ function CrisisAlertDetail({ id }: { id: number }) {
         </CardContent>
       </Card>
 
+      {/* Assign for Follow-Up */}
+      <AssignAlertCard
+        alertType="crisis"
+        alertId={id}
+        currentAssigneeId={event.assignedToId}
+        onAssigned={refetch}
+      />
+
       {/* Add Action Form */}
       {!event.acknowledged && (
         <Card className="border-blue-100">
@@ -244,7 +333,7 @@ function CrisisAlertDetail({ id }: { id: number }) {
                 <SelectValue placeholder="Select action type…" />
               </SelectTrigger>
               <SelectContent>
-                {Object.entries(ACTION_LABELS).map(([value, label]) => (
+                {Object.entries(ACTION_LABELS).filter(([v]) => v !== "assigned").map(([value, label]) => (
                   <SelectItem key={value} value={value}>{label}</SelectItem>
                 ))}
               </SelectContent>
@@ -429,6 +518,14 @@ function ViolenceAlertDetail({ id }: { id: number }) {
         </CardContent>
       </Card>
 
+      {/* Assign for Follow-Up */}
+      <AssignAlertCard
+        alertType="violence"
+        alertId={id}
+        currentAssigneeId={flag.assignedToId}
+        onAssigned={refetch}
+      />
+
       {/* Add Action Form */}
       {!flag.acknowledged && (
         <Card className="border-blue-100">
@@ -444,7 +541,7 @@ function ViolenceAlertDetail({ id }: { id: number }) {
                 <SelectValue placeholder="Select action type…" />
               </SelectTrigger>
               <SelectContent>
-                {Object.entries(ACTION_LABELS).map(([value, label]) => (
+                {Object.entries(ACTION_LABELS).filter(([v]) => v !== "assigned").map(([value, label]) => (
                   <SelectItem key={value} value={value}>{label}</SelectItem>
                 ))}
               </SelectContent>

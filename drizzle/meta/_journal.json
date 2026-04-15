@@ -71,6 +71,13 @@
       "when": 1776262651218,
       "tag": "0009_bumpy_squadron_supreme",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "5",
+      "when": 1776267552547,
+      "tag": "0010_special_luckman",
+      "breakpoints": true
     }
   ]
 }

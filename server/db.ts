@@ -1017,6 +1017,8 @@ export async function getCrisisEventById(id: number) {
       severity: crisisEvents.severity,
       acknowledged: crisisEvents.acknowledged,
       facilitatorNotified: crisisEvents.facilitatorNotified,
+      assignedToId: crisisEvents.assignedToId,
+      assignedAt: crisisEvents.assignedAt,
       createdAt: crisisEvents.createdAt,
     })
     .from(crisisEvents)
@@ -1038,6 +1040,8 @@ export async function getViolenceFlagById(id: number) {
       severity: violenceFlags.severity,
       acknowledged: violenceFlags.acknowledged,
       facilitatorNotified: violenceFlags.facilitatorNotified,
+      assignedToId: violenceFlags.assignedToId,
+      assignedAt: violenceFlags.assignedAt,
       createdAt: violenceFlags.createdAt,
     })
     .from(violenceFlags)
@@ -1081,7 +1085,8 @@ export async function addAlertAction(data: {
     | "referred_to_counselor"
     | "resolved"
     | "note_added"
-    | "protocol_initiated";
+    | "protocol_initiated"
+    | "assigned";
   note?: string;
 }) {
   const db = await getDb();
@@ -1101,4 +1106,98 @@ export async function addAlertAction(data: {
         .where(eq(violenceFlags.id, data.violenceFlagId));
     }
   }
+}
+
+// ─── Alert Assignment Helpers ─────────────────────────────────────────────────
+
+/** Assign a crisis alert to a team member */
+export async function assignCrisisAlert(crisisEventId: number, assignedToId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+  await db
+    .update(crisisEvents)
+    .set({ assignedToId, assignedAt: new Date() })
+    .where(eq(crisisEvents.id, crisisEventId));
+}
+
+/** Assign a violence flag to a team member */
+export async function assignViolenceFlag(violenceFlagId: number, assignedToId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+  await db
+    .update(violenceFlags)
+    .set({ assignedToId, assignedAt: new Date() })
+    .where(eq(violenceFlags.id, violenceFlagId));
+}
+
+/** Get all team members (admin, superadmin, facilitator) for an institution */
+export async function getTeamMembers(institutionId: number | null) {
+  const db = await getDb();
+  if (!db) return [];
+  if (institutionId) {
+    return db
+      .select({ id: users.id, name: users.name, email: users.email, role: users.role })
+      .from(users)
+      .where(
+        and(
+          eq(users.institutionId, institutionId),
+          sql`${users.role} IN ('admin', 'superadmin', 'facilitator')`
+        )
+      );
+  }
+  // superadmin without institution — return all admins/superadmins/facilitators
+  return db
+    .select({ id: users.id, name: users.name, email: users.email, role: users.role })
+    .from(users)
+    .where(sql`${users.role} IN ('admin', 'superadmin', 'facilitator')`);
+}
+
+/** Get crisis alerts assigned to a specific user */
+export async function getMyCrisisAssignments(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select({
+      id: crisisEvents.id,
+      userId: crisisEvents.userId,
+      severity: crisisEvents.severity,
+      acknowledged: crisisEvents.acknowledged,
+      assignedToId: crisisEvents.assignedToId,
+      assignedAt: crisisEvents.assignedAt,
+      createdAt: crisisEvents.createdAt,
+    })
+    .from(crisisEvents)
+    .where(eq(crisisEvents.assignedToId, userId))
+    .orderBy(desc(crisisEvents.createdAt));
+}
+
+/** Get violence flags assigned to a specific user */
+export async function getMyViolenceAssignments(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select({
+      id: violenceFlags.id,
+      userId: violenceFlags.userId,
+      flagType: violenceFlags.flagType,
+      severity: violenceFlags.severity,
+      acknowledged: violenceFlags.acknowledged,
+      assignedToId: violenceFlags.assignedToId,
+      assignedAt: violenceFlags.assignedAt,
+      createdAt: violenceFlags.createdAt,
+    })
+    .from(violenceFlags)
+    .where(eq(violenceFlags.assignedToId, userId))
+    .orderBy(desc(violenceFlags.createdAt));
+}
+
+/** Get user by id (for assignee display) */
+export async function getUserById(userId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const rows = await db
+    .select({ id: users.id, name: users.name, email: users.email, role: users.role })
+    .from(users)
+    .where(eq(users.id, userId));
+  return rows[0] ?? null;
 }

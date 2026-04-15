@@ -532,3 +532,12 @@
 - [x] Create /alert/crisis/:id and /alert/violence/:id pages (shared AlertDetail component) with full details, timeline, admin action form
 - [x] Add "View Details" button from FacilitatorDashboard alert cards to detail pages
 - [x] Register new routes in App.tsx
+
+## Phase 24: Alert Assignment to Team Members
+
+- [x] Extend DB schema: add assignedToId (userId FK) and assignedAt fields to crisis_events and violence_flags tables
+- [x] Add DB helpers: assignCrisisAlert, assignViolenceFlag, getTeamMembers, getMyAssignedCrisisAlerts, getMyAssignedViolenceFlags
+- [x] Add tRPC procedures: crisis.assignAlert, crisis.getTeamMembers, crisis.getMyAssignments
+- [x] Update AlertDetail page: add "Assign to Team Member" dropdown + Assign button, show current assignee badge
+- [x] Add "Assigned to Me" tab in FacilitatorDashboard with crisis and violence assignment lists
+- [x] Register assignment action in alert_actions history (type: "Assigned")

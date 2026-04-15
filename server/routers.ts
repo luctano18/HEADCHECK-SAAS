@@ -62,6 +62,12 @@ import {
   getViolenceFlagById,
   getAlertActions,
   addAlertAction,
+  assignCrisisAlert,
+  assignViolenceFlag,
+  getTeamMembers,
+  getMyCrisisAssignments,
+  getMyViolenceAssignments,
+  getUserById,
 } from "./db";
 import {
   EI_QUIZ_QUESTIONS,
@@ -762,6 +768,54 @@ export const appRouter = router({
         });
         return { success: true };
       }),
+
+    // Assign an alert to a team member
+    assignAlert: protectedProcedure
+      .input(z.object({
+        alertType: z.enum(["crisis", "violence"]),
+        alertId: z.number().int().positive(),
+        assignedToId: z.number().int().positive(),
+        note: z.string().max(500).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const isSuperadmin = ctx.user.role === "superadmin";
+        const isAdmin = ctx.user.role === "admin" || ctx.user.role === "facilitator";
+        if (!isSuperadmin && !isAdmin) throw new TRPCError({ code: "FORBIDDEN" });
+        // Verify assignee exists
+        const assignee = await getUserById(input.assignedToId);
+        if (!assignee) throw new TRPCError({ code: "NOT_FOUND", message: "Team member not found" });
+        // Perform assignment
+        if (input.alertType === "crisis") {
+          await assignCrisisAlert(input.alertId, input.assignedToId);
+        } else {
+          await assignViolenceFlag(input.alertId, input.assignedToId);
+        }
+        // Log the assignment as an action
+        await addAlertAction({
+          adminUserId: ctx.user.id,
+          alertType: input.alertType,
+          crisisEventId: input.alertType === "crisis" ? input.alertId : undefined,
+          violenceFlagId: input.alertType === "violence" ? input.alertId : undefined,
+          actionType: "assigned",
+          note: input.note ?? `Assigned to ${assignee.name ?? assignee.email}`,
+        });
+        return { success: true, assignee };
+      }),
+
+    // Get team members for assignment dropdown
+    getTeamMembers: protectedProcedure.query(async ({ ctx }) => {
+      const isSuperadmin = ctx.user.role === "superadmin";
+      const isAdmin = ctx.user.role === "admin" || ctx.user.role === "facilitator";
+      if (!isSuperadmin && !isAdmin) throw new TRPCError({ code: "FORBIDDEN" });
+      return getTeamMembers(ctx.user.institutionId ?? null);
+    }),
+
+    // Get alerts assigned to me
+    getMyAssignments: protectedProcedure.query(async ({ ctx }) => {
+      const crisisAssignments = await getMyCrisisAssignments(ctx.user.id);
+      const violenceAssignments = await getMyViolenceAssignments(ctx.user.id);
+      return { crisis: crisisAssignments, violence: violenceAssignments };
+    }),
 
     // Save / update my safety plan
     saveSafetyPlan: protectedProcedure

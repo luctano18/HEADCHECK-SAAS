@@ -40,7 +40,8 @@ export default function FacilitatorDashboard() {
   const [groupName, setGroupName] = useState("");
   const [inviteLink, setInviteLink] = useState<string | null>(null);
   const [selectedGroupId, setSelectedGroupId] = useState<number | "">("");
-  const [activeTab, setActiveTab] = useState<"overview" | "alerts" | "violence" | "groups">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "alerts" | "violence" | "groups" | "assigned">("overview");
+  const { data: myAssignments } = trpc.crisis.getMyAssignments.useQuery(undefined, { enabled: isAuthenticated });
   const [crisisFilterUnresolved, setCrisisFilterUnresolved] = useState(true);
   const [violenceFilterUnresolved, setViolenceFilterUnresolved] = useState(true);
 
@@ -132,11 +133,16 @@ export default function FacilitatorDashboard() {
     ? (violenceFlags ?? []).filter((f: any) => !f.acknowledged)
     : (violenceFlags ?? []);
 
+  const assignedCrisisCount = myAssignments?.crisis?.filter((a: any) => !a.acknowledged).length ?? 0;
+  const assignedViolenceCount = myAssignments?.violence?.filter((f: any) => !f.acknowledged).length ?? 0;
+  const totalAssignedCount = assignedCrisisCount + assignedViolenceCount;
+
   const TABS = [
     { id: "overview", label: "Overview", icon: <BarChart3 className="w-4 h-4" /> },
     { id: "alerts", label: "Crisis Alerts", icon: <AlertTriangle className="w-4 h-4" />, badge: criticalCount + highCount },
     { id: "violence", label: "Violence Flags", icon: <Shield className="w-4 h-4" />, badge: unacknowledgedViolence },
     { id: "groups", label: "Groups & Invites", icon: <Users className="w-4 h-4" /> },
+    { id: "assigned", label: "Assigned to Me", icon: <Mail className="w-4 h-4" />, badge: totalAssignedCount },
   ];
 
   return (
@@ -652,6 +658,94 @@ export default function FacilitatorDashboard() {
                     )}
                   </CardContent>
                 </Card>
+               </>
+            )}
+
+            {/* ─── Assigned to Me ─────────────────────────────────────────────────── */}
+            {activeTab === "assigned" && (
+              <>
+                <div className="mb-6">
+                  <h2 className="text-xl font-bold text-foreground">Assigned to Me</h2>
+                  <p className="text-sm text-muted-foreground mt-1">Alerts assigned to you for follow-up. Identities are anonymized.</p>
+                </div>
+
+                {/* Crisis Assignments */}
+                <div className="mb-6">
+                  <h3 className="text-base font-semibold text-foreground mb-3 flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4 text-red-500" /> Crisis Alerts ({assignedCrisisCount} unresolved)
+                  </h3>
+                  {!myAssignments?.crisis?.length ? (
+                    <p className="text-sm text-muted-foreground py-4 text-center">No crisis alerts assigned to you.</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {myAssignments.crisis.map((alert: any) => (
+                        <Card key={alert.id} className={`border ${alert.acknowledged ? "border-gray-200 opacity-60" : "border-red-200"}`}>
+                          <CardContent className="p-4">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <AlertTriangle className={`w-4 h-4 ${alert.acknowledged ? "text-gray-400" : "text-red-500"}`} />
+                                <div>
+                                  <p className="text-sm font-medium">Crisis Alert #{alert.id}</p>
+                                  <p className="text-xs text-muted-foreground">{new Date(alert.createdAt).toLocaleString("en-US")}</p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Badge className={SEVERITY_BADGES[alert.severity] ?? ""}>{alert.severity}</Badge>
+                                {alert.acknowledged && <Badge className="bg-emerald-100 text-emerald-700">Resolved</Badge>}
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => navigate(`/alert/crisis/${alert.id}`)}
+                                >
+                                  View Details
+                                </Button>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Violence Assignments */}
+                <div>
+                  <h3 className="text-base font-semibold text-foreground mb-3 flex items-center gap-2">
+                    <Shield className="w-4 h-4 text-orange-500" /> Violence Flags ({assignedViolenceCount} unresolved)
+                  </h3>
+                  {!myAssignments?.violence?.length ? (
+                    <p className="text-sm text-muted-foreground py-4 text-center">No violence flags assigned to you.</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {myAssignments.violence.map((flag: any) => (
+                        <Card key={flag.id} className={`border ${flag.acknowledged ? "border-gray-200 opacity-60" : "border-orange-200"}`}>
+                          <CardContent className="p-4">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <Shield className={`w-4 h-4 ${flag.acknowledged ? "text-gray-400" : "text-orange-500"}`} />
+                                <div>
+                                  <p className="text-sm font-medium">Violence Flag #{flag.id}</p>
+                                  <p className="text-xs text-muted-foreground">{new Date(flag.createdAt).toLocaleString("en-US")}</p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Badge className={SEVERITY_BADGES[flag.severity] ?? ""}>{flag.severity}</Badge>
+                                {flag.acknowledged && <Badge className="bg-emerald-100 text-emerald-700">Resolved</Badge>}
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => navigate(`/alert/violence/${flag.id}`)}
+                                >
+                                  View Details
+                                </Button>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </>
             )}
           </div>
