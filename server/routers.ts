@@ -56,6 +56,8 @@ import {
   getAllCrisisEvents,
   getAllViolenceFlags,
   getAllGroups,
+  resolveCrisisEvent,
+  getGroupMemberCounts,
 } from "./db";
 import {
   EI_QUIZ_QUESTIONS,
@@ -372,6 +374,17 @@ export const appRouter = router({
       }
       return getGroupsByInstitution(ctx.user.institutionId);
     }),
+    getGroupsWithCounts: protectedProcedure.query(async ({ ctx }) => {
+      const isSuperadmin = ctx.user.role === "superadmin";
+      if (!ctx.user.institutionId && !isSuperadmin) return [];
+      const groupList = ctx.user.institutionId
+        ? await getGroupsByInstitution(ctx.user.institutionId)
+        : await getAllGroups();
+      const counts = ctx.user.institutionId
+        ? await getGroupMemberCounts(ctx.user.institutionId)
+        : {};
+      return groupList.map((g: any) => ({ ...g, memberCount: counts[g.id] ?? 0 }));
+    }),
     inviteStudent: protectedProcedure
       .input(z.object({ email: z.string().email(), groupId: z.number().optional() }))
       .mutation(async ({ ctx, input }) => {
@@ -622,6 +635,14 @@ export const appRouter = router({
         ? getAllCrisisEvents()
         : getCrisisEventsByInstitution(ctx.user.institutionId!);
     }),
+    resolveCrisisAlert: protectedProcedure
+      .input(z.object({ alertId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const isSuperadmin = ctx.user.role === "superadmin";
+        if (!ctx.user.institutionId && !isSuperadmin) throw new TRPCError({ code: "FORBIDDEN" });
+        await resolveCrisisEvent(input.alertId);
+        return { success: true };
+      }),
   }),
 
   // ─── Crisis & Violence Prevention ─────────────────────────────────────────────────────────────────────────────────────────

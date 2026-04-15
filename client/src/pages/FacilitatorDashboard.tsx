@@ -39,6 +39,7 @@ export default function FacilitatorDashboard() {
   const [inviteEmail, setInviteEmail] = useState("");
   const [groupName, setGroupName] = useState("");
   const [inviteLink, setInviteLink] = useState<string | null>(null);
+  const [selectedGroupId, setSelectedGroupId] = useState<number | "">("");
   const [activeTab, setActiveTab] = useState<"overview" | "alerts" | "violence" | "groups">("overview");
 
   const isSuperadmin = user?.role === "superadmin";
@@ -58,9 +59,13 @@ export default function FacilitatorDashboard() {
     onSuccess: () => { toast.success("Alert marked as resolved."); refetchViolenceFlags(); },
     onError: (err) => toast.error(err.message),
   });
-  const { data: groups, refetch: refetchGroups } = trpc.institutions.getGroups.useQuery(
+  const { data: groups, refetch: refetchGroups } = trpc.institutions.getGroupsWithCounts.useQuery(
     undefined, { enabled: isAuthenticated }
   );
+  const resolveCrisisAlertMutation = trpc.facilitator.resolveCrisisAlert.useMutation({
+    onSuccess: () => { toast.success("Crisis alert marked as resolved."); refetchAlerts(); },
+    onError: (err) => toast.error(err.message),
+  });
 
   const inviteMutation = trpc.institutions.inviteStudent.useMutation({
     onSuccess: (data) => {
@@ -319,20 +324,43 @@ export default function FacilitatorDashboard() {
                     </div>
                   ) : (
                     crisisAlerts.map((alert: any) => (
-                      <div key={alert.id} className={`rounded-2xl p-4 border flex items-start gap-4 ${alert.severity === "critical" ? "bg-red-50 border-red-200" : alert.severity === "high" ? "bg-orange-50 border-orange-200" : "bg-yellow-50 border-yellow-200"}`}>
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${alert.severity === "critical" ? "bg-red-100" : alert.severity === "high" ? "bg-orange-100" : "bg-yellow-100"}`}>
-                          <Shield className={`w-5 h-5 ${alert.severity === "critical" ? "text-red-600" : alert.severity === "high" ? "text-orange-600" : "text-yellow-600"}`} />
+                      <div key={alert.id} className={`rounded-2xl p-4 border flex items-start gap-4 ${
+                        alert.acknowledged ? "opacity-50 bg-muted/20 border-border" :
+                        alert.severity === "critical" ? "bg-red-50 border-red-200" :
+                        alert.severity === "high" ? "bg-orange-50 border-orange-200" :
+                        "bg-yellow-50 border-yellow-200"
+                      }`}>
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                          alert.acknowledged ? "bg-muted" :
+                          alert.severity === "critical" ? "bg-red-100" :
+                          alert.severity === "high" ? "bg-orange-100" : "bg-yellow-100"
+                        }`}>
+                          <Shield className={`w-5 h-5 ${
+                            alert.acknowledged ? "text-muted-foreground" :
+                            alert.severity === "critical" ? "text-red-600" :
+                            alert.severity === "high" ? "text-orange-600" : "text-yellow-600"
+                          }`} />
                         </div>
                         <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
+                          <div className="flex items-center gap-2 flex-wrap mb-1">
                             <Badge className={`text-xs ${SEVERITY_BADGES[alert.severity]}`}>{alert.severity?.toUpperCase()}</Badge>
+                            {alert.acknowledged && <Badge variant="outline" className="text-xs text-emerald-600 border-emerald-300">✓ Resolved</Badge>}
                             <span className="text-xs text-muted-foreground">{format(new Date(alert.createdAt), "MMM d, yyyy · h:mm a")}</span>
                           </div>
                           <p className="text-sm text-foreground font-medium">Anonymous Student</p>
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            {alert.resolved ? "Resolved" : "Unresolved"} · Trigger detected in journal entry
-                          </p>
+                          <p className="text-xs text-muted-foreground mt-0.5">Trigger detected in journal entry</p>
                         </div>
+                        {!alert.acknowledged && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => resolveCrisisAlertMutation.mutate({ alertId: alert.id })}
+                            disabled={resolveCrisisAlertMutation.isPending}
+                            className="flex-shrink-0 text-xs"
+                          >
+                            Mark Resolved
+                          </Button>
+                        )}
                       </div>
                     ))
                   )}
@@ -470,7 +498,7 @@ export default function FacilitatorDashboard() {
                 {groups && groups.length > 0 && (
                   <Card className="border shadow-sm">
                     <CardHeader className="pb-2">
-                      <CardTitle className="text-base font-semibold">Your Groups</CardTitle>
+                      <CardTitle className="text-base font-semibold">Your Groups ({groups.length})</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-2">
                       {groups.map((g: any) => (
@@ -479,6 +507,9 @@ export default function FacilitatorDashboard() {
                             <Users className="w-4 h-4 text-primary" />
                           </div>
                           <span className="font-medium text-sm flex-1">{g.name}</span>
+                          <span className="text-xs text-muted-foreground bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">
+                            {g.memberCount ?? 0} member{g.memberCount !== 1 ? "s" : ""}
+                          </span>
                           <span className="text-xs text-muted-foreground">Created {format(new Date(g.createdAt), "MMM d")}</span>
                         </div>
                       ))}
@@ -494,6 +525,22 @@ export default function FacilitatorDashboard() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
+                    {groups && groups.length > 0 && (
+                      <div className="space-y-2">
+                        <Label htmlFor="group-select">Assign to Group <span className="text-muted-foreground font-normal">(optional)</span></Label>
+                        <select
+                          id="group-select"
+                          value={selectedGroupId}
+                          onChange={(e) => setSelectedGroupId(e.target.value ? Number(e.target.value) : "")}
+                          className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
+                        >
+                          <option value="">No group (institution-wide)</option>
+                          {groups.map((g: any) => (
+                            <option key={g.id} value={g.id}>{g.name} ({g.memberCount ?? 0} members)</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
                     <div className="space-y-2">
                       <Label htmlFor="email">Student Email</Label>
                       <div className="flex gap-3">
@@ -507,7 +554,7 @@ export default function FacilitatorDashboard() {
                         />
                         <Button
                           disabled={!inviteEmail.trim() || inviteMutation.isPending || (isSuperadmin && !hasInstitution)}
-                          onClick={() => inviteMutation.mutate({ email: inviteEmail.trim() })}
+                          onClick={() => inviteMutation.mutate({ email: inviteEmail.trim(), groupId: selectedGroupId || undefined })}
                           className="flex-shrink-0"
                           title={isSuperadmin && !hasInstitution ? "Superadmin must be linked to an institution to invite students" : undefined}
                         >

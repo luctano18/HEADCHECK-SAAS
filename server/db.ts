@@ -978,3 +978,26 @@ export async function getUserProfileStats(userId: number) {
     achievements,
   };
 }
+
+// ─── Crisis Event Resolution ───────────────────────────────────────────────────
+export async function resolveCrisisEvent(eventId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+  await db.update(crisisEvents).set({ acknowledged: true }).where(eq(crisisEvents.id, eventId));
+}
+
+// ─── Group Member Counts ───────────────────────────────────────────────────────
+export async function getGroupMemberCounts(institutionId: number): Promise<Record<number, number>> {
+  const db = await getDb();
+  if (!db) return {};
+  const rows = await db
+    .select({ groupId: users.groupId, count: sql<number>`COUNT(*)` })
+    .from(users)
+    .where(and(eq(users.institutionId, institutionId), sql`${users.groupId} IS NOT NULL`))
+    .groupBy(users.groupId);
+  const map: Record<number, number> = {};
+  for (const row of rows) {
+    if (row.groupId != null) map[row.groupId] = Number(row.count);
+  }
+  return map;
+}

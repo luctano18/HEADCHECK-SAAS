@@ -512,3 +512,9 @@
 - [x] Create /profile page: avatar, personal info form, stats summary, preferences, account info
 - [x] Add profile stats: total check-ins, current streak, best streak, achievements
 - [x] Register /profile route in App.tsx
+
+## Phase 21: Activate Facilitator Modules
+
+- [x] Groups & Invitations: activate full group management UI (create group, list groups, invite students, copy invite link, view member count, group selector for invitations)
+- [x] Violence Alerts: activate with anonymized identities, correct description banner, severity badges, Mark Resolved button
+- [x] Crisis Alerts: activate with anonymized identities, correct description banner, severity badges, Mark Resolved button (resolveCrisisAlert tRPC mutation)
