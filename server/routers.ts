@@ -125,6 +125,22 @@ async function notifyAdmins(params: {
         if (sent) await markNotificationEmailSent(0); // emailSent tracked per notification row
       }
     }
+
+    // ── Web Push: fire-and-forget for all eligible admins ─────────────────────────────────────
+    const pushTargetIds = admins
+      .filter((a) => !params.excludeUserId || a.id !== params.excludeUserId)
+      .map((a) => a.id);
+    if (pushTargetIds.length > 0) {
+      import("./webpush").then(({ sendPushToUsers }) =>
+        sendPushToUsers(pushTargetIds, {
+          title: params.title,
+          body: params.body,
+          url: params.link ?? "/",
+          tag: params.type,
+          requireInteraction: params.type === "crisis_alert" || params.type === "violence_flag",
+        })
+      ).catch((e) => console.warn("[WebPush] notifyAdmins push error:", e));
+    }
   } catch (err) {
     console.error("[notifyAdmins] Failed to send notifications:", err);
   }
@@ -891,6 +907,16 @@ export const appRouter = router({
               recipientName: assignee.name ?? undefined,
             }).catch(() => {});
           }
+          // Web Push to assignee
+          import("./webpush").then(({ sendPushToUsers }) =>
+            sendPushToUsers([assignee.id], {
+              title: "📋 Alert Assigned to You",
+              body: `A ${input.alertType} alert has been assigned to you by ${ctx.user.name ?? ctx.user.email}.`,
+              url: `/alert/${input.alertType}/${input.alertId}`,
+              tag: "alert_assigned",
+              requireInteraction: true,
+            })
+          ).catch(() => {});
         }
         return { success: true, assignee };
       }),
@@ -1124,6 +1150,35 @@ export const appRouter = router({
     markAllRead: protectedProcedure
       .mutation(async ({ ctx }) => {
         await markAllNotificationsRead(ctx.user.id);
+        return { success: true };
+      }),
+  }),
+
+  // ─── Web Push Subscriptions ───────────────────────────────────────────────────
+  push: router({
+    // Register a push subscription for the current user
+    subscribe: protectedProcedure
+      .input(z.object({
+        endpoint: z.string().url(),
+        p256dh: z.string().min(1),
+        auth: z.string().min(1),
+        userAgent: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { savePushSubscription } = await import("./webpush");
+        await savePushSubscription(
+          ctx.user.id,
+          { endpoint: input.endpoint, keys: { p256dh: input.p256dh, auth: input.auth } },
+          input.userAgent
+        );
+        return { success: true };
+      }),
+    // Remove a push subscription
+    unsubscribe: protectedProcedure
+      .input(z.object({ endpoint: z.string().url() }))
+      .mutation(async ({ ctx, input }) => {
+        const { deletePushSubscription } = await import("./webpush");
+        await deletePushSubscription(input.endpoint);
         return { success: true };
       }),
   }),

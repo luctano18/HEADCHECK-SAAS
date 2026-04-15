@@ -11,4 +11,7 @@ export const ENV = {
   googleClientId: process.env.GOOGLE_CLIENT_ID ?? "",
   googleClientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
   googleRedirectBase: process.env.GOOGLE_REDIRECT_BASE ?? "",
+  // Web Push (VAPID)
+  vapidPublicKey: process.env.VAPID_PUBLIC_KEY ?? "",
+  vapidPrivateKey: process.env.VAPID_PRIVATE_KEY ?? "",
 };

@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { toast } from "sonner";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 import {
   User, Mail, Phone, Globe, Bell, BellOff, Camera,
   Flame, Trophy, Calendar, CheckCircle2, ArrowLeft,
@@ -63,6 +64,53 @@ function roleBadgeColor(role: string) {
     student: "bg-gray-100 text-gray-600 border-gray-200",
   };
   return map[role] ?? "bg-gray-100 text-gray-600 border-gray-200";
+}
+
+// ─── Browser Push Toggle sub-component ──────────────────────────────────────
+function BrowserPushToggle() {
+  const { permission, isSubscribed, isLoading, subscribe, unsubscribe } = usePushNotifications();
+
+  if (permission === "unsupported") {
+    return (
+      <div className="flex items-center justify-between py-2 opacity-50">
+        <div>
+          <p className="text-sm font-medium text-gray-700 flex items-center gap-2">
+            <Bell className="w-4 h-4 text-gray-400" />
+            Browser Push Notifications
+          </p>
+          <p className="text-xs text-gray-500 mt-0.5">Not supported by your browser</p>
+        </div>
+        <Badge variant="outline" className="text-xs text-gray-400">Unsupported</Badge>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center justify-between py-2">
+      <div>
+        <p className="text-sm font-medium text-gray-700 flex items-center gap-2">
+          {isSubscribed ? (
+            <Bell className="w-4 h-4 text-indigo-500" />
+          ) : (
+            <BellOff className="w-4 h-4 text-gray-400" />
+          )}
+          Browser Push Notifications
+        </p>
+        <p className="text-xs text-gray-500 mt-0.5">
+          {permission === "denied"
+            ? "Blocked — enable in browser settings"
+            : isSubscribed
+            ? "Active — you'll receive alerts even when the tab is closed"
+            : "Get alerted even when HeadCheck is not open"}
+        </p>
+      </div>
+      <Switch
+        checked={isSubscribed}
+        onCheckedChange={(v) => (v ? subscribe() : unsubscribe())}
+        disabled={isLoading || permission === "denied"}
+      />
+    </div>
+  );
 }
 
 export default function Profile() {
@@ -353,9 +401,9 @@ export default function Profile() {
             <div>
               <p className="text-sm font-medium text-gray-700 flex items-center gap-2">
                 {form.notificationsEnabled ? <Bell className="w-4 h-4 text-indigo-500" /> : <BellOff className="w-4 h-4 text-gray-400" />}
-                Push Notifications
+                Email Notifications
               </p>
-              <p className="text-xs text-gray-500 mt-0.5">Receive reminders for daily check-ins and wellness tips</p>
+              <p className="text-xs text-gray-500 mt-0.5">Receive email alerts for crisis events and assignments</p>
             </div>
             <Switch
               checked={form.notificationsEnabled}
@@ -368,6 +416,8 @@ export default function Profile() {
               disabled={updateMutation.isPending}
             />
           </div>
+
+          <BrowserPushToggle />
 
           <Separator />
 

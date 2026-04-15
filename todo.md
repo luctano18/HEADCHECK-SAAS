@@ -562,3 +562,16 @@
 - [x] Create NotificationBell component in NavBar: badge with unread count, dropdown with recent notifications, polling every 30s
 - [x] Create /notifications page with full history, read/unread filter, mark all read button
 - [x] Register /notifications route in App.tsx
+
+## Phase 28: Web Push Notifications (Browser Push API)
+- [x] Generate VAPID key pair and store as VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY secrets
+- [x] Add push_subscriptions table to DB schema (userId, endpoint, p256dh, auth, createdAt)
+- [x] Add DB helpers: savePushSubscription, deletePushSubscription, getPushSubscriptionsByUser, getPushSubscriptionsByInstitution
+- [x] Add tRPC procedures: push.subscribe, push.unsubscribe
+- [x] Create server/webpush.ts helper (web-push library, sendPushNotification)
+- [x] Create public/sw.js Service Worker (push event handler, notification click → focus/open tab)
+- [x] Create client/src/hooks/usePushNotifications.ts hook (request permission, subscribe, unsubscribe)
+- [x] Add "Browser Push Notifications" toggle in My Profile page
+- [x] Wire push notifications into notifyAdmins helper (alongside in-app + email)
+- [x] Wire push notification to assignee in crisis.assignAlert
+- [x] Test end-to-end: trigger crisis alert → push notification appears in browser
