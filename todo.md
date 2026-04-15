@@ -541,3 +541,12 @@
 - [x] Update AlertDetail page: add "Assign to Team Member" dropdown + Assign button, show current assignee badge
 - [x] Add "Assigned to Me" tab in FacilitatorDashboard with crisis and violence assignment lists
 - [x] Register assignment action in alert_actions history (type: "Assigned")
+
+## Phase 25: Alert Comments Section
+
+- [x] Add alert_comments table to DB schema (alertType, alertId, authorId, content, createdAt, editedAt)
+- [x] Add DB helpers: getAlertComments, addAlertComment, editAlertComment, deleteAlertComment
+- [x] Add tRPC procedures: comments.getComments, comments.addComment, comments.editComment, comments.deleteComment
+- [x] Add AlertCommentsSection component in AlertDetail.tsx: avatar initials, author name/role, timestamps, edit/delete own comments, Ctrl+Enter shortcut
+- [x] Integrate AlertCommentsSection in both CrisisAlertDetail and ViolenceAlertDetail
+- [x] Auto-refresh via trpc.useUtils().comments.getComments.invalidate on add/edit/delete

@@ -78,6 +78,13 @@
       "when": 1776267552547,
       "tag": "0010_special_luckman",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "5",
+      "when": 1776273066792,
+      "tag": "0011_melted_kabuki",
+      "breakpoints": true
     }
   ]
 }

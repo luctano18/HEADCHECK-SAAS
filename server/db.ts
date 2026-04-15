@@ -16,6 +16,7 @@ import {
   userStreaks,
   userAchievements,
   violenceFlags,
+  alertComments,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -1200,4 +1201,56 @@ export async function getUserById(userId: number) {
     .from(users)
     .where(eq(users.id, userId));
   return rows[0] ?? null;
+}
+
+// ─── Alert Comments ────────────────────────────────────────────────────────────
+export async function getAlertComments(alertType: "crisis" | "violence", alertId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select({
+      id: alertComments.id,
+      alertType: alertComments.alertType,
+      alertId: alertComments.alertId,
+      authorId: alertComments.authorId,
+      authorName: users.name,
+      authorRole: users.role,
+      content: alertComments.content,
+      editedAt: alertComments.editedAt,
+      createdAt: alertComments.createdAt,
+    })
+    .from(alertComments)
+    .innerJoin(users, eq(alertComments.authorId, users.id))
+    .where(and(eq(alertComments.alertType, alertType), eq(alertComments.alertId, alertId)))
+    .orderBy(alertComments.createdAt);
+}
+
+export async function addAlertComment(data: {
+  alertType: "crisis" | "violence";
+  alertId: number;
+  authorId: number;
+  content: string;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+  const result = await db.insert(alertComments).values(data);
+  const insertId = (result as unknown as [{ insertId: number }])[0]?.insertId;
+  return insertId;
+}
+
+export async function deleteAlertComment(commentId: number, authorId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db
+    .delete(alertComments)
+    .where(and(eq(alertComments.id, commentId), eq(alertComments.authorId, authorId)));
+}
+
+export async function editAlertComment(commentId: number, authorId: number, content: string) {
+  const db = await getDb();
+  if (!db) return;
+  await db
+    .update(alertComments)
+    .set({ content, editedAt: new Date() })
+    .where(and(eq(alertComments.id, commentId), eq(alertComments.authorId, authorId)));
 }

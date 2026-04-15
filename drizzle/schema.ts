@@ -354,3 +354,16 @@ export const quizAttempts = mysqlTable("quiz_attempts", {
 
 export type QuizAttempt = typeof quizAttempts.$inferSelect;
 export type InsertQuizAttempt = typeof quizAttempts.$inferInsert;
+
+// ─── Alert Comments (Team Discussion) ────────────────────────────────────────
+export const alertComments = mysqlTable("alert_comments", {
+  id: int("id").autoincrement().primaryKey(),
+  alertType: mysqlEnum("alertType", ["crisis", "violence"]).notNull(),
+  alertId: int("alertId").notNull(), // crisisEventId or violenceFlagId
+  authorId: int("authorId").notNull(), // userId of the commenter
+  content: text("content").notNull(),
+  editedAt: timestamp("editedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type AlertComment = typeof alertComments.$inferSelect;
+export type InsertAlertComment = typeof alertComments.$inferInsert;

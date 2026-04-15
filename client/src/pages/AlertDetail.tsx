@@ -15,8 +15,12 @@ import {
   CheckCircle,
   Clock,
   FileText,
+  MessageSquare,
+  Pencil,
   Phone,
+  Send,
   Shield,
+  Trash2,
   TrendingUp,
   User,
   UserPlus,
@@ -76,6 +80,154 @@ function AnonymizedId({ userId }: { userId: number }) {
     <span className="font-mono text-sm bg-gray-100 px-2 py-0.5 rounded text-gray-600">
       {code}
     </span>
+  );
+}
+
+// ─── Alert Comments Section ──────────────────────────────────────────────────
+function AlertCommentsSection({ alertType, alertId }: { alertType: "crisis" | "violence"; alertId: number }) {
+  const { user } = useAuth();
+  const [newComment, setNewComment] = useState("");
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editContent, setEditContent] = useState("");
+  const [posting, setPosting] = useState(false);
+
+  const utils = trpc.useUtils();
+  const { data: comments = [], isLoading } = trpc.comments.getComments.useQuery({ alertType, alertId });
+
+  const addMutation = trpc.comments.addComment.useMutation({
+    onSuccess: () => {
+      setNewComment("");
+      setPosting(false);
+      utils.comments.getComments.invalidate({ alertType, alertId });
+    },
+    onError: () => setPosting(false),
+  });
+
+  const editMutation = trpc.comments.editComment.useMutation({
+    onSuccess: () => {
+      setEditingId(null);
+      setEditContent("");
+      utils.comments.getComments.invalidate({ alertType, alertId });
+    },
+  });
+
+  const deleteMutation = trpc.comments.deleteComment.useMutation({
+    onSuccess: () => utils.comments.getComments.invalidate({ alertType, alertId }),
+  });
+
+  const handlePost = () => {
+    if (!newComment.trim()) return;
+    setPosting(true);
+    addMutation.mutate({ alertType, alertId, content: newComment.trim() });
+  };
+
+  const handleEdit = (id: number) => {
+    if (!editContent.trim()) return;
+    editMutation.mutate({ commentId: id, content: editContent.trim() });
+  };
+
+  return (
+    <Card className="border-indigo-100">
+      <CardHeader>
+        <CardTitle className="text-base flex items-center gap-2">
+          <MessageSquare className="w-4 h-4 text-indigo-500" />
+          Team Discussion ({comments.length})
+        </CardTitle>
+        <p className="text-xs text-gray-400">Internal discussion — visible to admins and facilitators only.</p>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {isLoading ? (
+          <div className="flex justify-center py-4">
+            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-indigo-400" />
+          </div>
+        ) : comments.length === 0 ? (
+          <p className="text-sm text-gray-400 text-center py-3">No comments yet. Start the discussion.</p>
+        ) : (
+          <div className="space-y-3">
+            {comments.map((c) => (
+              <div key={c.id} className="flex gap-3">
+                {/* Avatar */}
+                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-semibold text-sm">
+                  {(c.authorName ?? "?").charAt(0).toUpperCase()}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <span className="font-medium text-sm text-gray-800">{c.authorName ?? "Team Member"}</span>
+                    <Badge variant="outline" className="text-xs py-0 px-1.5 text-gray-400 border-gray-200">{c.authorRole}</Badge>
+                    <span className="text-xs text-gray-400 ml-auto">{formatDate(c.createdAt)}</span>
+                    {c.editedAt && <span className="text-xs text-gray-300 italic">(edited)</span>}
+                  </div>
+                  {editingId === c.id ? (
+                    <div className="space-y-2">
+                      <Textarea
+                        value={editContent}
+                        onChange={(e) => setEditContent(e.target.value)}
+                        rows={2}
+                        maxLength={2000}
+                        className="text-sm"
+                      />
+                      <div className="flex gap-2">
+                        <Button size="sm" onClick={() => handleEdit(c.id)} disabled={editMutation.isPending}>
+                          {editMutation.isPending ? "Saving…" : "Save"}
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>Cancel</Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="group relative">
+                      <p className="text-sm text-gray-700 bg-gray-50 rounded-lg px-3 py-2 border border-gray-100 whitespace-pre-wrap">{c.content}</p>
+                      {user?.id === c.authorId && (
+                        <div className="absolute top-1 right-1 hidden group-hover:flex gap-1">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-6 w-6 p-0 text-gray-400 hover:text-indigo-600"
+                            onClick={() => { setEditingId(c.id); setEditContent(c.content); }}
+                          >
+                            <Pencil className="w-3 h-3" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-6 w-6 p-0 text-gray-400 hover:text-red-500"
+                            onClick={() => deleteMutation.mutate({ commentId: c.id })}
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        <Separator />
+        {/* New comment input */}
+        <div className="flex gap-2 items-end">
+          <Textarea
+            placeholder="Add a comment for the team…"
+            value={newComment}
+            onChange={(e) => setNewComment(e.target.value)}
+            rows={2}
+            maxLength={2000}
+            className="flex-1 text-sm"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) handlePost();
+            }}
+          />
+          <Button
+            onClick={handlePost}
+            disabled={!newComment.trim() || posting}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white self-end"
+          >
+            {posting ? "…" : <Send className="w-4 h-4" />}
+          </Button>
+        </div>
+        <p className="text-xs text-gray-300">Press Ctrl+Enter to post</p>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -318,6 +470,9 @@ function CrisisAlertDetail({ id }: { id: number }) {
         onAssigned={refetch}
       />
 
+      {/* Team Discussion */}
+      <AlertCommentsSection alertType="crisis" alertId={id} />
+
       {/* Add Action Form */}
       {!event.acknowledged && (
         <Card className="border-blue-100">
@@ -525,6 +680,9 @@ function ViolenceAlertDetail({ id }: { id: number }) {
         currentAssigneeId={flag.assignedToId}
         onAssigned={refetch}
       />
+
+      {/* Team Discussion */}
+      <AlertCommentsSection alertType="violence" alertId={id} />
 
       {/* Add Action Form */}
       {!flag.acknowledged && (

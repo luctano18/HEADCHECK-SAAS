@@ -68,6 +68,10 @@ import {
   getMyCrisisAssignments,
   getMyViolenceAssignments,
   getUserById,
+  getAlertComments,
+  addAlertComment,
+  deleteAlertComment,
+  editAlertComment,
 } from "./db";
 import {
   EI_QUIZ_QUESTIONS,
@@ -940,6 +944,63 @@ export const appRouter = router({
       const { getUserProfileStats } = await import("./db");
       return getUserProfileStats(ctx.user.id);
     }),
+  }),
+
+  // ─── Alert Comments ──────────────────────────────────────────────────────────
+  comments: router({
+    // Get all comments for an alert
+    getComments: protectedProcedure
+      .input(z.object({
+        alertType: z.enum(["crisis", "violence"]),
+        alertId: z.number().int().positive(),
+      }))
+      .query(async ({ ctx, input }) => {
+        const isSuperadmin = ctx.user.role === "superadmin";
+        const isAdmin = ctx.user.role === "admin" || ctx.user.role === "facilitator";
+        if (!isSuperadmin && !isAdmin) throw new TRPCError({ code: "FORBIDDEN" });
+        return getAlertComments(input.alertType, input.alertId);
+      }),
+
+    // Add a new comment
+    addComment: protectedProcedure
+      .input(z.object({
+        alertType: z.enum(["crisis", "violence"]),
+        alertId: z.number().int().positive(),
+        content: z.string().min(1).max(2000),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const isSuperadmin = ctx.user.role === "superadmin";
+        const isAdmin = ctx.user.role === "admin" || ctx.user.role === "facilitator";
+        if (!isSuperadmin && !isAdmin) throw new TRPCError({ code: "FORBIDDEN" });
+        const id = await addAlertComment({
+          alertType: input.alertType,
+          alertId: input.alertId,
+          authorId: ctx.user.id,
+          content: input.content,
+        });
+        return { success: true, id };
+      }),
+
+    // Edit own comment
+    editComment: protectedProcedure
+      .input(z.object({
+        commentId: z.number().int().positive(),
+        content: z.string().min(1).max(2000),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        await editAlertComment(input.commentId, ctx.user.id, input.content);
+        return { success: true };
+      }),
+
+    // Delete own comment (or admin can delete any)
+    deleteComment: protectedProcedure
+      .input(z.object({
+        commentId: z.number().int().positive(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        await deleteAlertComment(input.commentId, ctx.user.id);
+        return { success: true };
+      }),
   }),
 });
 export type AppRouter = typeof appRouter;
