@@ -27,6 +27,7 @@ import ViolencePrevention from "./pages/ViolencePrevention";
 import Profile from "./pages/Profile";
 import AlertDetail from "./pages/AlertDetail";
 import Notifications from "./pages/Notifications";
+import CheckInSummary from "./pages/CheckInSummary";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -42,6 +43,7 @@ function Router() {
       <Route path="/join" component={JoinInstitution} />
       <Route path="/checkin" component={CheckIn} />
       {/* Canonical routes */}
+      <Route path="/checkin/summary" component={CheckInSummary} />
       <Route path="/checkin/guest-result" component={GuestCheckInResult} />
       <Route path="/checkin/result/:id" component={CheckInResult} />
       <Route path="/compass" component={SevenMirrors} />

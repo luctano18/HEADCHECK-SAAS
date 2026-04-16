@@ -194,13 +194,31 @@ export default function CheckIn() {
     };
 
     try {
+      let checkInId: number | undefined;
+      let guestResult: unknown;
+
       if (isAuthenticated && wantsSave) {
         const result = await createCheckIn.mutateAsync(payload);
-        navigate(`/checkin/result/${result.checkInId}`);
+        checkInId = result.checkInId;
       } else {
         const result = await guestCreate.mutateAsync(payload);
-        navigate("/checkin/guest-result", { state: { result } });
+        guestResult = result;
       }
+
+      // Store summary data in sessionStorage for the intermediate summary screen
+      sessionStorage.setItem("headcheck_summary", JSON.stringify({
+        primaryEmotion,
+        stressors,
+        supportNeed,
+        possibleAction,
+        supportType,
+        wantsSave,
+        checkInId,
+        guestResult,
+      }));
+
+      // Navigate to intermediate summary screen
+      navigate("/checkin/summary");
     } catch {
       toast.error("Something went wrong. Please try again.");
     }

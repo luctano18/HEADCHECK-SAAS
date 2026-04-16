@@ -575,3 +575,19 @@
 - [x] Wire push notifications into notifyAdmins helper (alongside in-app + email)
 - [x] Wire push notification to assignee in crisis.assignAlert
 - [x] Test end-to-end: trigger crisis alert → push notification appears in browser
+
+## Phase 29: Alignement exact Check-In + Seven Mirrors + Écran résumé
+
+- [x] Mettre à jour CHECKIN_STEPS dans shared/headcheckData.ts avec les 10 étapes exactes du document source
+- [x] Ajouter guidanceCard (Step 6) et reflectionCard (Step 8) dans les données headcheckData.ts
+- [x] Ajouter la carte "Why This Works" sur Step 10 dans headcheckData.ts
+- [x] Mettre à jour SEVEN_MIRRORS dans shared/headcheckData.ts avec les 7 miroirs exacts du document source
+- [x] Désactiver le bouton Continuer dans CheckIn.tsx tant qu'aucune sélection n'est faite
+- [x] Afficher la carte de guidance sur Step 6 dans CheckIn.tsx
+- [x] Afficher la carte de réflexion sur Step 8 dans CheckIn.tsx
+- [x] Afficher la carte "Why This Works" sur Step 10 dans CheckIn.tsx
+- [x] Ajouter le message conditionnel "Not yet" sur Step 9 dans CheckIn.tsx
+- [x] Créer la page CheckInSummary.tsx avec les 5 sections du document source
+- [x] Enregistrer la route /checkin/summary dans App.tsx
+- [x] Modifier CheckIn.tsx pour rediriger vers /checkin/summary après complétion (avant /checkin/result/:id)
+- [x] Modifier CheckInSummary.tsx pour naviguer vers /checkin/result/:id après lecture du résumé
