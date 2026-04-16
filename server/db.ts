@@ -202,7 +202,7 @@ export async function saveAiResponse(data: {
   aieiProverbOrigin?: string;
   personalizedNextStep: string;
   supportInvitation: string;
-  mochaAffirmation?: string;
+  affirmation?: string;
   patternInsight?: string;
 }) {
   const db = await getDb();

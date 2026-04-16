@@ -685,3 +685,17 @@
 - [x] Intégrer le graphique dans la section "Emotional Trends" du rapport HTML
 - [x] Ajouter une section "Top Emotions This Week" avec barres horizontales SVG
 - [x] Vérifier TypeScript et tests
+
+## Phase 35: Suppression des mentions de "Mocha"
+
+- [x] Remplacer "Mocha's Affirmation" → "HeadCheck Affirmation" dans CheckInResult.tsx
+- [x] Remplacer "— Mocha, your HeadCheck companion" → "— your HeadCheck companion" dans CheckInResult.tsx
+- [x] Remplacer "Mocha's Affirmation" → "HeadCheck Affirmation" dans GuestCheckInResult.tsx
+- [x] Remplacer "— Mocha, your HeadCheck companion" → "— your HeadCheck companion" dans GuestCheckInResult.tsx
+- [x] Remplacer "From Mocha" → "From HeadCheck AI" dans EIQuiz.tsx
+- [x] Remplacer "Mocha's Insight" → "HeadCheck Insight" dans EIQuizResult.tsx
+- [x] Remplacer "— Mocha, your HeadCheck companion" → "— your HeadCheck companion" dans EIQuizResult.tsx
+- [x] Remplacer "an AI insight from Mocha" → "a personalized AI insight" dans Home.tsx et LearnEI.tsx
+- [x] Remplacer "You are Mocha, the HeadCheck AI companion" → "You are the HeadCheck AI companion" dans routers.ts (prompt LLM)
+- [x] Remplacer le champ JSON "mochaAffirmation" label → "affirmation" dans le prompt LLM (routers.ts)
+- [x] Vérifier TypeScript et tests

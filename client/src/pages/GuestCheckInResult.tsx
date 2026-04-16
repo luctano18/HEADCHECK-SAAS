@@ -17,7 +17,7 @@ type GuestResult = {
     aieiProverbOrigin: string;
     personalizedNextStep: string;
     supportInvitation: string;
-    mochaAffirmation?: string;
+    affirmation?: string;
   };
   crisisDetected: boolean;
   severity: string | null;
@@ -70,9 +70,9 @@ const RESPONSE_SECTIONS = [
     titleColor: "text-rose-700",
   },
   {
-    key: "mochaAffirmation" as const,
+    key: "affirmation" as const,
     icon: "✨",
-    title: "Mocha's Affirmation",
+    title: "HeadCheck Affirmation",
     gradient: "from-violet-50 to-pink-50",
     border: "border-violet-200",
     titleColor: "text-violet-700",
@@ -172,7 +172,7 @@ export default function GuestCheckInResult() {
               ) : (section as any).isAffirmation ? (
                 <div className="text-center py-2">
                   <p className="font-serif text-xl font-semibold leading-relaxed" style={{ color: "oklch(0.45 0.18 285)" }}>✨ {value}</p>
-                  <p className="text-xs opacity-60 mt-3">— Mocha, your HeadCheck companion</p>
+                  <p className="text-xs opacity-60 mt-3">— your HeadCheck companion</p>
                 </div>
               ) : (
                 <p className="text-sm leading-relaxed" style={{ color: "oklch(0.22 0.04 260)" }}>{value}</p>

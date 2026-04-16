@@ -200,7 +200,7 @@ export default function Home() {
               </div>
             </div>
             <p className="text-white/80 mb-5 leading-relaxed">
-              Discover your EI profile across 5 pillars: Self-Awareness, Self-Regulation, Motivation, Empathy, and Social Skills. Get a personalized radar chart and an AI insight from Mocha.
+              Discover your EI profile across 5 pillars: Self-Awareness, Self-Regulation, Motivation, Empathy, and Social Skills. Get a personalized radar chart and a personalized AI insight.
             </p>
             <div className="grid grid-cols-3 gap-3 mb-6 text-sm">
               <div className="bg-white/10 rounded-xl p-3 text-center">

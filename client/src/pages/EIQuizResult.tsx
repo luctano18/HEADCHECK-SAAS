@@ -264,12 +264,12 @@ export default function EIQuizResult() {
             </CardContent>
           </Card>
 
-          {/* Mocha's AI Insight */}
+          {/* HeadCheck AI Insight */}
           <Card className="bg-gradient-to-br from-slate-900 to-violet-950 text-white shadow-sm border-0">
             <CardHeader className="pb-2">
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-2xl">✨</span>
-                <CardTitle className="text-lg font-semibold text-white">Mocha's Insight</CardTitle>
+                <CardTitle className="text-lg font-semibold text-white">HeadCheck Insight</CardTitle>
               </div>
               <p className="text-white/60 text-xs">Your personalized AI reflection</p>
             </CardHeader>
@@ -278,7 +278,7 @@ export default function EIQuizResult() {
                 {result.aiInsight}
               </div>
               <div className="mt-4 pt-4 border-t border-white/10 text-xs text-white/40 italic">
-                — Mocha, your HeadCheck companion
+                — your HeadCheck companion
               </div>
             </CardContent>
           </Card>

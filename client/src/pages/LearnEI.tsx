@@ -155,7 +155,7 @@ export default function LearnEI() {
             <div className="flex-1 text-center md:text-left">
               <h2 className="text-xl font-bold mb-2" style={{ color: "oklch(0.18 0.04 260)" }}>Discover Your EI Profile</h2>
               <p className="text-sm leading-relaxed mb-4" style={{ color: "oklch(0.45 0.04 260)" }}>
-                Take our 25-question interactive quiz to measure your emotional intelligence across all 5 pillars. Get a personalized radar chart, pillar scores, and an AI insight from Mocha.
+                Take our 25-question interactive quiz to measure your emotional intelligence across all 5 pillars. Get a personalized radar chart, pillar scores, and a personalized AI insight.
               </p>
               <button
                 onClick={() => navigate("/ei-quiz")}

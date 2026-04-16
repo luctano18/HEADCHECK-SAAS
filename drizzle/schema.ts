@@ -129,7 +129,7 @@ export const aiResponses = mysqlTable("ai_responses", {
   aieiProverbOrigin: varchar("aieiProverbOrigin", { length: 128 }),
   personalizedNextStep: text("personalizedNextStep").notNull(),
   supportInvitation: text("supportInvitation").notNull(),
-  mochaAffirmation: text("mochaAffirmation"),
+  affirmation: text("mochaAffirmation"),
   patternInsight: text("patternInsight"),
   feedbackRating: mysqlEnum("feedbackRating", ["helpful", "not_helpful"]),
   feedbackText: text("feedbackText"),

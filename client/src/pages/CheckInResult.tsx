@@ -20,7 +20,7 @@ const RESPONSE_SECTIONS = [
   { key: "aieiProverb", icon: <BookOpen className="w-5 h-5" />, title: "African Wisdom (AIEI)", color: "bg-orange-50 border-orange-100", iconColor: "text-orange-500", badgeColor: "bg-orange-100 text-orange-700", isProverb: true },
   { key: "personalizedNextStep", icon: <Lightbulb className="w-5 h-5" />, title: "Your Next Step", color: "bg-green-50 border-green-100", iconColor: "text-green-500", badgeColor: "bg-green-100 text-green-700" },
   { key: "supportInvitation", icon: <Users className="w-5 h-5" />, title: "Support Invitation", color: "bg-sky-50 border-sky-100", iconColor: "text-sky-500", badgeColor: "bg-sky-100 text-sky-700" },
-  { key: "mochaAffirmation", icon: <Sparkles className="w-5 h-5" />, title: "Mocha's Affirmation", color: "bg-gradient-to-br from-violet-50 to-pink-50 border-violet-200", iconColor: "text-violet-500", badgeColor: "bg-violet-100 text-violet-700", isAffirmation: true },
+  { key: "affirmation", icon: <Sparkles className="w-5 h-5" />, title: "HeadCheck Affirmation", color: "bg-gradient-to-br from-violet-50 to-pink-50 border-violet-200", iconColor: "text-violet-500", badgeColor: "bg-violet-100 text-violet-700", isAffirmation: true },
 ];
 
 // ─── Feedback Bar ─────────────────────────────────────────────────────────────
@@ -211,7 +211,7 @@ export default function CheckInResult() {
                   ) : section.isAffirmation ? (
                     <div className="text-center py-2">
                       <p className="font-serif text-xl font-semibold text-violet-700 leading-relaxed">✨ {value}</p>
-                      <p className="text-xs text-muted-foreground mt-3">— Mocha, your HeadCheck companion</p>
+                      <p className="text-xs text-muted-foreground mt-3">— your HeadCheck companion</p>
                     </div>
                   ) : (
                     <p className="text-sm text-foreground leading-relaxed">{value}</p>

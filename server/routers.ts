@@ -241,7 +241,7 @@ Generate a structured JSON response with EXACTLY these 10 fields:
 6. "aieiProverbOrigin": The country or culture of origin for the proverb (e.g., "Yoruba, Nigeria" or "Swahili, East Africa").
 7. "personalizedNextStep": A specific, actionable 2-3 sentence recommendation for their immediate next step.
 8. "supportInvitation": A gentle 1-2 sentence invitation to seek additional support if needed.
-9. "mochaAffirmation": A short, powerful 1-sentence affirmation from Mocha (the HeadCheck AI companion) that the user can carry with them. Make it personal, warm, and rooted in their specific emotional state.
+9. "affirmation": A short, powerful 1-sentence affirmation from your HeadCheck AI companion that the user can carry with them. Make it personal, warm, and rooted in their specific emotional state.
 10. "patternInsight": ${patternContext ? `Based on the recent emotional history provided, give a 2-3 sentence compassionate insight about the emotional pattern you notice. Highlight what this pattern might mean and one gentle suggestion for breaking or nurturing it.` : `Return an empty string "".`}
 Respond ONLY with valid JSON, no markdown.`;
 
@@ -263,10 +263,10 @@ Respond ONLY with valid JSON, no markdown.`;
             aieiProverbOrigin: { type: "string" },
             personalizedNextStep: { type: "string" },
             supportInvitation: { type: "string" },
-            mochaAffirmation: { type: "string" },
+            affirmation: { type: "string" },
             patternInsight: { type: "string" },
           },
-          required: ["emotionalReflection", "brainInsight", "eiPillar", "eiPillarDescription", "aieiProverb", "aieiProverbOrigin", "personalizedNextStep", "supportInvitation", "mochaAffirmation", "patternInsight"],
+          required: ["emotionalReflection", "brainInsight", "eiPillar", "eiPillarDescription", "aieiProverb", "aieiProverbOrigin", "personalizedNextStep", "supportInvitation", "affirmation", "patternInsight"],
           additionalProperties: false,
         },
       },
@@ -285,7 +285,7 @@ Respond ONLY with valid JSON, no markdown.`;
     aieiProverbOrigin: string;
     personalizedNextStep: string;
     supportInvitation: string;
-    mochaAffirmation: string;
+    affirmation: string;
     patternInsight: string;
   };
 }
@@ -364,7 +364,7 @@ async function generateQuizInsight(scores: {
     "Social Skills": scores.socialSkills,
   }).sort((a, b) => a[1] - b[1])[0][0];
 
-  const prompt = `You are Mocha, the HeadCheck AI companion — warm, insightful, and grounded in African wisdom.
+  const prompt = `You are the HeadCheck AI companion — warm, insightful, and grounded in African wisdom.
 
 A user just completed the Emotional Intelligence (EI) Quiz. Here are their results:
 - Overall EI Level: ${level} (${scores.total}%)

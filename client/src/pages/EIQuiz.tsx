@@ -194,7 +194,7 @@ export default function EIQuiz() {
             <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-100">
               <div className="text-2xl mb-2">✨</div>
               <div className="font-medium text-slate-800">AI Insight</div>
-              <div>From Mocha</div>
+              <div>From HeadCheck AI</div>
             </div>
           </div>
 
