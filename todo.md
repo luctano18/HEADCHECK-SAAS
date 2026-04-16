@@ -699,3 +699,14 @@
 - [x] Remplacer "You are Mocha, the HeadCheck AI companion" → "You are the HeadCheck AI companion" dans routers.ts (prompt LLM)
 - [x] Remplacer le champ JSON "mochaAffirmation" label → "affirmation" dans le prompt LLM (routers.ts)
 - [x] Vérifier TypeScript et tests
+
+## Phase 36: Nouvelle identité visuelle HeadCheck
+
+- [x] Générer le logo HeadCheck AI (icône tête + cœur + motif africain)
+- [x] Définir la nouvelle palette de couleurs (primaire, secondaire, accents)
+- [x] Mettre à jour client/src/index.css avec les nouvelles variables CSS
+- [x] Uploader le logo sur CDN et l'intégrer dans NavBar.tsx
+- [x] Remplacer l'emoji 💜 par le logo SVG dans la NavBar
+- [x] Mettre à jour le favicon avec le nouveau logo
+- [x] Vérifier le rendu sur desktop et mobile
+- [x] Vérifier TypeScript et tests

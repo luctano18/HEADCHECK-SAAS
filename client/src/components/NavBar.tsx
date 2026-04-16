@@ -49,9 +49,9 @@ function StepIcon({ status }: { status: StepStatus }) {
     return (
       <span
         className="w-4 h-4 rounded-full flex-shrink-0 border-2 flex items-center justify-center"
-        style={{ borderColor: "oklch(0.45 0.18 285)", background: "oklch(0.95 0.04 285)" }}
+        style={{ borderColor: "oklch(0.42 0.22 270)", background: "oklch(0.94 0.04 270)" }}
       >
-        <span className="w-1.5 h-1.5 rounded-full" style={{ background: "oklch(0.45 0.18 285)" }} />
+        <span className="w-1.5 h-1.5 rounded-full" style={{ background: "oklch(0.42 0.22 270)" }} />
       </span>
     );
   return <Circle className="w-4 h-4 flex-shrink-0 text-muted-foreground opacity-40" />;
@@ -67,12 +67,12 @@ function MessagesIconButton() {
   return (
     <button
       onClick={() => navigate("/messages")}
-      className="relative p-2 rounded-xl hover:bg-violet-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
+      className="relative p-2 rounded-xl hover:bg-indigo-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600"
       aria-label={`Messages${unread > 0 ? ` (${unread} unread)` : ""}`}
     >
       <MessageCircle
         className="w-5 h-5"
-        style={{ color: unread > 0 ? "oklch(0.45 0.18 285)" : "oklch(0.55 0.04 260)" }}
+        style={{ color: unread > 0 ? "oklch(0.42 0.22 270)" : "oklch(0.55 0.04 260)" }}
       />
       {unread > 0 && (
         <span
@@ -216,7 +216,7 @@ export default function NavBar() {
       onClick={() => progress.steps.length > 0 && setSummaryOpen((o) => !o)}
       className={[
         "flex items-center gap-2 rounded-xl transition-colors",
-        mobile ? "w-full px-0 py-1" : "flex-1 px-2 py-1 hover:bg-violet-50",
+        mobile ? "w-full px-0 py-1" : "flex-1 px-2 py-1 hover:bg-indigo-50",
         progress.steps.length > 0 ? "cursor-pointer" : "cursor-default",
       ].join(" ")}
       aria-expanded={summaryOpen}
@@ -227,7 +227,7 @@ export default function NavBar() {
       {/* Journey label */}
       <span
         className="text-xs font-semibold whitespace-nowrap"
-        style={{ color: "oklch(0.45 0.18 285)" }}
+        style={{ color: "oklch(0.42 0.22 270)" }}
       >
         {progress.label}
       </span>
@@ -278,11 +278,15 @@ export default function NavBar() {
         {/* Logo */}
         <button
           onClick={() => navigate("/")}
-          className="flex items-center gap-2 font-black text-xl flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 rounded-lg"
-          style={{ color: "oklch(0.45 0.18 285)" }}
+          className="flex items-center gap-2 font-black text-xl flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg"
+          style={{ color: "oklch(0.42 0.22 270)" }}
           aria-label="HeadCheck — Back to home"
         >
-          <Heart className="w-5 h-5" style={{ fill: "oklch(0.45 0.18 285)" }} />
+          <img
+            src="https://d2xsxph8kpxj0f.cloudfront.net/310519663198457005/2dnC5dXijMKhtVCChhUvdN/headcheck-logo-final_d8b554b8.png"
+            alt="HeadCheck logo"
+            className="w-8 h-8 rounded-md object-contain"
+          />
           <span>HeadCheck</span>
         </button>
 
@@ -293,10 +297,10 @@ export default function NavBar() {
               <button
                 key={link.href}
                 onClick={() => navigate(link.href)}
-                className="px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
+                className="px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600"
                 style={{
-                  background: isActive(link.href) ? "oklch(0.95 0.04 285)" : "transparent",
-                  color: isActive(link.href) ? "oklch(0.45 0.18 285)" : "oklch(0.40 0.04 260)",
+                  background: isActive(link.href) ? "oklch(0.94 0.04 270)" : "transparent",
+                  color: isActive(link.href) ? "oklch(0.42 0.22 270)" : "oklch(0.40 0.04 260)",
                 }}
                 aria-current={isActive(link.href) ? "page" : undefined}
               >
@@ -325,10 +329,10 @@ export default function NavBar() {
             <div className="relative" ref={bellRef}>
               <button
                 onClick={() => { setBellOpen((o) => !o); if (!bellOpen) refetchNotifs(); }}
-                className="relative p-2 rounded-xl hover:bg-violet-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
+                className="relative p-2 rounded-xl hover:bg-indigo-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600"
                 aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ""}`}
               >
-                <Bell className="w-5 h-5" style={{ color: unreadCount > 0 ? "oklch(0.45 0.18 285)" : "oklch(0.55 0.04 260)" }} />
+                <Bell className="w-5 h-5" style={{ color: unreadCount > 0 ? "oklch(0.42 0.22 270)" : "oklch(0.55 0.04 260)" }} />
                 {unreadCount > 0 && (
                   <span
                     className="absolute top-1 right-1 min-w-[18px] h-[18px] rounded-full text-white text-[10px] font-bold flex items-center justify-center px-1"
@@ -353,7 +357,7 @@ export default function NavBar() {
                       <button
                         onClick={() => markAllReadMutation.mutate()}
                         className="text-xs font-medium hover:underline"
-                        style={{ color: "oklch(0.45 0.18 285)" }}
+                        style={{ color: "oklch(0.42 0.22 270)" }}
                       >
                         Mark all as read
                       </button>
@@ -371,8 +375,8 @@ export default function NavBar() {
                         <div
                           key={n.id}
                           className={[
-                            "flex items-start gap-3 px-4 py-3 cursor-pointer hover:bg-violet-50/60 transition-colors",
-                            !n.read ? "bg-violet-50/40" : "",
+                            "flex items-start gap-3 px-4 py-3 cursor-pointer hover:bg-indigo-50/60 transition-colors",
+                            !n.read ? "bg-indigo-50/40" : "",
                           ].join(" ")}
                           onClick={() => {
                             if (!n.read) markReadMutation.mutate({ id: n.id });
@@ -383,7 +387,7 @@ export default function NavBar() {
                             {n.type === "crisis_alert" ? "⚠️" : n.type === "violence_flag" ? "🚨" : n.type === "alert_assigned" ? "📋" : n.type === "new_comment" ? "💬" : "🔔"}
                           </span>
                           <div className="min-w-0 flex-1">
-                            <p className={["text-xs font-semibold truncate", !n.read ? "text-violet-700" : "text-gray-800"].join(" ")}>{n.title}</p>
+                            <p className={["text-xs font-semibold truncate", !n.read ? "text-indigo-700" : "text-gray-800"].join(" ")}>{n.title}</p>
                             <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{n.body}</p>
                             <p className="text-[10px] text-muted-foreground mt-1">{new Date(n.createdAt).toLocaleString()}</p>
                           </div>
@@ -399,7 +403,7 @@ export default function NavBar() {
                     <button
                       onClick={() => { setBellOpen(false); navigate("/notifications"); }}
                       className="text-xs font-medium w-full text-center hover:underline"
-                      style={{ color: "oklch(0.45 0.18 285)" }}
+                      style={{ color: "oklch(0.42 0.22 270)" }}
                     >
                       View all notifications
                     </button>
@@ -412,12 +416,12 @@ export default function NavBar() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
-                  className="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-violet-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
+                  className="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-indigo-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600"
                   aria-label="User menu"
                 >
                   <span
                     className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
-                    style={{ background: "linear-gradient(135deg, oklch(0.45 0.18 285), oklch(0.65 0.18 340))" }}
+                    style={{ background: "linear-gradient(135deg, oklch(0.42 0.22 270), oklch(0.65 0.18 340))" }}
                     aria-hidden="true"
                   >
                     {initials}
@@ -446,7 +450,7 @@ export default function NavBar() {
                   onClick={() => navigate("/dashboard")}
                   className="cursor-pointer rounded-lg"
                 >
-                  <LayoutDashboard className="w-4 h-4 mr-2 text-violet-500" aria-hidden="true" />
+                  <LayoutDashboard className="w-4 h-4 mr-2 text-indigo-500" aria-hidden="true" />
                   My Dashboard
                 </DropdownMenuItem>
                 {(user?.role === "admin" || user?.role === "superadmin" || user?.role === "facilitator") && (
@@ -484,15 +488,15 @@ export default function NavBar() {
               <Button
                 variant="ghost"
                 size="sm"
-                className="rounded-lg font-medium focus-visible:ring-2 focus-visible:ring-violet-500"
+                className="rounded-lg font-medium focus-visible:ring-2 focus-visible:ring-indigo-600"
                 onClick={() => navigate("/login")}
               >
                 Sign In
               </Button>
               <Button
                 size="sm"
-                className="rounded-lg font-semibold text-white focus-visible:ring-2 focus-visible:ring-violet-500"
-                style={{ background: "linear-gradient(135deg, oklch(0.45 0.18 285), oklch(0.65 0.18 340))" }}
+                className="rounded-lg font-semibold text-white focus-visible:ring-2 focus-visible:ring-indigo-600"
+                style={{ background: "linear-gradient(135deg, oklch(0.42 0.22 270), oklch(0.65 0.18 340))" }}
                 onClick={() => navigate("/register")}
               >
                 Get Started Free
@@ -503,9 +507,9 @@ export default function NavBar() {
 
         {/* Mobile hamburger */}
         <button
-          className="lg:hidden p-2 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
+          className="lg:hidden p-2 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600"
           onClick={() => setMobileOpen(!mobileOpen)}
-          style={{ color: "oklch(0.45 0.18 285)" }}
+          style={{ color: "oklch(0.42 0.22 270)" }}
           aria-label={mobileOpen ? "Close menu" : "Open menu"}
           aria-expanded={mobileOpen}
           aria-controls="mobile-menu"
@@ -557,7 +561,7 @@ export default function NavBar() {
               </h2>
               <button
                 onClick={() => setSummaryOpen(false)}
-                className="p-1 rounded-lg hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
+                className="p-1 rounded-lg hover:bg-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600"
                 aria-label="Close summary"
               >
                 <X className="w-4 h-4 text-muted-foreground" />
@@ -589,7 +593,7 @@ export default function NavBar() {
                     className={[
                       "flex items-start gap-2.5 px-3 py-2.5 rounded-xl border transition-colors",
                       step.status === "current"
-                        ? "border-violet-300 bg-violet-50"
+                        ? "border-violet-300 bg-indigo-50"
                         : step.status === "done"
                           ? "border-emerald-200 bg-emerald-50/60"
                           : "border-gray-100 bg-gray-50/60",
@@ -622,7 +626,7 @@ export default function NavBar() {
                     {step.status === "current" && (
                       <ArrowRight
                         className="w-3.5 h-3.5 mt-0.5 flex-shrink-0"
-                        style={{ color: "oklch(0.45 0.18 285)" }}
+                        style={{ color: "oklch(0.42 0.22 270)" }}
                         aria-hidden="true"
                       />
                     )}
@@ -639,7 +643,7 @@ export default function NavBar() {
               <span style={{ color: "oklch(0.50 0.03 260)" }}>
                 <span>{progress.steps.filter((s) => s.status === "done").length} step{progress.steps.filter((s) => s.status === "done").length !== 1 ? "s" : ""} completed</span>
               </span>
-              <span className="font-semibold" style={{ color: "oklch(0.45 0.18 285)" }}>
+              <span className="font-semibold" style={{ color: "oklch(0.42 0.22 270)" }}>
                 <span>{pct}% of journey</span>
               </span>
             </div>
@@ -658,10 +662,10 @@ export default function NavBar() {
             <button
               key={link.href}
               onClick={() => { navigate(link.href); setMobileOpen(false); }}
-              className="w-full text-left px-3 py-2.5 rounded-xl text-sm font-medium flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
+              className="w-full text-left px-3 py-2.5 rounded-xl text-sm font-medium flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600"
               style={{
-                background: isActive(link.href) ? "oklch(0.95 0.04 285)" : "transparent",
-                color: isActive(link.href) ? "oklch(0.45 0.18 285)" : "oklch(0.40 0.04 260)",
+                background: isActive(link.href) ? "oklch(0.94 0.04 270)" : "transparent",
+                color: isActive(link.href) ? "oklch(0.42 0.22 270)" : "oklch(0.40 0.04 260)",
               }}
               aria-current={isActive(link.href) ? "page" : undefined}
             >
@@ -672,10 +676,10 @@ export default function NavBar() {
           <div className="pt-2 border-t" style={{ borderColor: "oklch(0.92 0.03 260)" }}>
             {isAuthenticated ? (
               <div className="space-y-2">
-                <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-violet-50">
+                <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-indigo-50">
                   <span
                     className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
-                    style={{ background: "linear-gradient(135deg, oklch(0.45 0.18 285), oklch(0.65 0.18 340))" }}
+                    style={{ background: "linear-gradient(135deg, oklch(0.42 0.22 270), oklch(0.65 0.18 340))" }}
                     aria-hidden="true"
                   >
                     {initials}
@@ -726,7 +730,7 @@ export default function NavBar() {
                 <Button
                   size="sm"
                   className="w-full rounded-xl font-semibold text-white"
-                  style={{ background: "linear-gradient(135deg, oklch(0.45 0.18 285), oklch(0.65 0.18 340))" }}
+                  style={{ background: "linear-gradient(135deg, oklch(0.42 0.22 270), oklch(0.65 0.18 340))" }}
                   onClick={() => { navigate("/register"); setMobileOpen(false); }}
                 >
                   Get Started Free
