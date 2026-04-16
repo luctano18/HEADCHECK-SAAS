@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
   Heart, Menu, X, LayoutDashboard, LogOut, ChevronDown, User,
-  CheckCircle2, Circle, ArrowRight, ChevronUp, Loader2, Shield, Bell,
+  CheckCircle2, Circle, ArrowRight, ChevronUp, Loader2, Shield, Bell, MessageCircle,
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
@@ -55,6 +55,35 @@ function StepIcon({ status }: { status: StepStatus }) {
       </span>
     );
   return <Circle className="w-4 h-4 flex-shrink-0 text-muted-foreground opacity-40" />;
+}
+
+function MessagesIconButton() {
+  const [, navigate] = useLocation();
+  const { data: unreadData } = trpc.messages.getUnreadCount.useQuery(undefined, {
+    refetchInterval: 20_000,
+    staleTime: 15_000,
+  });
+  const unread = unreadData ?? 0;
+  return (
+    <button
+      onClick={() => navigate("/messages")}
+      className="relative p-2 rounded-xl hover:bg-violet-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
+      aria-label={`Messages${unread > 0 ? ` (${unread} unread)` : ""}`}
+    >
+      <MessageCircle
+        className="w-5 h-5"
+        style={{ color: unread > 0 ? "oklch(0.45 0.18 285)" : "oklch(0.55 0.04 260)" }}
+      />
+      {unread > 0 && (
+        <span
+          className="absolute top-1 right-1 min-w-[18px] h-[18px] rounded-full text-white text-[10px] font-bold flex items-center justify-center px-1"
+          style={{ background: "oklch(0.55 0.22 25)", lineHeight: 1 }}
+        >
+          {unread > 99 ? "99+" : unread}
+        </span>
+      )}
+    </button>
+  );
 }
 
 export default function NavBar() {
@@ -286,6 +315,11 @@ export default function NavBar() {
 
         {/* Right side — desktop */}
         <div className="hidden lg:flex items-center gap-2">
+          {/* Messages Icon — all authenticated users */}
+          {isAuthenticated && (
+            <MessagesIconButton />
+          )}
+
           {/* Notification Bell — admin/superadmin/facilitator only */}
           {isAuthenticated && isAdminRole && (
             <div className="relative" ref={bellRef}>

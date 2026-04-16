@@ -28,6 +28,10 @@ export const users = mysqlTable("users", {
   language: varchar("language", { length: 8 }).default("en"),
   avatarUrl: text("avatarUrl"),
   notificationsEnabled: boolean("notificationsEnabled").default(true).notNull(),
+  // Smart reminder fields
+  reminderEnabled: boolean("reminderEnabled").default(false).notNull(),
+  reminderTime: varchar("reminderTime", { length: 5 }).default("08:00"), // HH:MM format
+  reminderDays: varchar("reminderDays", { length: 32 }).default("1,2,3,4,5"), // comma-separated 0-6 (0=Sun)
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
@@ -416,3 +420,26 @@ export const resourceRatings = mysqlTable("resource_ratings", {
 });
 export type ResourceRating = typeof resourceRatings.$inferSelect;
 export type InsertResourceRating = typeof resourceRatings.$inferInsert;
+
+// ─── Secure Messaging ─────────────────────────────────────────────────────────
+export const conversations = mysqlTable("conversations", {
+  id: int("id").autoincrement().primaryKey(),
+  facilitatorId: int("facilitatorId").notNull(),
+  studentId: int("studentId").notNull(),
+  subject: varchar("subject", { length: 256 }),
+  lastMessageAt: timestamp("lastMessageAt").defaultNow().notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type Conversation = typeof conversations.$inferSelect;
+export type InsertConversation = typeof conversations.$inferInsert;
+
+export const messages = mysqlTable("messages", {
+  id: int("id").autoincrement().primaryKey(),
+  conversationId: int("conversationId").notNull(),
+  senderId: int("senderId").notNull(),
+  content: text("content").notNull(),
+  read: boolean("read").default(false).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type Message = typeof messages.$inferSelect;
+export type InsertMessage = typeof messages.$inferInsert;

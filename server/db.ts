@@ -19,6 +19,8 @@ import {
   alertComments,
   notifications,
   resourceRatings,
+  conversations,
+  messages,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -1423,4 +1425,86 @@ export async function getBatchResourceRatingStats(resourceIds: string[], userId?
     result[id] = { average: Math.round(average * 10) / 10, count, userRating };
   }
   return result;
+}
+
+// ─── Secure Messaging ─────────────────────────────────────────────────────────
+
+export async function getOrCreateConversation(facilitatorId: number, studentId: number, subject?: string) {
+  const db = await getDb();
+  if (!db) return null;
+  const existing = await db
+    .select()
+    .from(conversations)
+    .where(and(eq(conversations.facilitatorId, facilitatorId), eq(conversations.studentId, studentId)))
+    .limit(1);
+  if (existing.length > 0) return existing[0];
+  const result = await db.insert(conversations).values({
+    facilitatorId,
+    studentId,
+    subject: subject ?? null,
+    lastMessageAt: new Date(),
+    createdAt: new Date(),
+  });
+  const insertId = (result as unknown as [{ insertId: number }])[0]?.insertId;
+  const [created] = await db.select().from(conversations).where(eq(conversations.id, insertId)).limit(1);
+  return created;
+}
+
+export async function getConversationsForUser(userId: number, role: string) {
+  const db = await getDb();
+  if (!db) return [];
+  const isFacilitator = ["facilitator", "admin", "superadmin"].includes(role);
+  const condition = isFacilitator ? eq(conversations.facilitatorId, userId) : eq(conversations.studentId, userId);
+  return db.select().from(conversations).where(condition).orderBy(desc(conversations.lastMessageAt));
+}
+
+export async function getMessagesForConversation(conversationId: number, limit = 100) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(messages)
+    .where(eq(messages.conversationId, conversationId))
+    .orderBy(messages.createdAt)
+    .limit(limit);
+}
+
+export async function createMessage(conversationId: number, senderId: number, content: string) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.insert(messages).values({ conversationId, senderId, content, read: false, createdAt: new Date() });
+  const insertId = (result as unknown as [{ insertId: number }])[0]?.insertId;
+  await db.update(conversations).set({ lastMessageAt: new Date() }).where(eq(conversations.id, conversationId));
+  const [msg] = await db.select().from(messages).where(eq(messages.id, insertId)).limit(1);
+  return msg;
+}
+
+export async function markConversationMessagesRead(conversationId: number, readerId: number) {
+  const db = await getDb();
+  if (!db) return;
+  // Mark messages in this conversation as read (only those NOT sent by the reader)
+  const convMessages = await db.select().from(messages).where(and(eq(messages.conversationId, conversationId), eq(messages.read, false)));
+  for (const msg of convMessages) {
+    if (msg.senderId !== readerId) {
+      await db.update(messages).set({ read: true }).where(eq(messages.id, msg.id));
+    }
+  }
+}
+
+export async function getUnreadMessageCount(userId: number, role: string) {
+  const db = await getDb();
+  if (!db) return 0;
+  const isFacilitator = ["facilitator", "admin", "superadmin"].includes(role);
+  const condition = isFacilitator ? eq(conversations.facilitatorId, userId) : eq(conversations.studentId, userId);
+  const userConvs = await db.select({ id: conversations.id }).from(conversations).where(condition);
+  if (userConvs.length === 0) return 0;
+  let count = 0;
+  for (const conv of userConvs) {
+    const unread = await db
+      .select()
+      .from(messages)
+      .where(and(eq(messages.conversationId, conv.id), eq(messages.read, false)));
+    count += unread.filter((m) => m.senderId !== userId).length;
+  }
+  return count;
 }

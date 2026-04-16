@@ -1132,6 +1132,47 @@ export const appRouter = router({
       const { getUserProfileStats } = await import("./db");
       return getUserProfileStats(ctx.user.id);
     }),
+    /** Get current reminder settings for the logged-in user */
+    getReminderSettings: protectedProcedure.query(async ({ ctx }) => {
+      const { getDb } = await import("./db");
+      const { users } = await import("../drizzle/schema");
+      const { eq } = await import("drizzle-orm");
+      const db = await getDb();
+      if (!db) return null;
+      const [user] = await db
+        .select({
+          reminderEnabled: users.reminderEnabled,
+          reminderTime: users.reminderTime,
+          reminderDays: users.reminderDays,
+        })
+        .from(users)
+        .where(eq(users.id, ctx.user.id))
+        .limit(1);
+      return user ?? null;
+    }),
+    /** Update reminder settings for the logged-in user */
+    updateReminderSettings: protectedProcedure
+      .input(z.object({
+        reminderEnabled: z.boolean(),
+        reminderTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).optional(),
+        reminderDays: z.string().regex(/^[0-6](,[0-6])*$/).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { getDb } = await import("./db");
+        const { users } = await import("../drizzle/schema");
+        const { eq } = await import("drizzle-orm");
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
+        await db
+          .update(users)
+          .set({
+            reminderEnabled: input.reminderEnabled,
+            ...(input.reminderTime !== undefined && { reminderTime: input.reminderTime }),
+            ...(input.reminderDays !== undefined && { reminderDays: input.reminderDays }),
+          })
+          .where(eq(users.id, ctx.user.id));
+        return { success: true };
+      }),
   }),
 
   // ─── Alert Comments ──────────────────────────────────────────────────────────
@@ -1253,6 +1294,115 @@ export const appRouter = router({
         const { deletePushSubscription } = await import("./webpush");
         await deletePushSubscription(input.endpoint);
         return { success: true };
+      }),
+  }),
+
+  // ─── Secure Messaging ──────────────────────────────────────────────────────────
+  messages: router({
+    /** Get all conversations for the current user */
+    getConversations: protectedProcedure.query(async ({ ctx }) => {
+      const { getConversationsForUser } = await import('./db');
+      const convs = await getConversationsForUser(ctx.user.id, ctx.user.role);
+      // Enrich with participant names
+      const { getUserById } = await import('./db');
+      return Promise.all(convs.map(async (conv) => {
+        const otherId = ctx.user.role === 'student' ? conv.facilitatorId : conv.studentId;
+        const other = await getUserById(otherId);
+        return { ...conv, otherName: other?.name ?? 'Unknown', otherRole: other?.role ?? 'user' };
+      }));
+    }),
+
+    /** Get or create a conversation between facilitator and student */
+    getOrCreateConversation: protectedProcedure
+      .input(z.object({
+        otherUserId: z.number().int().positive(),
+        subject: z.string().max(256).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { getOrCreateConversation } = await import('./db');
+        const isFacilitator = ['facilitator', 'admin', 'superadmin'].includes(ctx.user.role);
+        const facilitatorId = isFacilitator ? ctx.user.id : input.otherUserId;
+        const studentId = isFacilitator ? input.otherUserId : ctx.user.id;
+        return getOrCreateConversation(facilitatorId, studentId, input.subject);
+      }),
+
+    /** Get messages for a conversation */
+    getMessages: protectedProcedure
+      .input(z.object({ conversationId: z.number().int().positive() }))
+      .query(async ({ ctx, input }) => {
+        const { getMessagesForConversation, markConversationMessagesRead } = await import('./db');
+        // Mark messages as read when fetched
+        await markConversationMessagesRead(input.conversationId, ctx.user.id);
+        return getMessagesForConversation(input.conversationId);
+      }),
+
+    /** Send a message */
+    sendMessage: protectedProcedure
+      .input(z.object({
+        conversationId: z.number().int().positive(),
+        content: z.string().min(1).max(2000),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const { createMessage } = await import('./db');
+        const msg = await createMessage(input.conversationId, ctx.user.id, input.content);
+        return msg;
+      }),
+
+    /** Get unread message count for the current user */
+    getUnreadCount: protectedProcedure.query(async ({ ctx }) => {
+      const { getUnreadMessageCount } = await import('./db');
+      return getUnreadMessageCount(ctx.user.id, ctx.user.role);
+    }),
+  }),
+
+  // ─── Admin ───────────────────────────────────────────────────────────────────────
+  admin: router({
+    /** Preview the weekly report HTML (admin only) */
+    getWeeklyReportPreview: protectedProcedure
+      .query(async ({ ctx }) => {
+        if (!['admin', 'superadmin'].includes(ctx.user.role)) {
+          throw new TRPCError({ code: 'FORBIDDEN' });
+        }
+        const institutionId = ctx.user.institutionId;
+        if (!institutionId) throw new TRPCError({ code: 'BAD_REQUEST', message: 'No institution found' });
+        const { getInstitutionById } = await import('./db');
+        const institution = await getInstitutionById(institutionId);
+        const { collectWeeklyReportData, buildReportHtml } = await import('./weeklyReport');
+        const data = await collectWeeklyReportData(institutionId, institution?.name ?? 'Your Institution');
+        const html = buildReportHtml(data);
+        return { html, data };
+      }),
+
+    /** Generate PDF and send weekly report to all admins of the institution */
+    sendWeeklyReport: protectedProcedure
+      .mutation(async ({ ctx }) => {
+        if (!['admin', 'superadmin'].includes(ctx.user.role)) {
+          throw new TRPCError({ code: 'FORBIDDEN' });
+        }
+        const institutionId = ctx.user.institutionId;
+        if (!institutionId) throw new TRPCError({ code: 'BAD_REQUEST', message: 'No institution found' });
+        const { getInstitutionById, getAdminUsers } = await import('./db');
+        const institution = await getInstitutionById(institutionId);
+        const admins = await getAdminUsers(institutionId);
+        const { collectWeeklyReportData, buildReportHtml, generateReportPdf, sendWeeklyReportEmail } = await import('./weeklyReport');
+        const data = await collectWeeklyReportData(institutionId, institution?.name ?? 'Your Institution');
+        const html = buildReportHtml(data);
+        const pdfBuffer = await generateReportPdf(html);
+        const pdfBase64 = pdfBuffer.toString('base64');
+        let sent = 0;
+        for (const admin of admins) {
+          if (!admin.email) continue;
+          const ok = await sendWeeklyReportEmail({
+            to: admin.email,
+            recipientName: admin.name ?? 'Admin',
+            institutionName: institution?.name ?? 'Your Institution',
+            weekStart: data.weekStart,
+            weekEnd: data.weekEnd,
+            pdfBase64,
+          });
+          if (ok) sent++;
+        }
+        return { success: true, sent, total: admins.filter(a => a.email).length };
       }),
   }),
 });

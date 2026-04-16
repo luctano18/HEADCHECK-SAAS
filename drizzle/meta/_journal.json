@@ -113,6 +113,20 @@
       "when": 1776348163322,
       "tag": "0015_furry_shadow_king",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "5",
+      "when": 1776352413940,
+      "tag": "0016_polite_radioactive_man",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "5",
+      "when": 1776352682582,
+      "tag": "0017_colossal_warlock",
+      "breakpoints": true
     }
   ]
 }

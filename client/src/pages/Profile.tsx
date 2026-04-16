@@ -4,6 +4,7 @@ import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { toast } from "sonner";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
+import ReminderSettings from "@/components/ReminderSettings";
 import {
   User, Mail, Phone, Globe, Bell, BellOff, Camera,
   Flame, Trophy, Calendar, CheckCircle2, ArrowLeft,
@@ -421,15 +422,10 @@ export default function Profile() {
 
           <Separator />
 
-          <div className="flex items-center justify-between py-2 opacity-60">
-            <div>
-              <p className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                <Heart className="w-4 h-4 text-rose-400" /> Weekly Wellness Summary
-              </p>
-              <p className="text-xs text-gray-500 mt-0.5">Email digest of your emotional wellness trends</p>
-            </div>
-            <Badge variant="outline" className="text-xs text-gray-400">Coming soon</Badge>
-          </div>
+          {/* Smart Reminders */}
+          <ReminderSettings />
+
+          <Separator />
 
           <div className="flex items-center justify-between py-2 opacity-60">
             <div>

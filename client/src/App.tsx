@@ -10,6 +10,7 @@ import CheckInResult from "./pages/CheckInResult";
 import SevenMirrors from "./pages/SevenMirrors";
 import Dashboard from "./pages/Dashboard";
 import FacilitatorDashboard from "./pages/FacilitatorDashboard";
+import WeeklyReport from "./pages/WeeklyReport";
 import Onboarding from "./pages/Onboarding";
 import JoinInstitution from "./pages/JoinInstitution";
 import NotFound from "./pages/NotFound";
@@ -28,6 +29,7 @@ import Profile from "./pages/Profile";
 import AlertDetail from "./pages/AlertDetail";
 import Notifications from "./pages/Notifications";
 import CheckInSummary from "./pages/CheckInSummary";
+import Messages from "./pages/Messages";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -50,6 +52,7 @@ function Router() {
       {/* Legacy aliases removed — use canonical routes above */}
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/facilitator" component={FacilitatorDashboard} />
+      <Route path="/admin/weekly-report" component={WeeklyReport} />
       <Route path="/resources" component={Resources} />
       <Route path="/learn-ei" component={LearnEI} />
       <Route path="/mindset" component={Mindset} />
@@ -66,6 +69,8 @@ function Router() {
       <Route path="/profile" component={Profile} />
       {/* Notifications */}
       <Route path="/notifications" component={Notifications} />
+      {/* Secure Messaging */}
+      <Route path="/messages" component={Messages} />
       {/* Alert Detail pages (admin/facilitator only) */}
       <Route path="/alert/crisis/:id" component={AlertDetail} />
       <Route path="/alert/violence/:id" component={AlertDetail} />

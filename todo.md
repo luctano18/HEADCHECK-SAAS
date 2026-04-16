@@ -641,3 +641,38 @@
 - [x] Afficher la note moyenne et le nombre de votes sous chaque ressource
 - [x] Permettre à l'utilisateur de modifier sa note (upsert)
 - [x] Vérifier TypeScript et tests
+
+## Phase 33: Rapport PDF hebdomadaire, Rappels intelligents, Messagerie sécurisée
+
+### A. Rapport PDF hebdomadaire automatique
+- [x] Installer @sparticuz/chromium-min + puppeteer-core pour génération PDF côté serveur
+- [x] Créer server/weeklyReport.ts : génération HTML du rapport (stats check-ins, alertes, tendances émotionnelles)
+- [x] Ajouter tRPC procedure admin.generateWeeklyReport (protectedProcedure, admin only)
+- [x] Ajouter tRPC procedure admin.sendWeeklyReport (envoie le PDF par email via Resend)
+- [x] Créer route Express POST /api/cron/weekly-report pour déclenchement automatique
+- [x] Créer page WeeklyReport.tsx (/admin/weekly-report) : aperçu du rapport + bouton envoi manuel
+- [x] Ajouter lien vers /admin/weekly-report dans FacilitatorDashboard
+
+### B. Rappels intelligents
+- [x] Ajouter champs reminderEnabled, reminderTime, reminderDays à la table users (migration SQL)
+- [x] Ajouter tRPC procedure profile.updateReminderSettings (protectedProcedure)
+- [x] Ajouter tRPC procedure profile.getReminderSettings (protectedProcedure)
+- [x] Créer server/reminderScheduler.ts : logique d'envoi des rappels (email + push)
+- [x] Ajouter route Express GET /api/cron/send-reminders pour déclenchement automatique
+- [x] Créer composant ReminderSettings.tsx dans Profile.tsx (toggle, heure, jours de la semaine)
+- [x] Afficher ReminderSettings dans la page Profile sous les préférences de notification
+
+### C. Messagerie sécurisée facilitateur ↔ étudiant
+- [x] Créer table messages dans drizzle/schema.ts (id, senderId, receiverId, content, read, createdAt)
+- [x] Créer table conversations dans drizzle/schema.ts (id, facilitatorId, studentId, lastMessageAt, createdAt)
+- [x] Générer et appliquer la migration SQL pour messages + conversations
+- [x] Ajouter helpers DB : createMessage, getConversation, getMessages, markMessagesRead, getConversationsForUser
+- [x] Ajouter tRPC router messages : sendMessage, getConversations, getMessages, markRead
+- [x] Créer page Messages.tsx (/messages) : liste des conversations + vue de chat
+- [x] Créer composant ConversationList.tsx (liste des conversations avec dernier message + badge non-lu)
+- [x] Créer composant ChatView.tsx (historique messages + champ de saisie + envoi)
+- [x] Ajouter polling toutes les 10s dans ChatView pour les nouveaux messages
+- [x] Ajouter badge non-lu dans NavBar pour les messages non lus
+- [x] Enregistrer la route /messages dans App.tsx
+- [x] Ajouter lien Messages dans NavBar (visible pour facilitateurs et étudiants)
+- [x] Vérifier TypeScript et tests
