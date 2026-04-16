@@ -404,3 +404,15 @@ export const pushSubscriptions = mysqlTable("push_subscriptions", {
 });
 export type PushSubscription = typeof pushSubscriptions.$inferSelect;
 export type InsertPushSubscription = typeof pushSubscriptions.$inferInsert;
+
+// ─── Resource Ratings ─────────────────────────────────────────────────────────
+export const resourceRatings = mysqlTable("resource_ratings", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  resourceId: varchar("resourceId", { length: 64 }).notNull(), // e.g. "ow-1", "ax-2"
+  rating: int("rating").notNull(), // 1-5
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type ResourceRating = typeof resourceRatings.$inferSelect;
+export type InsertResourceRating = typeof resourceRatings.$inferInsert;

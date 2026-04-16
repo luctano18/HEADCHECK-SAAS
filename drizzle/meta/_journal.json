@@ -106,6 +106,13 @@
       "when": 1776339117406,
       "tag": "0014_late_lord_hawal",
       "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "5",
+      "when": 1776348163322,
+      "tag": "0015_furry_shadow_king",
+      "breakpoints": true
     }
   ]
 }

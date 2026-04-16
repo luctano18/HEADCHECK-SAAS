@@ -81,6 +81,9 @@ import {
   markNotificationEmailSent,
   getRecentEmotionPatterns,
   updateAiResponseFeedback,
+  upsertResourceRating,
+  getResourceRatingStats,
+  getBatchResourceRatingStats,
 } from "./db";
 import { sendNotificationEmail } from "./notificationEmail";
 import {
@@ -636,6 +639,36 @@ export const appRouter = router({
       .input(z.object({ emotion: z.string().min(1) }))
       .query(({ input }) => {
         return getResourcesForEmotion(input.emotion);
+      }),
+  }),
+
+  // ─── Resource Ratings ───────────────────────────────────────────────────────
+  resources: router({
+    /** Rate a resource (1-5 stars). Upserts: calling again updates the existing rating. */
+    rate: protectedProcedure
+      .input(z.object({
+        resourceId: z.string().min(1).max(64),
+        rating: z.number().int().min(1).max(5),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        await upsertResourceRating(ctx.user.id, input.resourceId, input.rating);
+        return { success: true };
+      }),
+
+    /** Get average rating + vote count for a single resource. */
+    getRatingStats: publicProcedure
+      .input(z.object({ resourceId: z.string().min(1).max(64) }))
+      .query(async ({ ctx, input }) => {
+        const userId = (ctx as { user?: { id: number } }).user?.id;
+        return getResourceRatingStats(input.resourceId, userId);
+      }),
+
+    /** Batch: get rating stats for multiple resources at once. */
+    getBatchRatingStats: publicProcedure
+      .input(z.object({ resourceIds: z.array(z.string().min(1).max(64)).max(20) }))
+      .query(async ({ ctx, input }) => {
+        const userId = (ctx as { user?: { id: number } }).user?.id;
+        return getBatchResourceRatingStats(input.resourceIds, userId);
       }),
   }),
 

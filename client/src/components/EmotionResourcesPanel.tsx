@@ -1,12 +1,15 @@
 /**
  * EmotionResourcesPanel
  * Displays 3 contextual resources (articles, exercises, proverbs) tailored to
- * the user's detected emotion. Shown in CheckInResult.tsx after Pattern Insight.
+ * the user's detected emotion. Each resource has a StarRating widget.
+ * Shown in CheckInResult.tsx after Pattern Insight.
  */
+import { useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
 import { BookOpen, Dumbbell, FileText, Lightbulb, ArrowRight, Loader2 } from "lucide-react";
 import type { ResourceType } from "@shared/emotionResources";
+import StarRating from "./StarRating";
 
 // ─── Type badge config ────────────────────────────────────────────────────────
 const TYPE_CONFIG: Record<ResourceType, { icon: React.ReactNode; color: string }> = {
@@ -25,9 +28,19 @@ interface Props {
 export default function EmotionResourcesPanel({ emotion }: Props) {
   const [, navigate] = useLocation();
 
+  // 1. Fetch the emotion-specific resource list
   const { data, isLoading } = trpc.checkIns.getEmotionResources.useQuery(
     { emotion },
     { enabled: !!emotion, staleTime: Infinity }
+  );
+
+  // 2. Derive the list of resource IDs once data is available
+  const resourceIds = useMemo(() => data?.resources.map((r) => r.id) ?? [], [data]);
+
+  // 3. Batch-fetch rating stats for all resources in a single query
+  const { data: batchStats } = trpc.resources.getBatchRatingStats.useQuery(
+    { resourceIds },
+    { enabled: resourceIds.length > 0, staleTime: 30_000 }
   );
 
   if (isLoading) {
@@ -62,6 +75,7 @@ export default function EmotionResourcesPanel({ emotion }: Props) {
       <div className="space-y-3">
         {data.resources.map((resource) => {
           const cfg = TYPE_CONFIG[resource.type] ?? TYPE_CONFIG.Article;
+          const stats = batchStats?.[resource.id];
           return (
             <div
               key={resource.id}
@@ -89,6 +103,17 @@ export default function EmotionResourcesPanel({ emotion }: Props) {
                   <p className="text-xs text-muted-foreground mt-0.5">— {resource.proverb.origin}</p>
                 </blockquote>
               )}
+
+              {/* ─── Star Rating ─────────────────────────────────────────── */}
+              <div className="pt-1 border-t border-indigo-100/60">
+                <p className="text-xs text-muted-foreground mb-1.5">Was this helpful?</p>
+                <StarRating
+                  resourceId={resource.id}
+                  initialAverage={stats?.average ?? 0}
+                  initialCount={stats?.count ?? 0}
+                  initialUserRating={stats?.userRating ?? null}
+                />
+              </div>
             </div>
           );
         })}

@@ -18,6 +18,7 @@ import {
   violenceFlags,
   alertComments,
   notifications,
+  resourceRatings,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -1358,4 +1359,68 @@ export async function getAdminUsers(institutionId?: number) {
         : sql`${users.role} IN ('admin','superadmin')`
     );
   return rows;
+}
+
+// ─── Resource Ratings ─────────────────────────────────────────────────────────
+/**
+ * Upserts a star rating (1-5) for a given resource by a user.
+ * If the user has already rated this resource, the existing rating is updated.
+ */
+export async function upsertResourceRating(userId: number, resourceId: string, rating: number) {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+  // Check if rating already exists
+  const existing = await db
+    .select({ id: resourceRatings.id })
+    .from(resourceRatings)
+    .where(and(eq(resourceRatings.userId, userId), eq(resourceRatings.resourceId, resourceId)))
+    .limit(1);
+  if (existing.length > 0) {
+    await db
+      .update(resourceRatings)
+      .set({ rating, updatedAt: new Date() })
+      .where(and(eq(resourceRatings.userId, userId), eq(resourceRatings.resourceId, resourceId)));
+  } else {
+    await db.insert(resourceRatings).values({ userId, resourceId, rating });
+  }
+}
+
+/**
+ * Returns the average rating and total vote count for a resource.
+ * Also returns the current user's rating if userId is provided.
+ */
+export async function getResourceRatingStats(resourceId: string, userId?: number) {
+  const db = await getDb();
+  if (!db) return { average: 0, count: 0, userRating: null as number | null };
+  const rows = await db
+    .select({ rating: resourceRatings.rating, userId: resourceRatings.userId })
+    .from(resourceRatings)
+    .where(eq(resourceRatings.resourceId, resourceId));
+  const count = rows.length;
+  const average = count > 0 ? rows.reduce((sum, r) => sum + r.rating, 0) / count : 0;
+  const userRating = userId ? (rows.find((r) => r.userId === userId)?.rating ?? null) : null;
+  return { average: Math.round(average * 10) / 10, count, userRating };
+}
+
+/**
+ * Returns rating stats for multiple resources at once (batch).
+ * Returns a map of resourceId → { average, count, userRating }.
+ */
+export async function getBatchResourceRatingStats(resourceIds: string[], userId?: number) {
+  const db = await getDb();
+  if (!db) return {} as Record<string, { average: number; count: number; userRating: number | null }>;
+  if (resourceIds.length === 0) return {};
+  const rows = await db
+    .select({ rating: resourceRatings.rating, userId: resourceRatings.userId, resourceId: resourceRatings.resourceId })
+    .from(resourceRatings)
+    .where(sql`${resourceRatings.resourceId} IN (${sql.join(resourceIds.map((id) => sql`${id}`), sql`, `)})`);
+  const result: Record<string, { average: number; count: number; userRating: number | null }> = {};
+  for (const id of resourceIds) {
+    const matching = rows.filter((r) => r.resourceId === id);
+    const count = matching.length;
+    const average = count > 0 ? matching.reduce((sum, r) => sum + r.rating, 0) / count : 0;
+    const userRating = userId ? (matching.find((r) => r.userId === userId)?.rating ?? null) : null;
+    result[id] = { average: Math.round(average * 10) / 10, count, userRating };
+  }
+  return result;
 }

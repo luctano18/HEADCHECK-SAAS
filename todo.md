@@ -425,7 +425,7 @@
 - [ ] Ajouter table `safety_plans` (userId, trustedContacts JSON, warningSignals, copingStrategies, safeEnvironments)
 - [ ] Ajouter helpers DB: createViolenceFlag, getViolenceFlagsByUser, createSafetyPlan, getSafetyPlan, updateSafetyPlan
 - [ ] Ajouter procédures tRPC: crisis.reportFlag, crisis.getMyFlags, crisis.getSafetyPlan, crisis.saveSafetyPlan
-- [ ] Générer et appliquer la migration SQL
+- [x] Générer et appliquer la migration SQL
 
 ### Frontend — Page CrisisSupport (/crisis-support)
 - [ ] Créer page /crisis-support avec écran d'alerte plein écran (titre "Vous n'êtes pas seul·e")
@@ -627,4 +627,17 @@
 - [x] Intégrer EmotionResourcesPanel dans CheckInResult.tsx après le Pattern Insight
 - [x] Afficher 2-3 ressources ciblées (type badge, titre, description courte, durée, lien vers /resources)
 - [x] Ajouter un bouton "See all resources" qui redirige vers /resources avec le filtre pré-sélectionné
+- [x] Vérifier TypeScript et tests
+
+## Phase 32: Notation par étoiles des ressources
+
+- [x] Ajouter la table resource_ratings dans drizzle/schema.ts (id, userId, resourceId, rating 1-5, createdAt)
+- [x] Générer et appliquer la migration SQL
+- [x] Ajouter les helpers DB : upsertResourceRating, getResourceRatingStats (moyenne + total votes)
+- [x] Ajouter la procédure tRPC resources.rate (protectedProcedure, upsert 1-5)
+- [x] Ajouter la procédure tRPC resources.getRatingStats (publicProcedure, input: resourceId)
+- [x] Créer le composant StarRating.tsx (5 étoiles interactives, état hover, note soumise)
+- [x] Intégrer StarRating dans EmotionResourcesPanel.tsx pour chaque ressource
+- [x] Afficher la note moyenne et le nombre de votes sous chaque ressource
+- [x] Permettre à l'utilisateur de modifier sa note (upsert)
 - [x] Vérifier TypeScript et tests
