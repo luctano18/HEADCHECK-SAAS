@@ -676,3 +676,12 @@
 - [x] Enregistrer la route /messages dans App.tsx
 - [x] Ajouter lien Messages dans NavBar (visible pour facilitateurs et étudiants)
 - [x] Vérifier TypeScript et tests
+
+## Phase 34: Graphique d'évolution des émotions dans le rapport PDF
+
+- [x] Ajouter le helper DB getEmotionTrendByDay(institutionId, days) dans server/db.ts
+- [x] Générer un graphique SVG inline (courbes multi-émotions sur 7 jours) dans weeklyReport.ts
+- [x] Ajouter une légende colorée par émotion sous le graphique
+- [x] Intégrer le graphique dans la section "Emotional Trends" du rapport HTML
+- [x] Ajouter une section "Top Emotions This Week" avec barres horizontales SVG
+- [x] Vérifier TypeScript et tests

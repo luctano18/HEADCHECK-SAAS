@@ -30,6 +30,12 @@ export interface WeeklyReportData {
   avgFeedbackRating: number | null;
   dailyCheckIns: { day: string; count: number }[];
   emotionDistribution: { emotion: string; percentage: number }[];
+  // emotion trend: top-5 emotions × 7 days
+  emotionTrend: {
+    emotion: string;
+    color: string;
+    points: { day: string; count: number }[];
+  }[];
 }
 
 const EMOTION_SCORE: Record<string, number> = {
@@ -158,6 +164,29 @@ export async function collectWeeklyReportData(
   }
   const dailyCheckIns = Object.entries(dailyMap).map(([day, count]) => ({ day, count }));
 
+  // ── Emotion trend: top-5 emotions × 7 days ──────────────────────────────
+  const TREND_COLORS = ["#7c3aed", "#f59e0b", "#10b981", "#ef4444", "#3b82f6"];
+  const top5Emotions = topEmotions.slice(0, 5).map((e) => e.emotion);
+  const dayKeys = Object.keys(dailyMap); // ordered Sun…Sat for the week
+
+  // Build a map: emotion → day → count
+  const trendMap: Record<string, Record<string, number>> = {};
+  for (const em of top5Emotions) {
+    trendMap[em] = {};
+    for (const dk of dayKeys) trendMap[em][dk] = 0;
+  }
+  for (const c of weekCheckIns) {
+    if (!c.emotion || !top5Emotions.includes(c.emotion)) continue;
+    const dayName = days[new Date(c.createdAt).getDay()];
+    if (dayName in trendMap[c.emotion]) trendMap[c.emotion][dayName]++;
+  }
+
+  const emotionTrend = top5Emotions.map((emotion, i) => ({
+    emotion,
+    color: TREND_COLORS[i % TREND_COLORS.length],
+    points: dayKeys.map((dk) => ({ day: dk, count: trendMap[emotion][dk] })),
+  }));
+
   // Feedback
   const helpfulCount = weekFeedback.filter((f) => f.feedbackRating === "helpful").length;
   const avgFeedbackRating =
@@ -183,7 +212,102 @@ export async function collectWeeklyReportData(
     avgFeedbackRating,
     dailyCheckIns,
     emotionDistribution,
+    emotionTrend,
   };
+}
+
+// ─── SVG Line Chart Generator ───────────────────────────────────────────────
+
+function buildEmotionTrendSvg(
+  trend: WeeklyReportData["emotionTrend"],
+  dailyCheckIns: WeeklyReportData["dailyCheckIns"]
+): string {
+  if (trend.length === 0) {
+    return `<div style="text-align:center;padding:40px;color:#9ca3af;font-size:13px;font-style:italic;">No check-in data available for trend analysis.</div>`;
+  }
+
+  const W = 680;  // SVG width
+  const H = 200;  // SVG height
+  const PAD_L = 36; // left padding for Y axis labels
+  const PAD_R = 16;
+  const PAD_T = 16;
+  const PAD_B = 28; // bottom padding for X axis labels
+  const innerW = W - PAD_L - PAD_R;
+  const innerH = H - PAD_T - PAD_B;
+
+  const n = dailyCheckIns.length; // 7 days
+  // Max count across all emotions + days
+  const allCounts = trend.flatMap((t) => t.points.map((p) => p.count));
+  const maxY = Math.max(...allCounts, 1);
+
+  // X position for day index i (0..n-1)
+  const xPos = (i: number) => PAD_L + (i / (n - 1)) * innerW;
+  // Y position for count value
+  const yPos = (v: number) => PAD_T + innerH - (v / maxY) * innerH;
+
+  // Y-axis grid lines (4 levels)
+  const yLevels = [0, 0.25, 0.5, 0.75, 1.0].map((f) => Math.round(f * maxY));
+  const gridLines = yLevels
+    .map((v) => {
+      const y = yPos(v);
+      return `<line x1="${PAD_L}" y1="${y}" x2="${W - PAD_R}" y2="${y}" stroke="#e0e7ff" stroke-width="1" stroke-dasharray="4,3"/>
+              <text x="${PAD_L - 4}" y="${y + 4}" text-anchor="end" font-size="9" fill="#9ca3af">${v}</text>`;
+    })
+    .join("");
+
+  // X-axis day labels
+  const xLabels = dailyCheckIns
+    .map((d, i) => `<text x="${xPos(i)}" y="${H - 4}" text-anchor="middle" font-size="10" fill="#6b7280">${d.day}</text>`)
+    .join("");
+
+  // One polyline + dots per emotion
+  const lines = trend
+    .map((series) => {
+      const pts = series.points
+        .map((p, i) => `${xPos(i).toFixed(1)},${yPos(p.count).toFixed(1)}`)
+        .join(" ");
+
+      // Area fill (semi-transparent)
+      const areaFirst = `${xPos(0).toFixed(1)},${(PAD_T + innerH).toFixed(1)}`;
+      const areaLast = `${xPos(n - 1).toFixed(1)},${(PAD_T + innerH).toFixed(1)}`;
+      const areaPath = `M ${areaFirst} L ${pts.split(" ").map((p) => `${p}`).join(" L ")} L ${areaLast} Z`;
+
+      const dots = series.points
+        .map(
+          (p, i) =>
+            `<circle cx="${xPos(i).toFixed(1)}" cy="${yPos(p.count).toFixed(1)}" r="3.5" fill="${series.color}" stroke="white" stroke-width="1.5"/>`
+        )
+        .join("");
+
+      return `
+        <path d="${areaPath}" fill="${series.color}" fill-opacity="0.07"/>
+        <polyline points="${pts}" fill="none" stroke="${series.color}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+        ${dots}`;
+    })
+    .join("");
+
+  // Legend
+  const legendItems = trend
+    .map(
+      (s, i) =>
+        `<span style="display:inline-flex;align-items:center;gap:5px;margin-right:14px;font-size:11px;color:#374151;">
+          <svg width="20" height="4"><line x1="0" y1="2" x2="20" y2="2" stroke="${s.color}" stroke-width="2.5" stroke-linecap="round"/></svg>
+          ${s.emotion}
+        </span>`
+    )
+    .join("");
+
+  return `
+    <svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" xmlns="http://www.w3.org/2000/svg">
+      <!-- Grid -->
+      ${gridLines}
+      <!-- Series -->
+      ${lines}
+      <!-- X labels -->
+      ${xLabels}
+    </svg>
+    <div style="margin-top:10px;">${legendItems}</div>
+  `;
 }
 
 // ─── HTML Template ────────────────────────────────────────────────────────────
@@ -321,6 +445,13 @@ export function buildReportHtml(data: WeeklyReportData): string {
         ${emotionRows || '<tr><td colspan="3" style="text-align:center;color:#9ca3af;font-size:13px;padding:16px;">No check-ins this week</td></tr>'}
       </table>
     </div>
+  </div>
+
+  <!-- Emotion Trend Chart -->
+  <div class="card" style="margin-bottom:24px;">
+    <div class="section-title">📈 Emotion Trend — Last 7 Days</div>
+    <p style="font-size:12px;color:#9ca3af;margin-bottom:12px;">Daily count of the top ${data.emotionTrend.length > 0 ? data.emotionTrend.length : "reported"} emotions across the institution.</p>
+    ${buildEmotionTrendSvg(data.emotionTrend, data.dailyCheckIns)}
   </div>
 
   <!-- Top Emotions -->
