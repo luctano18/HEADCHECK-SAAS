@@ -12,10 +12,20 @@ import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianG
 import { format } from "date-fns";
 import MoodTrendChart from "@/components/MoodTrendChart";
 
+// Brand-aligned emotion palette: Indigo primary, Coral accent, Teal, Amber, Rose
 const EMOTION_COLORS: Record<string, string> = {
-  Happy: "#f59e0b", Calm: "#06b6d4", Grateful: "#10b981", Sad: "#6366f1",
-  Anxious: "#f97316", Frustrated: "#ef4444", Angry: "#dc2626", Exhausted: "#8b5cf6",
-  Numb: "#9ca3af", Confused: "#6366f1", Motivated: "#22c55e", Vulnerable: "#ec4899",
+  Happy: "#F59E0B",       // Amber — warmth, joy
+  Calm: "#0D9488",        // Teal — serenity
+  Grateful: "#10B981",   // Emerald — growth
+  Sad: "#4338CA",         // Indigo — depth
+  Anxious: "#F97316",    // Coral — tension
+  Frustrated: "#E11D48", // Rose — intensity
+  Angry: "#DC2626",      // Red — urgency
+  Exhausted: "#6366F1",  // Violet — fatigue
+  Numb: "#9CA3AF",       // Gray — disconnection
+  Confused: "#818CF8",   // Indigo light — uncertainty
+  Motivated: "#22C55E",  // Green — energy
+  Vulnerable: "#FB923C", // Orange — openness
 };
 
 export default function Dashboard() {
@@ -216,12 +226,13 @@ export default function Dashboard() {
             {checkIns.length > 2 && (() => {
               const emotionCounts = checkIns.reduce((acc, c) => ({ ...acc, [c.emotion]: (acc[c.emotion] ?? 0) + 1 }), {} as Record<string, number>);
               const pieData = Object.entries(emotionCounts).map(([name, value]) => ({ name, value }));
-              const COLORS = ["#6366f1","#f59e0b","#10b981","#f97316","#06b6d4","#ec4899","#8b5cf6","#22c55e","#ef4444","#9ca3af"];
+              // Brand palette for pie chart
+              const COLORS = ["#4338CA","#F97316","#0D9488","#F59E0B","#E11D48","#818CF8","#10B981","#FB923C","#6366F1","#9CA3AF"];
               return (
                 <Card className="border shadow-sm">
                   <CardHeader className="pb-2">
                     <CardTitle className="text-base font-semibold flex items-center gap-2">
-                      <Brain className="w-4 h-4 text-violet-500" /> Emotion Distribution
+                      <Brain className="w-4 h-4 text-indigo-600" /> Emotion Distribution
                     </CardTitle>
                   </CardHeader>
                   <CardContent>

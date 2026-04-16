@@ -710,3 +710,12 @@
 - [x] Mettre à jour le favicon avec le nouveau logo
 - [x] Vérifier le rendu sur desktop et mobile
 - [x] Vérifier TypeScript et tests
+
+## Phase 37: Mise à jour des graphiques avec la nouvelle palette
+
+- [x] Mettre à jour TREND_COLORS dans weeklyReport.ts (indigo × corail)
+- [x] Mettre à jour le dégradé header du rapport PDF (indigo × corail)
+- [x] Mettre à jour les couleurs de section-title et accents dans le CSS du rapport
+- [x] Mettre à jour EMOTION_COLORS dans Dashboard.tsx (indigo × corail)
+- [x] Mettre à jour les COLORS du graphique camembert dans Dashboard.tsx
+- [x] Vérifier TypeScript et tests (0 erreurs, 105 tests ✓)

@@ -31,7 +31,8 @@ const SEVERITY_BADGES: Record<string, string> = {
   critical: "bg-red-100 text-red-700",
 };
 
-const CHART_COLORS = ["oklch(0.52 0.15 290)", "oklch(0.72 0.12 10)", "oklch(0.55 0.10 155)", "oklch(0.62 0.16 75)", "oklch(0.65 0.14 220)"];
+// Brand palette: Indigo, Coral, Teal, Amber, Rose
+const CHART_COLORS = ["#4338CA", "#F97316", "#0D9488", "#F59E0B", "#E11D48"];
 
 export default function FacilitatorDashboard() {
   const { user, isAuthenticated, loading, logout } = useAuth();
@@ -275,7 +276,7 @@ export default function FacilitatorDashboard() {
                             <XAxis dataKey="date" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
                             <YAxis domain={[1, 10]} tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
                             <Tooltip contentStyle={{ borderRadius: "12px", fontSize: "12px" }} />
-                            <Bar dataKey="avg" fill="oklch(0.52 0.15 290)" radius={[4, 4, 0, 0]} />
+                            <Bar dataKey="avg" fill="#4338CA" radius={[4, 4, 0, 0]} />
                           </BarChart>
                         </ResponsiveContainer>
                       </CardContent>

@@ -38,7 +38,8 @@ const EMOTION_PALETTE: Record<string, { bg: string; text: string; stroke: string
   Vulnerable: { bg: "oklch(0.97 0.06 340)", text: "oklch(0.45 0.18 340)", stroke: "oklch(0.65 0.18 340)" },
 };
 
-const DEFAULT_PALETTE = { bg: "oklch(0.96 0.04 285)", text: "oklch(0.45 0.14 285)", stroke: "oklch(0.55 0.18 285)" };
+// Brand: Indigo primary (hue 270)
+const DEFAULT_PALETTE = { bg: "oklch(0.95 0.05 270)", text: "oklch(0.42 0.22 270)", stroke: "oklch(0.52 0.22 270)" };
 
 function emotionStyle(emotion: string) {
   return EMOTION_PALETTE[emotion] ?? DEFAULT_PALETTE;
@@ -66,9 +67,9 @@ function CustomTooltip({
   return (
     <div
       className="rounded-xl shadow-lg px-3 py-2.5 text-sm border bg-white"
-      style={{ borderColor: "oklch(0.92 0.03 260)" }}
+      style={{ borderColor: "oklch(0.92 0.04 270)" }}
     >
-      <p className="font-semibold mb-1" style={{ color: "oklch(0.25 0.04 260)" }}>
+      <p className="font-semibold mb-1" style={{ color: "oklch(0.25 0.05 270)" }}>
         {label}
       </p>
       <p style={{ color: style.stroke }}>
@@ -104,7 +105,7 @@ function StatCard({
   return (
     <div
       className="flex items-start gap-3 p-3 rounded-xl bg-white border"
-      style={{ borderColor: "oklch(0.92 0.03 260)" }}
+      style={{ borderColor: "oklch(0.92 0.04 270)" }}
     >
       <span
         className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
@@ -114,7 +115,7 @@ function StatCard({
       </span>
       <div className="min-w-0">
         <p className="text-xs text-muted-foreground">{label}</p>
-        <p className="text-base font-bold" style={{ color: "oklch(0.25 0.04 260)" }}>
+        <p className="text-base font-bold" style={{ color: "oklch(0.25 0.05 270)" }}>
           {value}
         </p>
         {sub && <p className="text-xs text-muted-foreground truncate">{sub}</p>}
@@ -168,9 +169,9 @@ function EmptyState({ days, filtered }: { days: Days; filtered: boolean }) {
     <div className="flex flex-col items-center justify-center py-12 text-center">
       <div
         className="w-16 h-16 rounded-2xl flex items-center justify-center mb-4"
-        style={{ background: "oklch(0.95 0.04 285)" }}
+        style={{ background: "oklch(0.95 0.05 270)" }}
       >
-        <Activity className="w-8 h-8" style={{ color: "oklch(0.55 0.18 285)" }} />
+        <Activity className="w-8 h-8" style={{ color: "oklch(0.52 0.22 270)" }} />
       </div>
       <p className="font-semibold text-sm mb-1" style={{ color: "oklch(0.35 0.04 260)" }}>
         {filtered
@@ -226,7 +227,7 @@ export default function MoodTrendChart() {
     stats?.trend === "up" ? TrendingUp : stats?.trend === "down" ? TrendingDown : Minus;
   const trendColor =
     stats?.trend === "up"
-      ? "oklch(0.55 0.18 155)"
+      ? "oklch(0.52 0.22 270)"
       : stats?.trend === "down"
       ? "oklch(0.55 0.22 25)"
       : "oklch(0.55 0.04 260)";
@@ -244,15 +245,15 @@ export default function MoodTrendChart() {
   return (
     <div
       className="rounded-2xl border overflow-hidden"
-      style={{ borderColor: "oklch(0.92 0.03 260)" }}
+      style={{ borderColor: "oklch(0.92 0.04 270)" }}
     >
       {/* ── Header ── */}
       <div
         className="px-5 pt-5 pb-4 flex items-center justify-between gap-3 flex-wrap"
-        style={{ background: "oklch(0.97 0.02 285)" }}
+        style={{ background: "oklch(0.97 0.03 270)" }}
       >
         <div>
-          <h2 className="text-base font-bold flex items-center gap-2" style={{ color: "oklch(0.25 0.04 260)" }}>
+          <h2 className="text-base font-bold flex items-center gap-2" style={{ color: "oklch(0.25 0.05 270)" }}>
             Mood Tracker
             {selectedEmotion && (
               <span
@@ -274,7 +275,7 @@ export default function MoodTrendChart() {
         {/* Period toggle */}
         <div
           className="flex items-center gap-1 p-1 rounded-xl"
-          style={{ background: "oklch(0.92 0.03 260)" }}
+          style={{ background: "oklch(0.92 0.04 270)" }}
           role="group"
           aria-label="Display period"
         >
@@ -285,8 +286,8 @@ export default function MoodTrendChart() {
               className="px-3 py-1 rounded-lg text-xs font-semibold transition-all duration-150"
               style={{
                 background: days === d ? "white" : "transparent",
-                color: days === d ? "oklch(0.45 0.18 285)" : "oklch(0.50 0.04 260)",
-                boxShadow: days === d ? "0 1px 4px oklch(0.45 0.18 285 / 0.15)" : "none",
+                color: days === d ? "oklch(0.45 0.22 270)" : "oklch(0.50 0.04 260)",
+                boxShadow: days === d ? "0 1px 4px oklch(0.45 0.22 270 / 0.15)" : "none",
               }}
               aria-pressed={days === d}
             >
