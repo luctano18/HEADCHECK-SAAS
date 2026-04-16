@@ -3,6 +3,7 @@ import NavBar from "@/components/NavBar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
+import { AFRICAN_PROVERBS } from "@shared/headcheckData";
 
 const VALUES = [
   {
@@ -59,12 +60,12 @@ const TEAM = [
   },
 ];
 
-const AIEI_PROVERBS = [
-  { proverb: "Until the lion learns to write, every story will glorify the hunter.", origin: "African Proverb", meaning: "Your story deserves to be told in your own words." },
-  { proverb: "A child who is not embraced by the village will burn it down to feel its warmth.", origin: "African Proverb", meaning: "Community and belonging are fundamental human needs." },
-  { proverb: "He who learns, teaches.", origin: "Ethiopian Proverb", meaning: "Growth is meant to be shared." },
-  { proverb: "If you want to go fast, go alone. If you want to go far, go together.", origin: "African Proverb", meaning: "Sustainable growth is collective." },
-];
+// Use the 4 most culturally representative proverbs from the shared AFRICAN_PROVERBS list
+const AIEI_PROVERBS = AFRICAN_PROVERBS.slice(0, 4).map((p) => ({
+  proverb: p.text,
+  origin: p.country,
+  meaning: p.theme,
+}));
 
 export default function About() {
   return (

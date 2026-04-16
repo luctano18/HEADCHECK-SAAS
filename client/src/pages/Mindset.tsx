@@ -7,6 +7,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { getLoginUrl } from "@/const";
 import NavBar from "@/components/NavBar";
 import Footer from "@/components/Footer";
+import { AFRICAN_PROVERBS } from "@shared/headcheckData";
 
 const AFFIRMATIONS = [
   { text: "I am capable of handling whatever comes my way today.", category: "Resilience" },
@@ -26,18 +27,12 @@ const AFFIRMATIONS = [
   { text: "Peace is available to me in this moment, right now.", category: "Mindfulness" },
 ];
 
-const PROVERBS = [
-  { text: "Hurry, hurry has no blessing.", origin: "Swahili", lesson: "Slow down. Presence is power." },
-  { text: "I am because we are.", origin: "Ubuntu Philosophy", lesson: "Your wellbeing is connected to the wellbeing of others." },
-  { text: "Little by little, a little becomes a lot.", origin: "Tanzanian", lesson: "Small consistent steps create lasting transformation." },
-  { text: "If you want to go fast, go alone. If you want to go far, go together.", origin: "African", lesson: "Seek community. Growth is a collective journey." },
-  { text: "A single hand cannot tie a bundle.", origin: "African", lesson: "Asking for help is a sign of wisdom, not weakness." },
-  { text: "Until the lion learns to write, every story will glorify the hunter.", origin: "African", lesson: "Own your narrative. Tell your own story." },
-  { text: "Rain does not fall on one roof alone.", origin: "Cameroonian", lesson: "You are not alone in your struggles." },
-  { text: "The child who is not embraced by the village will burn it down to feel its warmth.", origin: "African", lesson: "Every person needs to feel seen, valued, and included." },
-  { text: "Speak softly and carry a big stick.", origin: "West African", lesson: "Emotional strength is quiet and steady." },
-  { text: "Knowledge is like a garden: if it is not cultivated, it cannot be harvested.", origin: "African", lesson: "Your emotional intelligence grows through daily practice." },
-];
+// Derive from the shared AFRICAN_PROVERBS list — single source of truth
+const PROVERBS = AFRICAN_PROVERBS.map((p) => ({
+  text: p.text,
+  origin: p.country,
+  lesson: p.theme,
+}));
 
 const BREATHING_STEPS = [
   { label: "Inhale", duration: 4, color: "bg-blue-400" },

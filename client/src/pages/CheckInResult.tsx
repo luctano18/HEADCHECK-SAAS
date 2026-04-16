@@ -1,12 +1,16 @@
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
 import { useLocation, useParams } from "wouter";
-import { Brain, Heart, Sparkles, BookOpen, ArrowRight, Loader2, Home, Star, Lightbulb, Users } from "lucide-react";
+import {
+  Brain, Heart, Sparkles, BookOpen, ArrowRight, Loader2, Home,
+  Star, Lightbulb, Users, TrendingUp, ThumbsUp, ThumbsDown, CheckCircle2,
+} from "lucide-react";
 import NavBar from "@/components/NavBar";
 import Footer from "@/components/Footer";
+import { useState } from "react";
+import { toast } from "sonner";
 
 const RESPONSE_SECTIONS = [
   { key: "emotionalReflection", icon: <Heart className="w-5 h-5" />, title: "Emotional Reflection", color: "bg-rose-50 border-rose-100", iconColor: "text-rose-500", badgeColor: "bg-rose-100 text-rose-700" },
@@ -18,6 +22,81 @@ const RESPONSE_SECTIONS = [
   { key: "mochaAffirmation", icon: <Sparkles className="w-5 h-5" />, title: "Mocha's Affirmation", color: "bg-gradient-to-br from-violet-50 to-pink-50 border-violet-200", iconColor: "text-violet-500", badgeColor: "bg-violet-100 text-violet-700", isAffirmation: true },
 ];
 
+// ─── Feedback Bar ─────────────────────────────────────────────────────────────
+function FeedbackBar({ checkInId }: { checkInId: number }) {
+  const [selected, setSelected] = useState<"helpful" | "not_helpful" | null>(null);
+  const [comment, setComment] = useState("");
+  const [submitted, setSubmitted] = useState(false);
+
+  const submitFeedback = trpc.checkIns.submitFeedback.useMutation({
+    onSuccess: () => {
+      setSubmitted(true);
+      toast.success("Thank you for your feedback!");
+    },
+    onError: () => toast.error("Could not save feedback. Please try again."),
+  });
+
+  if (submitted) {
+    return (
+      <div className="rounded-2xl border bg-green-50 border-green-100 p-5 flex items-center gap-3 animate-fade-in-up">
+        <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0" />
+        <p className="text-sm text-green-700 font-medium">Thank you! Your feedback helps us improve HeadCheck AI.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-2xl border bg-card p-5 space-y-4 animate-fade-in-up">
+      <p className="text-sm font-semibold text-foreground">Were these insights helpful?</p>
+      <div className="flex gap-3">
+        <button
+          onClick={() => setSelected("helpful")}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl border text-sm font-medium transition-all ${
+            selected === "helpful"
+              ? "bg-green-100 border-green-300 text-green-700"
+              : "bg-background border-border text-muted-foreground hover:border-green-300 hover:text-green-600"
+          }`}
+        >
+          <ThumbsUp className="w-4 h-4" /> Yes, helpful
+        </button>
+        <button
+          onClick={() => setSelected("not_helpful")}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl border text-sm font-medium transition-all ${
+            selected === "not_helpful"
+              ? "bg-red-100 border-red-300 text-red-700"
+              : "bg-background border-border text-muted-foreground hover:border-red-300 hover:text-red-600"
+          }`}
+        >
+          <ThumbsDown className="w-4 h-4" /> Not really
+        </button>
+      </div>
+
+      {selected && (
+        <div className="space-y-3 animate-fade-in-up">
+          <textarea
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            placeholder={selected === "helpful" ? "What resonated most with you? (optional)" : "What could be improved? (optional)"}
+            className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground resize-none focus:outline-none focus:ring-2 focus:ring-primary/30"
+            rows={2}
+            maxLength={500}
+          />
+          <Button
+            size="sm"
+            onClick={() => submitFeedback.mutate({ checkInId, rating: selected, feedbackText: comment || undefined })}
+            disabled={submitFeedback.isPending}
+            className="w-full"
+          >
+            {submitFeedback.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+            Submit Feedback
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Main Component ───────────────────────────────────────────────────────────
 export default function CheckInResult() {
   const { isAuthenticated } = useAuth();
   const [, navigate] = useLocation();
@@ -139,8 +218,30 @@ export default function CheckInResult() {
                 </div>
               );
             })}
+
+            {/* Pattern Insight — only shown when AI detected a recurring pattern */}
+            {aiResponse.patternInsight && (
+              <div
+                className="rounded-2xl p-5 border bg-gradient-to-br from-teal-50 to-cyan-50 border-teal-200 animate-fade-in-up"
+                style={{ animationDelay: "0.8s" }}
+              >
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-teal-500"><TrendingUp className="w-5 h-5" /></span>
+                  <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-teal-100 text-teal-700">
+                    Pattern Insight
+                  </span>
+                </div>
+                <p className="text-sm text-foreground leading-relaxed">{aiResponse.patternInsight}</p>
+                <p className="text-xs text-teal-600 mt-3 font-medium">
+                  🔄 Based on your recent check-in history
+                </p>
+              </div>
+            )}
           </div>
         )}
+
+        {/* Feedback Bar */}
+        {aiResponse && <FeedbackBar checkInId={checkInId} />}
 
         {/* Action Buttons */}
         <div className="grid grid-cols-2 gap-4 pt-4">

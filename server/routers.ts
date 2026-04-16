@@ -79,6 +79,8 @@ import {
   markAllNotificationsRead,
   getAdminUsers,
   markNotificationEmailSent,
+  getRecentEmotionPatterns,
+  updateAiResponseFeedback,
 } from "./db";
 import { sendNotificationEmail } from "./notificationEmail";
 import {
@@ -216,14 +218,17 @@ async function generateAiResponse(params: {
   intensity: number;
   context: string;
   journalEntry?: string;
+  patternContext?: string; // Recent emotion history for Pattern Insight
 }) {
-  const { emotion, intensity, context, journalEntry } = params;
+  const { emotion, intensity, context, journalEntry, patternContext } = params;
+  const patternSection = patternContext
+    ? `\nRecent emotional history: ${patternContext}\n`
+    : "";
   const prompt = `You are HeadCheck AI, a compassionate emotional wellness assistant that integrates neuroscience, Emotional Intelligence (EI), and African-Inspired Emotional Intelligence (AIEI).
 
 A user is experiencing: Emotion: "${emotion}" | Intensity: ${intensity}/10 | Context: ${context}
-${journalEntry ? `Journal: "${journalEntry}"` : ""}
-
-Generate a structured JSON response with EXACTLY these 7 fields:
+${journalEntry ? `Journal: "${journalEntry}"` : ""}${patternSection}
+Generate a structured JSON response with EXACTLY these 10 fields:
 1. "emotionalReflection": A warm, validating 2-3 sentence reflection on what the user is feeling. Use a compassionate, non-judgmental tone.
 2. "brainInsight": A 2-sentence neuroscience explanation of what's happening in the brain (mention specific brain regions like amygdala, prefrontal cortex, hippocampus, etc.).
 3. "eiPillar": The most relevant EI pillar name (one of: Self-Awareness, Self-Regulation, Motivation, Empathy, Social Skills).
@@ -233,6 +238,7 @@ Generate a structured JSON response with EXACTLY these 7 fields:
 7. "personalizedNextStep": A specific, actionable 2-3 sentence recommendation for their immediate next step.
 8. "supportInvitation": A gentle 1-2 sentence invitation to seek additional support if needed.
 9. "mochaAffirmation": A short, powerful 1-sentence affirmation from Mocha (the HeadCheck AI companion) that the user can carry with them. Make it personal, warm, and rooted in their specific emotional state.
+10. "patternInsight": ${patternContext ? `Based on the recent emotional history provided, give a 2-3 sentence compassionate insight about the emotional pattern you notice. Highlight what this pattern might mean and one gentle suggestion for breaking or nurturing it.` : `Return an empty string "".`}
 Respond ONLY with valid JSON, no markdown.`;
 
   const response = await invokeLLM({
@@ -254,8 +260,9 @@ Respond ONLY with valid JSON, no markdown.`;
             personalizedNextStep: { type: "string" },
             supportInvitation: { type: "string" },
             mochaAffirmation: { type: "string" },
+            patternInsight: { type: "string" },
           },
-          required: ["emotionalReflection", "brainInsight", "eiPillar", "eiPillarDescription", "aieiProverb", "aieiProverbOrigin", "personalizedNextStep", "supportInvitation", "mochaAffirmation"],
+          required: ["emotionalReflection", "brainInsight", "eiPillar", "eiPillarDescription", "aieiProverb", "aieiProverbOrigin", "personalizedNextStep", "supportInvitation", "mochaAffirmation", "patternInsight"],
           additionalProperties: false,
         },
       },
@@ -275,6 +282,7 @@ Respond ONLY with valid JSON, no markdown.`;
     personalizedNextStep: string;
     supportInvitation: string;
     mochaAffirmation: string;
+    patternInsight: string;
   };
 }
 // ─── Seven Mirrors AI Summaryy ─────────────────────────────────────────────────
@@ -561,12 +569,21 @@ export const appRouter = router({
           }).catch(() => {});
         }
 
-        // Generate AI response
+        // Fetch recent emotion patterns for Pattern Insight
+        const recentPatterns = await getRecentEmotionPatterns(ctx.user.id, 5);
+        let patternContext: string | undefined;
+        if (recentPatterns.length >= 2) {
+          const emotionList = recentPatterns.map((p) => p.emotion).join(", ");
+          patternContext = `Last ${recentPatterns.length} check-ins: ${emotionList}`;
+        }
+
+        // Generate AI response with pattern context
         const aiData = await generateAiResponse({
           emotion: input.emotion,
           intensity: input.intensity,
           context: input.context,
           journalEntry: input.journalEntry,
+          patternContext,
         });
 
         await saveAiResponse({ checkInId, userId: ctx.user.id, ...aiData });
@@ -596,6 +613,22 @@ export const appRouter = router({
       .input(z.object({ text: z.string(), intensity: z.number() }))
       .query(({ input }) => {
         return detectCrisis(input.text, input.intensity);
+      }),
+
+    submitFeedback: protectedProcedure
+      .input(z.object({
+        checkInId: z.number(),
+        rating: z.enum(["helpful", "not_helpful"]),
+        feedbackText: z.string().max(500).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        await updateAiResponseFeedback(
+          input.checkInId,
+          ctx.user.id,
+          input.rating,
+          input.feedbackText
+        );
+        return { success: true };
       }),
   }),
 

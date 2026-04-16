@@ -47,11 +47,7 @@ function Router() {
       <Route path="/checkin/guest-result" component={GuestCheckInResult} />
       <Route path="/checkin/result/:id" component={CheckInResult} />
       <Route path="/compass" component={SevenMirrors} />
-      {/* Backward-compatible aliases */}
-      <Route path="/check-in" component={CheckIn} />
-      <Route path="/check-in/guest" component={GuestCheckInResult} />
-      <Route path="/check-in/:id" component={CheckInResult} />
-      <Route path="/seven-mirrors" component={SevenMirrors} />
+      {/* Legacy aliases removed — use canonical routes above */}
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/facilitator" component={FacilitatorDashboard} />
       <Route path="/resources" component={Resources} />

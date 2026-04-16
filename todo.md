@@ -591,3 +591,29 @@
 - [x] Enregistrer la route /checkin/summary dans App.tsx
 - [x] Modifier CheckIn.tsx pour rediriger vers /checkin/summary après complétion (avant /checkin/result/:id)
 - [x] Modifier CheckInSummary.tsx pour naviguer vers /checkin/result/:id après lecture du résumé
+
+## Phase 30: Pattern Insight + Feedback + Centralisation AIEI + Nettoyage
+
+### A. Pattern Insight dans le moteur AI
+- [x] Ajouter les champs feedback (rating, feedbackText) à la table ai_responses dans drizzle/schema.ts
+- [x] Générer et appliquer la migration SQL pour les nouveaux champs
+- [x] Ajouter la fonction getRecentEmotionPatterns(userId) dans server/db.ts
+- [x] Modifier generateAiResponse pour accepter un paramètre patternContext optionnel
+- [x] Ajouter le champ patternInsight à la réponse AI (7ème section)
+- [x] Modifier checkIns.create pour passer les patterns récents à generateAiResponse
+- [x] Ajouter la procédure tRPC checkIns.submitFeedback (protectedProcedure)
+- [x] Afficher le Pattern Insight dans CheckInResult.tsx (nouvelle section)
+
+### B. Boucle de feedback utilisateur
+- [x] Ajouter le composant FeedbackBar dans CheckInResult.tsx (thumbs up/down + commentaire optionnel)
+- [x] Afficher FeedbackBar après les insights AI
+- [x] Afficher un message de remerciement après soumission du feedback
+
+### C. Centralisation des données AIEI
+- [x] Vérifier que About.tsx utilise AFRICAN_PROVERBS de headcheckData.ts (supprimer AIEI_PROVERBS local)
+- [x] Vérifier que Mindset.tsx utilise AFRICAN_PROVERBS de headcheckData.ts
+- [x] Vérifier que ZeraCards.tsx utilise EI_PILLARS de headcheckData.ts
+
+### D. Nettoyage routes et fichiers
+- [x] Supprimer les routes alias /check-in, /check-in/guest, /check-in/:id, /seven-mirrors de App.tsx
+- [x] Supprimer le fichier ComponentShowcase.tsx (1437 lignes, dev-only)

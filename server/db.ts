@@ -200,10 +200,38 @@ export async function saveAiResponse(data: {
   personalizedNextStep: string;
   supportInvitation: string;
   mochaAffirmation?: string;
+  patternInsight?: string;
 }) {
   const db = await getDb();
   if (!db) throw new Error("DB unavailable");
   await db.insert(aiResponses).values(data);
+}
+
+// Returns the last N emotions for a user (for Pattern Insight)
+export async function getRecentEmotionPatterns(userId: number, limit = 5) {
+  const db = await getDb();
+  if (!db) return [];
+  const rows = await db
+    .select({ emotion: checkIns.emotion, createdAt: checkIns.createdAt })
+    .from(checkIns)
+    .where(eq(checkIns.userId, userId))
+    .orderBy(desc(checkIns.createdAt))
+    .limit(limit);
+  return rows;
+}
+
+export async function updateAiResponseFeedback(
+  checkInId: number,
+  userId: number,
+  rating: "helpful" | "not_helpful",
+  feedbackText?: string
+) {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+  await db
+    .update(aiResponses)
+    .set({ feedbackRating: rating, feedbackText: feedbackText ?? null })
+    .where(and(eq(aiResponses.checkInId, checkInId), eq(aiResponses.userId, userId)));
 }
 
 export async function getAiResponseByCheckIn(checkInId: number) {

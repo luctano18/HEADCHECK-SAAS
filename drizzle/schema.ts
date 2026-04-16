@@ -126,6 +126,9 @@ export const aiResponses = mysqlTable("ai_responses", {
   personalizedNextStep: text("personalizedNextStep").notNull(),
   supportInvitation: text("supportInvitation").notNull(),
   mochaAffirmation: text("mochaAffirmation"),
+  patternInsight: text("patternInsight"),
+  feedbackRating: mysqlEnum("feedbackRating", ["helpful", "not_helpful"]),
+  feedbackText: text("feedbackText"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
