@@ -18,6 +18,7 @@ import {
   CartesianGrid, PieChart, Pie, Cell, Legend
 } from "recharts";
 import { format } from "date-fns";
+import { BarChartSkeleton, PieChartSkeleton } from "@/components/ChartSkeleton";
 
 const SEVERITY_COLORS: Record<string, string> = {
   moderate: "#f59e0b",
@@ -263,47 +264,63 @@ export default function FacilitatorDashboard() {
                 </div>
 
                 {/* Charts */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {dailyTrend.length > 1 && (
+                {trendsLoading ? (
+                  /* ── Chart skeletons while cohort data loads ── */
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <Card className="border shadow-sm">
                       <CardHeader className="pb-2">
                         <CardTitle className="text-sm font-semibold">Daily Avg. Intensity</CardTitle>
                       </CardHeader>
                       <CardContent>
-                        <ResponsiveContainer width="100%" height={180}>
-                          <BarChart data={dailyTrend} margin={{ top: 5, right: 5, bottom: 0, left: -20 }}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.90 0.03 260)" />
-                            <XAxis dataKey="date" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
-                            <YAxis domain={[1, 10]} tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
-                            <Tooltip contentStyle={{ borderRadius: "12px", fontSize: "12px" }} />
-                            <Bar dataKey="avg" fill="#4338CA" radius={[4, 4, 0, 0]} />
-                          </BarChart>
-                        </ResponsiveContainer>
+                        <BarChartSkeleton height={180} bars={7} />
                       </CardContent>
                     </Card>
-                  )}
-                  {emotionDist.length > 0 && (
                     <Card className="border shadow-sm">
                       <CardHeader className="pb-2">
                         <CardTitle className="text-sm font-semibold">Emotion Distribution</CardTitle>
                       </CardHeader>
                       <CardContent>
-                        <ResponsiveContainer width="100%" height={180}>
-                          <PieChart>
-                            <Pie data={emotionDist} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={70} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false} fontSize={10}>
-                              {emotionDist.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
-                            </Pie>
-                            <Tooltip contentStyle={{ borderRadius: "12px", fontSize: "12px" }} />
-                          </PieChart>
-                        </ResponsiveContainer>
+                        <PieChartSkeleton size={140} />
                       </CardContent>
                     </Card>
-                  )}
-                </div>
-
-                {trendsLoading && (
-                  <div className="flex items-center justify-center py-12">
-                    <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {dailyTrend.length > 1 && (
+                      <Card className="border shadow-sm">
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-sm font-semibold">Daily Avg. Intensity</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <ResponsiveContainer width="100%" height={180}>
+                            <BarChart data={dailyTrend} margin={{ top: 5, right: 5, bottom: 0, left: -20 }}>
+                              <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.90 0.03 260)" />
+                              <XAxis dataKey="date" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
+                              <YAxis domain={[1, 10]} tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
+                              <Tooltip contentStyle={{ borderRadius: "12px", fontSize: "12px" }} />
+                              <Bar dataKey="avg" fill="#4338CA" radius={[4, 4, 0, 0]} />
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </CardContent>
+                      </Card>
+                    )}
+                    {emotionDist.length > 0 && (
+                      <Card className="border shadow-sm">
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-sm font-semibold">Emotion Distribution</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <ResponsiveContainer width="100%" height={180}>
+                            <PieChart>
+                              <Pie data={emotionDist} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={70} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false} fontSize={10}>
+                                {emotionDist.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
+                              </Pie>
+                              <Tooltip contentStyle={{ borderRadius: "12px", fontSize: "12px" }} />
+                            </PieChart>
+                          </ResponsiveContainer>
+                        </CardContent>
+                      </Card>
+                    )}
                   </div>
                 )}
                 {!trendsLoading && (!trends || trends.length === 0) && (

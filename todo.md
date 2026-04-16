@@ -719,3 +719,11 @@
 - [x] Mettre à jour EMOTION_COLORS dans Dashboard.tsx (indigo × corail)
 - [x] Mettre à jour les COLORS du graphique camembert dans Dashboard.tsx
 - [x] Vérifier TypeScript et tests (0 erreurs, 105 tests ✓)
+
+## Phase 38: Animations de chargement sur les graphiques
+
+- [x] Créer composant ChartSkeleton réutilisable (pulse/shimmer, variantes area/bar/pie/stat)
+- [x] Intégrer ChartSkeleton dans MoodTrendChart (remplacer le skeleton inline existant)
+- [x] Intégrer ChartSkeleton dans Dashboard.tsx (pie chart + mood trend)
+- [x] Intégrer ChartSkeleton dans FacilitatorDashboard.tsx (bar chart + pie chart)
+- [x] Vérifier TypeScript et tests (0 erreurs, 105 tests ✓)

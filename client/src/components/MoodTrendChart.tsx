@@ -11,6 +11,7 @@ import {
 } from "recharts";
 import { trpc } from "@/lib/trpc";
 import { TrendingUp, TrendingDown, Minus, Activity, Smile, Zap, Filter } from "lucide-react";
+import { MiniChartSkeleton } from "@/components/ChartSkeleton";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Days = 30 | 90;
@@ -333,14 +334,7 @@ export default function MoodTrendChart() {
         )}
 
         {isLoading ? (
-          <div className="space-y-3 py-4 mt-4">
-            <div className="h-40 rounded-xl bg-muted animate-pulse" />
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="h-16 rounded-xl bg-muted animate-pulse" />
-              ))}
-            </div>
-          </div>
+          <MiniChartSkeleton height={180} className="py-4 mt-4" />
         ) : !chartData.length ? (
           <EmptyState days={days} filtered={!!selectedEmotion} />
         ) : (

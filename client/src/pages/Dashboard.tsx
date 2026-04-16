@@ -11,6 +11,7 @@ import {
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell } from "recharts";
 import { format } from "date-fns";
 import MoodTrendChart from "@/components/MoodTrendChart";
+import { PieChartSkeleton, AreaChartSkeleton, StatCardsSkeleton } from "@/components/ChartSkeleton";
 
 // Brand-aligned emotion palette: Indigo primary, Coral accent, Teal, Amber, Rose
 const EMOTION_COLORS: Record<string, string> = {
@@ -35,18 +36,11 @@ export default function Dashboard() {
   const { data, isLoading } = trpc.dashboard.getHistory.useQuery(undefined, { enabled: isAuthenticated });
   const { data: quizHistory } = trpc.quiz.getHistory.useQuery(undefined, { enabled: isAuthenticated });
 
-  if (loading || isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center space-y-3">
-          <Brain className="w-10 h-10 text-primary animate-pulse mx-auto" />
-          <p className="text-muted-foreground text-sm">Loading your dashboard...</p>
-        </div>
-      </div>
-    );
-  }
+  // Show skeleton layout while data loads (instead of full-page spinner)
+  const showSkeleton = loading || isLoading;
 
-  if (!isAuthenticated) { navigate("/"); return null; }
+  // Only redirect if we know the user is not authenticated (not while loading)
+  if (!loading && !isAuthenticated) { navigate("/"); return null; }
 
   const checkIns = data?.checkIns ?? [];
   const mirrorSessions = data?.mirrorSessions ?? [];
@@ -223,7 +217,18 @@ export default function Dashboard() {
             </div>
 
             {/* Emotion Distribution Chart */}
-            {checkIns.length > 2 && (() => {
+            {showSkeleton ? (
+              <Card className="border shadow-sm">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base font-semibold flex items-center gap-2">
+                    <Brain className="w-4 h-4 text-indigo-600" /> Emotion Distribution
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <PieChartSkeleton size={140} />
+                </CardContent>
+              </Card>
+            ) : checkIns.length > 2 && (() => {
               const emotionCounts = checkIns.reduce((acc, c) => ({ ...acc, [c.emotion]: (acc[c.emotion] ?? 0) + 1 }), {} as Record<string, number>);
               const pieData = Object.entries(emotionCounts).map(([name, value]) => ({ name, value }));
               // Brand palette for pie chart
@@ -256,12 +261,22 @@ export default function Dashboard() {
                       </div>
                     </div>
                   </CardContent>
-                </Card>
-              );
+                </Card>              );
             })()}
 
             {/* Intensity Trend Chart */}
-            {chartData.length > 1 && (
+            {showSkeleton ? (
+              <Card className="border shadow-sm">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base font-semibold flex items-center gap-2">
+                    <TrendingUp className="w-4 h-4 text-primary" /> Emotional Intensity — Last 14 Days
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <AreaChartSkeleton height={200} />
+                </CardContent>
+              </Card>
+            ) : chartData.length > 1 && (
               <Card className="border shadow-sm">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-base font-semibold flex items-center gap-2">
