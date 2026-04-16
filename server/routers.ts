@@ -88,6 +88,7 @@ import {
   calculatePillarScores,
   getEILevel,
 } from "../shared/eiQuizData";
+import { getResourcesForEmotion } from "../shared/emotionResources";
 
 // ─── Notification Helper ────────────────────────────────────────────────────
 /**
@@ -629,6 +630,12 @@ export const appRouter = router({
           input.feedbackText
         );
         return { success: true };
+      }),
+
+    getEmotionResources: publicProcedure
+      .input(z.object({ emotion: z.string().min(1) }))
+      .query(({ input }) => {
+        return getResourcesForEmotion(input.emotion);
       }),
   }),
 

@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import NavBar from "@/components/NavBar";
 import Footer from "@/components/Footer";
+import EmotionResourcesPanel from "@/components/EmotionResourcesPanel";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -239,6 +240,9 @@ export default function CheckInResult() {
             )}
           </div>
         )}
+
+        {/* Contextual Resources for the detected emotion */}
+        <EmotionResourcesPanel emotion={checkIn.emotion} />
 
         {/* Feedback Bar */}
         {aiResponse && <FeedbackBar checkInId={checkInId} />}

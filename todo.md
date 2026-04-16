@@ -617,3 +617,14 @@
 ### D. Nettoyage routes et fichiers
 - [x] Supprimer les routes alias /check-in, /check-in/guest, /check-in/:id, /seven-mirrors de App.tsx
 - [x] Supprimer le fichier ComponentShowcase.tsx (1437 lignes, dev-only)
+
+## Phase 31: Ressources contextuelles par émotion dans le Pattern Insight
+
+- [x] Créer shared/emotionResources.ts avec le mapping émotion → ressources (articles, exercices, proverbes)
+- [x] Couvrir les 10 émotions du Check-In + fallback générique
+- [x] Ajouter une procédure tRPC checkIns.getEmotionResources (publicProcedure, input: emotion)
+- [x] Créer le composant EmotionResourcesPanel.tsx dans client/src/components/
+- [x] Intégrer EmotionResourcesPanel dans CheckInResult.tsx après le Pattern Insight
+- [x] Afficher 2-3 ressources ciblées (type badge, titre, description courte, durée, lien vers /resources)
+- [x] Ajouter un bouton "See all resources" qui redirige vers /resources avec le filtre pré-sélectionné
+- [x] Vérifier TypeScript et tests
