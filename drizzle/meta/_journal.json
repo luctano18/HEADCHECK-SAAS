@@ -127,6 +127,13 @@
       "when": 1776352682582,
       "tag": "0017_colossal_warlock",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "5",
+      "when": 1776877839375,
+      "tag": "0018_good_madripoor",
+      "breakpoints": true
     }
   ]
 }

@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { useLocation } from "wouter";
 import {
   Brain, Users, AlertTriangle, TrendingUp, Plus, LogOut, User,
-  Mail, Shield, BarChart3, Building2, Copy, Loader2, Home, Heart
+  Mail, Shield, BarChart3, Building2, Copy, Loader2, Home, Heart, Settings, Sliders
 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -42,7 +42,15 @@ export default function FacilitatorDashboard() {
   const [groupName, setGroupName] = useState("");
   const [inviteLink, setInviteLink] = useState<string | null>(null);
   const [selectedGroupId, setSelectedGroupId] = useState<number | "">("");
-  const [activeTab, setActiveTab] = useState<"overview" | "alerts" | "violence" | "groups" | "assigned">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "alerts" | "violence" | "groups" | "assigned" | "eeis">("overview");
+  // EEIS config state
+  const { data: eeisConfig, refetch: refetchConfig } = trpc.intervention.getConfig.useQuery(undefined, { enabled: isAuthenticated });
+  const updateConfigMutation = trpc.intervention.updateConfig.useMutation({
+    onSuccess: () => { toast.success("Intervention thresholds updated."); refetchConfig(); },
+    onError: (err) => toast.error(err.message),
+  });
+  const { data: escalationAlerts } = trpc.intervention.getEscalationAlerts.useQuery(undefined, { enabled: isAuthenticated });
+  const [eeisForm, setEeisForm] = useState<{ greenMaxScore: number; yellowMaxScore: number; yellowRepeatDays: number; yellowRepeatCount: number; lowResolutionCount: number } | null>(null);
   const { data: myAssignments } = trpc.crisis.getMyAssignments.useQuery(undefined, { enabled: isAuthenticated });
   const [crisisFilterUnresolved, setCrisisFilterUnresolved] = useState(true);
   const [violenceFilterUnresolved, setViolenceFilterUnresolved] = useState(true);
@@ -145,6 +153,7 @@ export default function FacilitatorDashboard() {
     { id: "violence", label: "Violence Flags", icon: <Shield className="w-4 h-4" />, badge: unacknowledgedViolence },
     { id: "groups", label: "Groups & Invites", icon: <Users className="w-4 h-4" /> },
     { id: "assigned", label: "Assigned to Me", icon: <Mail className="w-4 h-4" />, badge: totalAssignedCount },
+    { id: "eeis", label: "Intervention Config", icon: <Sliders className="w-4 h-4" /> },
   ];
 
   return (
@@ -767,6 +776,165 @@ export default function FacilitatorDashboard() {
               </>
             )}
           </div>
+
+            {/* ── EEIS: Intervention Config Tab ── */}
+            {activeTab === "eeis" && (
+              <>
+                <div className="mb-6">
+                  <h2 className="text-xl font-bold text-foreground">Intervention Configuration</h2>
+                  <p className="text-sm text-muted-foreground mt-1">Configure the scoring thresholds that determine Green / Yellow / Red classification for your institution.</p>
+                </div>
+
+                {/* Threshold Config Card */}
+                <Card className="mb-6">
+                  <CardHeader>
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Settings className="w-4 h-4 text-indigo-500" /> Scoring Thresholds
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-5">
+                    {eeisConfig && (
+                      <>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <Label className="text-sm font-medium">Green Max Score (0–{(eeisForm ?? eeisConfig).yellowMaxScore - 1})</Label>
+                            <p className="text-xs text-muted-foreground mb-1">Sessions scoring ≤ this are classified Green</p>
+                            <input
+                              type="number" min={1} max={8}
+                              value={(eeisForm ?? eeisConfig).greenMaxScore}
+                              onChange={e => setEeisForm(f => ({ ...(f ?? eeisConfig), greenMaxScore: Number(e.target.value) }))}
+                              className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-sm font-medium">Yellow Max Score</Label>
+                            <p className="text-xs text-muted-foreground mb-1">Sessions scoring ≤ this are Yellow; above is Red</p>
+                            <input
+                              type="number" min={2} max={11}
+                              value={(eeisForm ?? eeisConfig).yellowMaxScore}
+                              onChange={e => setEeisForm(f => ({ ...(f ?? eeisConfig), yellowMaxScore: Number(e.target.value) }))}
+                              className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-sm font-medium">Yellow Repeat Window (days)</Label>
+                            <p className="text-xs text-muted-foreground mb-1">Lookback window for escalation pattern detection</p>
+                            <input
+                              type="number" min={1} max={30}
+                              value={(eeisForm ?? eeisConfig).yellowRepeatDays}
+                              onChange={e => setEeisForm(f => ({ ...(f ?? eeisConfig), yellowRepeatDays: Number(e.target.value) }))}
+                              className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-sm font-medium">Yellow Repeat Count</Label>
+                            <p className="text-xs text-muted-foreground mb-1">Number of Yellow sessions in window to trigger escalation</p>
+                            <input
+                              type="number" min={1} max={10}
+                              value={(eeisForm ?? eeisConfig).yellowRepeatCount}
+                              onChange={e => setEeisForm(f => ({ ...(f ?? eeisConfig), yellowRepeatCount: Number(e.target.value) }))}
+                              className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background"
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-sm font-medium">Low Resolution Count</Label>
+                            <p className="text-xs text-muted-foreground mb-1">Consecutive "not yet" responses before flagging</p>
+                            <input
+                              type="number" min={1} max={10}
+                              value={(eeisForm ?? eeisConfig).lowResolutionCount}
+                              onChange={e => setEeisForm(f => ({ ...(f ?? eeisConfig), lowResolutionCount: Number(e.target.value) }))}
+                              className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background"
+                            />
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3 pt-2">
+                          <Button
+                            onClick={() => {
+                              const cfg = eeisForm ?? eeisConfig;
+                              updateConfigMutation.mutate(cfg);
+                            }}
+                            disabled={updateConfigMutation.isPending}
+                            className="bg-indigo-600 hover:bg-indigo-700 text-white"
+                          >
+                            {updateConfigMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                            Save Thresholds
+                          </Button>
+                          <Button variant="outline" onClick={() => setEeisForm(null)}>Reset to Saved</Button>
+                        </div>
+                      </>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Tier Reference */}
+                <Card className="mb-6">
+                  <CardHeader>
+                    <CardTitle className="text-base">Tier Reference</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="rounded-xl border border-emerald-200 bg-emerald-50 dark:bg-emerald-950/30 p-4 text-center">
+                        <span className="text-2xl">🌱</span>
+                        <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-300 mt-1">Green</p>
+                        <p className="text-xs text-muted-foreground">Score ≤ {eeisConfig?.greenMaxScore ?? 4}</p>
+                        <p className="text-xs text-muted-foreground mt-1">Grounding + affirmation</p>
+                      </div>
+                      <div className="rounded-xl border border-amber-200 bg-amber-50 dark:bg-amber-950/30 p-4 text-center">
+                        <span className="text-2xl">🌤</span>
+                        <p className="text-sm font-semibold text-amber-800 dark:text-amber-300 mt-1">Yellow</p>
+                        <p className="text-xs text-muted-foreground">Score ≤ {eeisConfig?.yellowMaxScore ?? 9}</p>
+                        <p className="text-xs text-muted-foreground mt-1">Breathing + peer support</p>
+                      </div>
+                      <div className="rounded-xl border border-rose-200 bg-rose-50 dark:bg-rose-950/30 p-4 text-center">
+                        <span className="text-2xl">🌧</span>
+                        <p className="text-sm font-semibold text-rose-800 dark:text-rose-300 mt-1">Red</p>
+                        <p className="text-xs text-muted-foreground">Score &gt; {eeisConfig?.yellowMaxScore ?? 9}</p>
+                        <p className="text-xs text-muted-foreground mt-1">Counselor escalation</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Escalation Alerts */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <AlertTriangle className="w-4 h-4 text-amber-500" /> Recent Escalation Alerts
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {!escalationAlerts?.length ? (
+                      <p className="text-sm text-muted-foreground text-center py-4">No escalation alerts yet.</p>
+                    ) : (
+                      <div className="space-y-3">
+                        {escalationAlerts.map((alert) => (
+                          <div key={alert.id} className="flex items-center justify-between p-3 rounded-xl border border-border bg-muted/30">
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                                  alert.tier === "red" ? "bg-rose-100 text-rose-700" :
+                                  alert.tier === "yellow" ? "bg-amber-100 text-amber-700" :
+                                  "bg-emerald-100 text-emerald-700"
+                                }`}>{alert.tier?.toUpperCase()}</span>
+                                <span className="text-xs text-muted-foreground">Score: {alert.totalScore}</span>
+                              </div>
+                              <p className="text-xs text-muted-foreground mt-1">{alert.escalationReason ?? "Escalation triggered"}</p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-xs text-muted-foreground">{alert.createdAt ? new Date(alert.createdAt).toLocaleDateString("en-US") : ""}</p>
+                              {alert.facilitatorNotified && (
+                                <Badge className="text-xs bg-indigo-100 text-indigo-700 mt-1">Notified</Badge>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </>
+            )}
+
         </main>
       </div>
     </div>

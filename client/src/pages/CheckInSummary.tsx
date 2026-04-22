@@ -1,9 +1,12 @@
+import { useState } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import NavBar from "@/components/NavBar";
 import { Heart, Sparkles, ArrowRight, CheckCircle2, Users, Loader2 } from "lucide-react";
+import { InterventionResult } from "@/components/InterventionResult";
+import { CrisisScreen } from "@/components/CrisisScreen";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// ── Types ────────────────────────────────────────────────────────────────────────────────
 export interface CheckInSummaryData {
   primaryEmotion: string;
   stressors: string[];
@@ -13,6 +16,19 @@ export interface CheckInSummaryData {
   wantsSave: boolean;
   checkInId?: number;
   guestResult?: unknown;
+  intervention?: {
+    tier: "green" | "yellow" | "red";
+    tierLabel: string;
+    tierColor: string;
+    scores: { emotionalIntensityScore: number; stressLoadScore: number; readinessScore: number; totalScore: number };
+    riskOverride: boolean;
+    riskLevel: "none" | "crisis";
+    stabilization: { message: string; subtext: string; breathingPrompt?: string };
+    redirection: { nextStep: string; nextStepReason: string; actionLabel: string; actionUrl?: string };
+    escalationTriggered: boolean;
+    escalationReason?: string;
+    interventionSessionId?: number;
+  } | null;
 }
 
 // ─── Helper: generate human-readable summary lines ───────────────────────────
@@ -39,13 +55,26 @@ function summariseStressors(stressors: string[]): string {
   return `${stressors.slice(0, 2).map(s => s.toLowerCase()).join(", ")}, and ${stressors.length - 2} other factor${stressors.length - 2 > 1 ? "s" : ""}`;
 }
 
-// ─── Component ────────────────────────────────────────────────────────────────
+// ── Component ────────────────────────────────────────────────────────────────────────────────
 export default function CheckInSummary() {
   const [, navigate] = useLocation();
+  // "crisis" | "intervention" | "summary"
+  const [screen, setScreen] = useState<"crisis" | "intervention" | "summary">("summary");
 
   // Read data passed via sessionStorage (set by CheckIn.tsx before navigating)
   const raw = sessionStorage.getItem("headcheck_summary");
   const data: CheckInSummaryData | null = raw ? JSON.parse(raw) : null;
+
+  // Determine initial screen based on intervention result
+  const [initialized, setInitialized] = useState(false);
+  if (!initialized && data) {
+    setInitialized(true);
+    if (data.intervention?.riskOverride) {
+      setScreen("crisis");
+    } else if (data.intervention && data.intervention.tier !== "green") {
+      setScreen("intervention");
+    }
+  }
 
   if (!data) {
     return (
@@ -75,12 +104,41 @@ export default function CheckInSummary() {
 
   const supportSelected = data.supportType && data.supportType !== "Not sure yet" && data.supportType !== "Not ready yet";
 
+  // ── Crisis Screen ───────────────────────────────────────────────────────────────────────────────
+  if (screen === "crisis") {
+    return (
+      <div className="min-h-screen" style={{ background: "linear-gradient(135deg, #fff1f2 0%, #fff 50%, #f0f9ff 100%)" }}>
+        <NavBar />
+        <div className="max-w-lg mx-auto px-4 pt-24 pb-12">
+          <CrisisScreen
+            onStayWithMe={() => setScreen("summary")}
+            onContinue={() => setScreen(data.intervention ? "intervention" : "summary")}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // ── Intervention Result Screen ─────────────────────────────────────────────────────────────────────────
+  if (screen === "intervention" && data.intervention) {
+    return (
+      <div className="min-h-screen bg-background">
+        <NavBar />
+        <div className="max-w-lg mx-auto px-4 pt-24 pb-12">
+          <InterventionResult
+            intervention={data.intervention}
+            onContinue={() => setScreen("summary")}
+            onEscalation={() => setScreen("summary")}
+          />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen" style={{ background: "linear-gradient(135deg, #f5f0ff 0%, #fff5f5 50%, #fff8f0 100%)" }}>
       <NavBar />
-      <div className="max-w-lg mx-auto px-4 pt-24 pb-12">
-
-        {/* Saved confirmation banner */}
+      <div className="max-w-lg mx-auto px-4 pt-24 pb-12">      {/* Saved confirmation banner */}
         {data.wantsSave && data.checkInId && (
           <div className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-2xl p-4 mb-6">
             <CheckCircle2 className="w-5 h-5 text-green-600 flex-shrink-0" />

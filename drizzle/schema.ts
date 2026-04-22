@@ -443,3 +443,74 @@ export const messages = mysqlTable("messages", {
 });
 export type Message = typeof messages.$inferSelect;
 export type InsertMessage = typeof messages.$inferInsert;
+
+// ─── Intervention Sessions (EEIS) ─────────────────────────────────────────────
+export const interventionSessions = mysqlTable("intervention_sessions", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  checkInId: int("checkInId").notNull().unique(),
+  primaryEmotion: varchar("primaryEmotion", { length: 64 }).notNull(),
+  contributors: json("contributors").$type<string[]>().notNull(),
+  emotionalImpact: json("emotionalImpact").$type<string[]>().notNull(),
+  intenseFeelings: json("intenseFeelings").$type<string[]>().notNull(),
+  secondaryStressors: json("secondaryStressors").$type<string[]>().notNull(),
+  supportPreference: varchar("supportPreference", { length: 128 }),
+  possibleNextStep: varchar("possibleNextStep", { length: 128 }),
+  supportSource: varchar("supportSource", { length: 128 }),
+  didHelp: mysqlEnum("didHelp", ["yes_clearer", "somewhat_calmer", "not_yet"]),
+  otherInputs: json("otherInputs").$type<Record<string, string>>(),
+  journalNotes: text("journalNotes"),
+  emotionalIntensityScore: int("emotionalIntensityScore").notNull().default(0),
+  stressLoadScore: int("stressLoadScore").notNull().default(0),
+  readinessScore: int("readinessScore").notNull().default(0),
+  totalScore: int("totalScore").notNull().default(0),
+  tier: mysqlEnum("tier", ["green", "yellow", "red"]).notNull().default("green"),
+  riskOverride: boolean("riskOverride").default(false).notNull(),
+  riskLevel: mysqlEnum("riskLevel", ["none", "crisis"]).default("none").notNull(),
+  riskReasons: json("riskReasons").$type<string[]>(),
+  stabilizationMessage: text("stabilizationMessage"),
+  nextStep: varchar("nextStep", { length: 256 }),
+  nextStepReason: text("nextStepReason"),
+  escalationTriggered: boolean("escalationTriggered").default(false).notNull(),
+  escalationReason: varchar("escalationReason", { length: 256 }),
+  supportPromptShown: boolean("supportPromptShown").default(false).notNull(),
+  supportSelection: varchar("supportSelection", { length: 128 }),
+  facilitatorNotified: boolean("facilitatorNotified").default(false).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type InterventionSession = typeof interventionSessions.$inferSelect;
+export type InsertInterventionSession = typeof interventionSessions.$inferInsert;
+
+// ─── Intervention Config (configurable thresholds per institution) ─────────────
+export const interventionConfig = mysqlTable("intervention_config", {
+  id: int("id").autoincrement().primaryKey(),
+  institutionId: int("institutionId"),
+  greenMaxScore: int("greenMaxScore").notNull().default(4),
+  yellowMaxScore: int("yellowMaxScore").notNull().default(9),
+  yellowRepeatDays: int("yellowRepeatDays").notNull().default(7),
+  yellowRepeatCount: int("yellowRepeatCount").notNull().default(3),
+  lowResolutionCount: int("lowResolutionCount").notNull().default(2),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type InterventionConfig = typeof interventionConfig.$inferSelect;
+export type InsertInterventionConfig = typeof interventionConfig.$inferInsert;
+
+// ─── Pattern Flags ────────────────────────────────────────────────────────────
+export const patternFlags = mysqlTable("pattern_flags", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  flagType: mysqlEnum("flagType", [
+    "recurring_emotion",
+    "escalation_pattern",
+    "low_resolution",
+    "support_avoidance",
+    "support_seeking",
+  ]).notNull(),
+  flagValue: varchar("flagValue", { length: 128 }),
+  detectedAt: timestamp("detectedAt").defaultNow().notNull(),
+  shownToUser: boolean("shownToUser").default(false).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type PatternFlag = typeof patternFlags.$inferSelect;
+export type InsertPatternFlag = typeof patternFlags.$inferInsert;

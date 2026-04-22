@@ -84,7 +84,24 @@ import {
   upsertResourceRating,
   getResourceRatingStats,
   getBatchResourceRatingStats,
+  createInterventionSession,
+  getInterventionSessionByCheckIn,
+  getRecentInterventionSessions,
+  countYellowSessionsInWindow,
+  countRecentNotYet,
+  updateInterventionSessionEscalation,
+  getInterventionConfig,
+  upsertInterventionConfig,
+  createPatternFlag,
+  getUnshownPatternFlags,
+  markPatternFlagsShown,
 } from "./db";
+import {
+  runInterventionPipeline,
+  detectPatterns,
+  DEFAULT_THRESHOLDS,
+  type CheckInInputs,
+} from "./interventionEngine";
 import { sendNotificationEmail } from "./notificationEmail";
 import {
   EI_QUIZ_QUESTIONS,
@@ -536,11 +553,23 @@ export const appRouter = router({
 
     create: protectedProcedure
       .input(z.object({
+        // ── Legacy fields (step 1 + slider) ──────────────────────────────────
         emotion: z.string().min(1),
         emotionEmoji: z.string().optional(),
         intensity: z.number().min(1).max(10),
         context: z.enum(["School", "Family", "Relationships", "Work", "Self"]),
         journalEntry: z.string().optional(),
+        // ── EEIS structured inputs (steps 2-10) ──────────────────────────────
+        contributors: z.array(z.string()).optional(),
+        emotionalImpact: z.array(z.string()).optional(),
+        intenseFeelings: z.array(z.string()).optional(),
+        secondaryStressors: z.array(z.string()).optional(),
+        supportPreference: z.string().optional(),
+        possibleNextStep: z.string().optional(),
+        supportSource: z.string().optional(),
+        didHelp: z.enum(["yes_clearer", "somewhat_calmer", "not_yet"]).optional(),
+        journalNotes: z.string().optional(),
+        otherInputs: z.record(z.string(), z.string()).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         const crisis = detectCrisis(input.journalEntry ?? "", input.intensity);
@@ -562,7 +591,6 @@ export const appRouter = router({
             triggerText: input.journalEntry,
             severity: crisis.severity,
           });
-          // Notify admins of new crisis alert (fire-and-forget)
           notifyAdmins({
             type: "crisis_alert",
             title: `⚠️ Crisis Alert Detected (${crisis.severity.toUpperCase()})`,
@@ -573,7 +601,131 @@ export const appRouter = router({
           }).catch(() => {});
         }
 
-        // Fetch recent emotion patterns for Pattern Insight
+        // ── EEIS Pipeline ─────────────────────────────────────────────────────
+        let interventionResult: Awaited<ReturnType<typeof runInterventionPipeline>> | null = null;
+        let interventionSessionId: number | undefined;
+
+        // Only run full pipeline when EEIS inputs are provided (step 2+)
+        const hasEEISInputs = !!(input.contributors?.length || input.emotionalImpact?.length || input.intenseFeelings?.length);
+        if (hasEEISInputs) {
+          // Load institution config for thresholds
+          const config = await getInterventionConfig(ctx.user.institutionId ?? undefined);
+          const thresholds = config
+            ? { greenMax: config.greenMaxScore, yellowMax: config.yellowMaxScore }
+            : DEFAULT_THRESHOLDS;
+
+          // Load escalation context
+          const yellowRepeatDays = config?.yellowRepeatDays ?? 7;
+          const yellowRepeatCount = config?.yellowRepeatCount ?? 3;
+          const lowResolutionCount = config?.lowResolutionCount ?? 2;
+          const [recentYellowCount, recentNotYetCount] = await Promise.all([
+            countYellowSessionsInWindow(ctx.user.id, yellowRepeatDays),
+            countRecentNotYet(ctx.user.id, lowResolutionCount),
+          ]);
+
+          const eeisInputs: CheckInInputs = {
+            primaryEmotion: input.emotion,
+            contributors: input.contributors ?? [],
+            emotionalImpact: input.emotionalImpact ?? [],
+            intenseFeelings: input.intenseFeelings ?? [],
+            secondaryStressors: input.secondaryStressors ?? [],
+            supportPreference: input.supportPreference,
+            possibleNextStep: input.possibleNextStep,
+            supportSource: input.supportSource,
+            didHelp: input.didHelp,
+            journalNotes: input.journalNotes ?? input.journalEntry,
+            otherInputs: input.otherInputs as Record<string, string> | undefined,
+            intensity: input.intensity,
+            context: input.context,
+          };
+
+          interventionResult = await runInterventionPipeline(
+            eeisInputs,
+            {
+              recentYellowCount,
+              recentNotYetCount,
+              thresholds: { yellowRepeatDays, yellowRepeatCount, lowResolutionCount },
+            },
+            thresholds
+          );
+
+          // Save intervention session
+          interventionSessionId = await createInterventionSession({
+            userId: ctx.user.id,
+            checkInId,
+            primaryEmotion: input.emotion,
+            contributors: input.contributors ?? [],
+            emotionalImpact: input.emotionalImpact ?? [],
+            intenseFeelings: input.intenseFeelings ?? [],
+            secondaryStressors: input.secondaryStressors ?? [],
+            supportPreference: input.supportPreference,
+            possibleNextStep: input.possibleNextStep,
+            supportSource: input.supportSource,
+            didHelp: input.didHelp,
+            journalNotes: input.journalNotes ?? input.journalEntry,
+            otherInputs: input.otherInputs as Record<string, string> | undefined,
+            emotionalIntensityScore: interventionResult.scores.emotionalIntensityScore,
+            stressLoadScore: interventionResult.scores.stressLoadScore,
+            readinessScore: interventionResult.scores.readinessScore,
+            totalScore: interventionResult.scores.totalScore,
+            tier: interventionResult.classification.tier,
+            riskOverride: interventionResult.risk.riskOverride,
+            riskLevel: interventionResult.risk.riskLevel,
+            riskReasons: interventionResult.risk.riskReasons,
+            stabilizationMessage: interventionResult.stabilization.message,
+            nextStep: interventionResult.redirection.nextStep,
+            nextStepReason: interventionResult.redirection.nextStepReason,
+            escalationTriggered: interventionResult.escalation.shouldEscalate,
+            escalationReason: interventionResult.escalation.reason,
+            facilitatorNotified: false,
+          });
+
+          // Notify facilitator if escalation triggered
+          if (interventionResult.escalation.shouldEscalate) {
+            notifyAdmins({
+              type: "crisis_alert",
+              title: `🟡 Escalation Alert — ${interventionResult.classification.label} Tier`,
+              body: `A student has been flagged for support: ${interventionResult.escalation.reason ?? "repeated distress signals"}. Identities are anonymized.`,
+              link: `/facilitator`,
+              institutionId: ctx.user.institutionId ?? undefined,
+            }).catch(() => {});
+            if (interventionSessionId) {
+              await updateInterventionSessionEscalation(interventionSessionId, {
+                escalationTriggered: true,
+                facilitatorNotified: true,
+              });
+            }
+          }
+
+          // Pattern detection (fire-and-forget)
+          getRecentInterventionSessions(ctx.user.id, 5).then(async (sessions) => {
+            const summaries = sessions.map(s => ({
+              primaryEmotion: s.primaryEmotion,
+              tier: s.tier,
+              didHelp: s.didHelp ?? undefined,
+              supportSource: s.supportSource ?? undefined,
+              createdAt: s.createdAt,
+            }));
+            const patterns = detectPatterns(summaries);
+            if (patterns.recurringEmotion) {
+              await createPatternFlag({ userId: ctx.user.id, flagType: "recurring_emotion", flagValue: patterns.recurringEmotion });
+            }
+            if (patterns.hasEscalationPattern) {
+              await createPatternFlag({ userId: ctx.user.id, flagType: "escalation_pattern" });
+            }
+            if (patterns.hasLowResolutionPattern) {
+              await createPatternFlag({ userId: ctx.user.id, flagType: "low_resolution" });
+            }
+            if (patterns.hasSupportAvoidance) {
+              await createPatternFlag({ userId: ctx.user.id, flagType: "support_avoidance" });
+            }
+            if (patterns.hasSupportSeeking) {
+              await createPatternFlag({ userId: ctx.user.id, flagType: "support_seeking" });
+            }
+          }).catch(() => {});
+        }
+
+        // ── AI Response (existing flow) ───────────────────────────────────────
         const recentPatterns = await getRecentEmotionPatterns(ctx.user.id, 5);
         let patternContext: string | undefined;
         if (recentPatterns.length >= 2) {
@@ -581,21 +733,41 @@ export const appRouter = router({
           patternContext = `Last ${recentPatterns.length} check-ins: ${emotionList}`;
         }
 
-        // Generate AI response with pattern context
-        const aiData = await generateAiResponse({
-          emotion: input.emotion,
-          intensity: input.intensity,
-          context: input.context,
-          journalEntry: input.journalEntry,
-          patternContext,
-        });
+        // Skip AI response generation if risk_override (crisis screen takes over)
+        let aiData = null;
+        if (!interventionResult?.risk.riskOverride) {
+          aiData = await generateAiResponse({
+            emotion: input.emotion,
+            intensity: input.intensity,
+            context: input.context,
+            journalEntry: input.journalEntry,
+            patternContext,
+          });
+          await saveAiResponse({ checkInId, userId: ctx.user.id, ...aiData });
+        }
 
-        await saveAiResponse({ checkInId, userId: ctx.user.id, ...aiData });
-
-        // Update streak and check achievements
         const streakData = await updateUserStreak(ctx.user.id);
 
-        return { checkInId, crisisDetected: crisis.detected, severity: crisis.severity, streak: streakData };
+        return {
+          checkInId,
+          crisisDetected: crisis.detected,
+          severity: crisis.severity,
+          streak: streakData,
+          // EEIS results
+          intervention: interventionResult ? {
+            tier: interventionResult.classification.tier,
+            tierLabel: interventionResult.classification.label,
+            tierColor: interventionResult.classification.color,
+            scores: interventionResult.scores,
+            riskOverride: interventionResult.risk.riskOverride,
+            riskLevel: interventionResult.risk.riskLevel,
+            stabilization: interventionResult.stabilization,
+            redirection: interventionResult.redirection,
+            escalationTriggered: interventionResult.escalation.shouldEscalate,
+            escalationReason: interventionResult.escalation.reason,
+            interventionSessionId,
+          } : null,
+        };
       }),
 
     list: protectedProcedure
@@ -1403,6 +1575,123 @@ export const appRouter = router({
           if (ok) sent++;
         }
         return { success: true, sent, total: admins.filter(a => a.email).length };
+      }),
+  }),
+
+  // ── EEIS: Intervention ────────────────────────────────────────────────────────────────────────────────
+  intervention: router({
+    /** Get the intervention session for a specific check-in */
+    getByCheckIn: protectedProcedure
+      .input(z.object({ checkInId: z.number() }))
+      .query(async ({ ctx, input }) => {
+        const session = await getInterventionSessionByCheckIn(input.checkInId);
+        if (!session || session.userId !== ctx.user.id) return null;
+        return session;
+      }),
+
+    /** Get recent intervention sessions for the current user */
+    getMyRecent: protectedProcedure
+      .input(z.object({ limit: z.number().optional() }))
+      .query(async ({ ctx, input }) => {
+        return getRecentInterventionSessions(ctx.user.id, input.limit ?? 10);
+      }),
+
+    /** Get unshown pattern flags for the current user */
+    getPatternFlags: protectedProcedure
+      .query(async ({ ctx }) => {
+        const flags = await getUnshownPatternFlags(ctx.user.id);
+        return flags;
+      }),
+
+    /** Mark pattern flags as shown */
+    markPatternFlagsShown: protectedProcedure
+      .mutation(async ({ ctx }) => {
+        await markPatternFlagsShown(ctx.user.id);
+        return { success: true };
+      }),
+
+    /** Update support selection after escalation prompt */
+    updateSupportSelection: protectedProcedure
+      .input(z.object({
+        interventionSessionId: z.number(),
+        supportSelection: z.string(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        // Verify ownership
+        const session = await getInterventionSessionByCheckIn(0);
+        await updateInterventionSessionEscalation(input.interventionSessionId, {
+          escalationTriggered: true,
+          supportPromptShown: true,
+          supportSelection: input.supportSelection,
+        });
+        return { success: true };
+      }),
+
+    /** Admin: get intervention config for the institution */
+    getConfig: protectedProcedure
+      .query(async ({ ctx }) => {
+        if (!['admin', 'superadmin', 'facilitator'].includes(ctx.user.role)) {
+          throw new TRPCError({ code: 'FORBIDDEN' });
+        }
+        const config = await getInterventionConfig(ctx.user.institutionId ?? undefined);
+        return config ?? {
+          greenMaxScore: 4,
+          yellowMaxScore: 9,
+          yellowRepeatDays: 7,
+          yellowRepeatCount: 3,
+          lowResolutionCount: 2,
+        };
+      }),
+
+    /** Admin: update intervention thresholds */
+    updateConfig: protectedProcedure
+      .input(z.object({
+        greenMaxScore: z.number().min(1).max(8),
+        yellowMaxScore: z.number().min(2).max(11),
+        yellowRepeatDays: z.number().min(1).max(30),
+        yellowRepeatCount: z.number().min(1).max(10),
+        lowResolutionCount: z.number().min(1).max(10),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (!['admin', 'superadmin'].includes(ctx.user.role)) {
+          throw new TRPCError({ code: 'FORBIDDEN' });
+        }
+        await upsertInterventionConfig(ctx.user.institutionId ?? null, input);
+        return { success: true };
+      }),
+
+    /** Admin: get all escalation alerts for the institution */
+    getEscalationAlerts: protectedProcedure
+      .query(async ({ ctx }) => {
+        if (!['admin', 'superadmin', 'facilitator'].includes(ctx.user.role)) {
+          throw new TRPCError({ code: 'FORBIDDEN' });
+        }
+        const db = await import('./db').then(m => m.getDb());
+        if (!db) return [];
+        const { interventionSessions, users } = await import('../drizzle/schema');
+        const { eq, desc, and } = await import('drizzle-orm');
+        // Get escalated sessions for institution members
+        const rows = await db
+          .select({
+            id: interventionSessions.id,
+            userId: interventionSessions.userId,
+            tier: interventionSessions.tier,
+            escalationReason: interventionSessions.escalationReason,
+            facilitatorNotified: interventionSessions.facilitatorNotified,
+            createdAt: interventionSessions.createdAt,
+            totalScore: interventionSessions.totalScore,
+          })
+          .from(interventionSessions)
+          .innerJoin(users, eq(interventionSessions.userId, users.id))
+          .where(
+            and(
+              eq(interventionSessions.escalationTriggered, true),
+              ctx.user.institutionId ? eq(users.institutionId, ctx.user.institutionId) : undefined
+            )
+          )
+          .orderBy(desc(interventionSessions.createdAt))
+          .limit(50);
+        return rows;
       }),
   }),
 });

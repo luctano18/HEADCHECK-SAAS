@@ -727,3 +727,39 @@
 - [x] Intégrer ChartSkeleton dans Dashboard.tsx (pie chart + mood trend)
 - [x] Intégrer ChartSkeleton dans FacilitatorDashboard.tsx (bar chart + pie chart)
 - [x] Vérifier TypeScript et tests (0 erreurs, 105 tests ✓)
+
+## Phase 39: Early Emotional Intervention System (EEIS)
+
+### Stage 1-2: DB Schema + Scoring Engine
+- [x] Ajouter table `intervention_sessions` (10 inputs + scores + tier + outcomes)
+- [x] Ajouter table `intervention_config` (seuils configurables par institution)
+- [x] Créer server/interventionEngine.ts (scoring emotional_intensity, stress_load, readiness)
+- [x] Créer server/interventionEngine.ts (classification Green/Yellow/Red)
+- [x] Étendre checkIns.create pour capturer et sauvegarder les inputs structurés
+
+### Stage 3-4: Classification + Risk Detection
+- [x] Intégrer classification tier dans le flow check-in (côté serveur)
+- [x] Améliorer détection de risque hybride (mots-clés + LLM fallback)
+- [x] Ajouter risk_override logic (skip AI cards en mode crise)
+
+### Stage 5-6: Stabilisation + Redirection
+- [x] Moteur de stabilisation (messages Green/Yellow/Red)
+- [x] Moteur de redirection (1 seul next step basé sur émotion + tier)
+- [x] Intégrer stabilisation dans la page de résultat check-in
+
+### Stage 7-8: Escalade + Crise
+- [x] Écran d'escalade (support pathway avec 7 options)
+- [x] Logique d'escalade (Red, Yellow×3 en 7j, did_help=Not yet + high intensity)
+- [x] Écran de crise (risk_override=true, 4 actions, 988, etc.)
+- [x] Logging des événements de crise complet
+- [x] Notification push+email au facilitateur en cas de crise ou escalade
+
+### Stage 9-10: Stockage + Patterns
+- [x] Stockage complet de la session d'intervention (scores, tier, next_step, support_selection, did_help)
+- [x] Détection de patterns récurrents (recurring_emotion_flag, escalation_pattern_flag, low_resolution_flag)
+- [x] Affichage soft des patterns à l'utilisateur
+
+### Admin Panel
+- [x] Panneau FacilitatorDashboard : seuils configurables (Green/Yellow/Red thresholds)
+- [x] Vue des alertes d'escalade dans FacilitatorDashboard
+- [x] Tests vitest pour interventionEngine (22 tests — 0 erreurs TypeScript, 132 tests ✓)

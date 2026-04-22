@@ -169,10 +169,13 @@ export default function CheckIn() {
     const wantsSave = answers[10]?.selected[0] === "Yes";
     const primaryEmotion = answers[1]?.selected[0] || "overwhelmed";
     const stressors = answers[2]?.selected || [];
+    const emotionalImpact = answers[3]?.selected || [];
     const intenseFeelings = answers[4]?.selected || [];
+    const secondaryStressors = answers[5]?.selected || [];
     const supportNeed = answers[6]?.selected[0] || "";
     const possibleAction = answers[7]?.selected[0] || "";
     const supportType = answers[8]?.selected[0] || "";
+    const didHelpRaw = answers[9]?.selected[0] || "";
     const allJournals = Object.values(answers).map(a => a.journal).filter(Boolean).join("\n");
 
     const intensity = intenseFeelings.length >= 7 ? 9
@@ -186,22 +189,47 @@ export default function CheckIn() {
 
     const journalEntry = allJournals || `Stressors: ${stressors.join(", ")}. Support needed: ${supportNeed}. Possible action: ${possibleAction}. Support type: ${supportType}.`;
 
+    // Map didHelp raw answer to enum
+    const didHelpMap: Record<string, "yes_clearer" | "somewhat_calmer" | "not_yet"> = {
+      "Yes, I feel clearer": "yes_clearer",
+      "Somewhat, I feel calmer": "somewhat_calmer",
+      "Not yet": "not_yet",
+    };
+    const didHelp = didHelpMap[didHelpRaw] as "yes_clearer" | "somewhat_calmer" | "not_yet" | undefined;
+
     const payload = {
       emotion: primaryEmotion.toLowerCase(),
       intensity,
       context,
-      journal: journalEntry,
+      journalEntry,
+      // EEIS structured inputs
+      contributors: stressors,
+      emotionalImpact,
+      intenseFeelings,
+      secondaryStressors,
+      supportPreference: supportNeed || undefined,
+      possibleNextStep: possibleAction || undefined,
+      supportSource: supportType || undefined,
+      didHelp,
+      journalNotes: allJournals || undefined,
     };
 
     try {
       let checkInId: number | undefined;
       let guestResult: unknown;
+      let interventionData: unknown = null;
 
       if (isAuthenticated && wantsSave) {
         const result = await createCheckIn.mutateAsync(payload);
         checkInId = result.checkInId;
+        interventionData = result.intervention;
       } else {
-        const result = await guestCreate.mutateAsync(payload);
+        const result = await guestCreate.mutateAsync({
+          emotion: payload.emotion,
+          intensity: payload.intensity,
+          context: payload.context,
+          journalEntry: payload.journalEntry,
+        });
         guestResult = result;
       }
 
@@ -215,6 +243,7 @@ export default function CheckIn() {
         wantsSave,
         checkInId,
         guestResult,
+        intervention: interventionData,
       }));
 
       // Navigate to intermediate summary screen

@@ -21,6 +21,10 @@ import {
   resourceRatings,
   conversations,
   messages,
+  interventionSessions,
+  interventionConfig,
+  patternFlags,
+  InsertInterventionSession,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -1507,4 +1511,125 @@ export async function getUnreadMessageCount(userId: number, role: string) {
     count += unread.filter((m) => m.senderId !== userId).length;
   }
   return count;
+}
+
+// ─── Intervention Sessions (EEIS) ─────────────────────────────────────────────
+export async function createInterventionSession(data: InsertInterventionSession) {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+  const result = await db.insert(interventionSessions).values(data);
+  const insertId = (result as unknown as [{ insertId: number }])[0]?.insertId;
+  return insertId;
+}
+
+export async function getInterventionSessionByCheckIn(checkInId: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(interventionSessions).where(eq(interventionSessions.checkInId, checkInId)).limit(1);
+  return result[0];
+}
+
+export async function getRecentInterventionSessions(userId: number, limit = 10) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(interventionSessions)
+    .where(eq(interventionSessions.userId, userId))
+    .orderBy(desc(interventionSessions.createdAt))
+    .limit(limit);
+}
+
+export async function countYellowSessionsInWindow(userId: number, days: number) {
+  const db = await getDb();
+  if (!db) return 0;
+  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+  const rows = await db
+    .select({ id: interventionSessions.id })
+    .from(interventionSessions)
+    .where(and(
+      eq(interventionSessions.userId, userId),
+      eq(interventionSessions.tier, "yellow"),
+      gte(interventionSessions.createdAt, since)
+    ));
+  return rows.length;
+}
+
+export async function countRecentNotYet(userId: number, limit = 3) {
+  const db = await getDb();
+  if (!db) return 0;
+  const rows = await db
+    .select({ didHelp: interventionSessions.didHelp })
+    .from(interventionSessions)
+    .where(eq(interventionSessions.userId, userId))
+    .orderBy(desc(interventionSessions.createdAt))
+    .limit(limit);
+  return rows.filter(r => r.didHelp === "not_yet").length;
+}
+
+export async function updateInterventionSessionEscalation(id: number, data: {
+  escalationTriggered: boolean;
+  escalationReason?: string;
+  facilitatorNotified?: boolean;
+  supportPromptShown?: boolean;
+  supportSelection?: string;
+}) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(interventionSessions).set(data).where(eq(interventionSessions.id, id));
+}
+
+// ─── Intervention Config ──────────────────────────────────────────────────────
+export async function getInterventionConfig(institutionId?: number) {
+  const db = await getDb();
+  if (!db) return null;
+  // Try institution-specific config first, then global default
+  if (institutionId) {
+    const result = await db.select().from(interventionConfig).where(eq(interventionConfig.institutionId, institutionId)).limit(1);
+    if (result[0]) return result[0];
+  }
+  const result = await db.select().from(interventionConfig).where(sql`institutionId IS NULL`).limit(1);
+  return result[0] ?? null;
+}
+
+export async function upsertInterventionConfig(institutionId: number | null, data: {
+  greenMaxScore?: number;
+  yellowMaxScore?: number;
+  yellowRepeatDays?: number;
+  yellowRepeatCount?: number;
+  lowResolutionCount?: number;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+  const existing = institutionId
+    ? await db.select().from(interventionConfig).where(eq(interventionConfig.institutionId, institutionId)).limit(1)
+    : await db.select().from(interventionConfig).where(sql`institutionId IS NULL`).limit(1);
+  if (existing[0]) {
+    await db.update(interventionConfig).set(data).where(eq(interventionConfig.id, existing[0].id));
+  } else {
+    await db.insert(interventionConfig).values({ institutionId: institutionId ?? undefined, ...data });
+  }
+}
+
+// ─── Pattern Flags ────────────────────────────────────────────────────────────
+export async function createPatternFlag(data: {
+  userId: number;
+  flagType: "recurring_emotion" | "escalation_pattern" | "low_resolution" | "support_avoidance" | "support_seeking";
+  flagValue?: string;
+}) {
+  const db = await getDb();
+  if (!db) return;
+  await db.insert(patternFlags).values({ ...data, detectedAt: new Date(), shownToUser: false });
+}
+
+export async function getUnshownPatternFlags(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(patternFlags).where(and(eq(patternFlags.userId, userId), eq(patternFlags.shownToUser, false))).orderBy(desc(patternFlags.detectedAt)).limit(3);
+}
+
+export async function markPatternFlagsShown(userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(patternFlags).set({ shownToUser: true }).where(eq(patternFlags.userId, userId));
 }
