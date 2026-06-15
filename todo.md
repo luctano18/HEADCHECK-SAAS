@@ -145,11 +145,11 @@
 - [x] Add completion affirmations ("You don't have to carry everything alone...")
 
 ### Dashboard Enhancements
-- [ ] Add Emotion Distribution pie/donut chart
-- [ ] Add Daily Check-in Activity heatmap/bar chart
-- [ ] Add CSV export of check-in history (privacy-first, browser-side generation)
-- [ ] Add Wellness Logbook page (journal entries from check-ins)
-- [ ] Add Personalized Recommendations section (after 3+ check-ins)
+- [x] Add Emotion Distribution pie/donut chart
+- [x] Add Daily Check-in Activity heatmap/bar chart
+- [x] Add CSV export of check-in history (privacy-first, browser-side generation)
+- [x] Add Wellness Logbook page (journal entries from check-ins)
+- [x] Add Personalized Recommendations section (after 3+ check-ins)
 
 ### Coaching Module (New)
 - [x] Add Coaching page with 3 session types: 30-min, 60-min, 3-session journey
@@ -763,3 +763,18 @@
 - [x] Panneau FacilitatorDashboard : seuils configurables (Green/Yellow/Red thresholds)
 - [x] Vue des alertes d'escalade dans FacilitatorDashboard
 - [x] Tests vitest pour interventionEngine (22 tests — 0 erreurs TypeScript, 132 tests ✓)
+
+## Phase 40: Dashboard Enhancements (Phase 14 items)
+
+- [ ] Add tRPC procedure dashboard.getEmotionDistribution (pie chart data)
+- [ ] Add tRPC procedure dashboard.getCheckInActivity (heatmap/bar chart data by day)
+- [ ] Add tRPC procedure dashboard.getWellnessLogbook (journal entries with emotion + date)
+- [ ] Add tRPC procedure dashboard.getPersonalizedRecommendations (after 3+ check-ins)
+- [ ] Build EmotionDistributionChart component (PieChart/DonutChart with Recharts)
+- [ ] Build CheckInActivityChart component (bar chart by day of week + calendar heatmap)
+- [ ] Integrate EmotionDistributionChart + CheckInActivityChart into Dashboard.tsx
+- [ ] Add CSV export button in Dashboard (browser-side generation, privacy-first)
+- [ ] Create /wellness-logbook page with journal entries list, emotion filter, date range
+- [ ] Add Personalized Recommendations section in Dashboard (after 3+ check-ins)
+- [ ] Register /wellness-logbook route in App.tsx
+- [ ] Vérifier TypeScript et tests

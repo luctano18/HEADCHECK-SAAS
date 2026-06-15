@@ -95,6 +95,10 @@ import {
   createPatternFlag,
   getUnshownPatternFlags,
   markPatternFlagsShown,
+  getEmotionDistribution,
+  getCheckInActivity,
+  getWellnessLogbook,
+  getPersonalizedRecommendations,
 } from "./db";
 import {
   runInterventionPipeline,
@@ -944,6 +948,38 @@ export const appRouter = router({
       ]);
       return { checkIns: checkInList, aiResponses: aiResponseList, mirrorSessions, streak, achievements };
     }),
+    getEmotionDistribution: protectedProcedure
+      .input(z.object({ days: z.union([z.literal(30), z.literal(90)]).default(30) }))
+      .query(async ({ ctx, input }) => {
+        return getEmotionDistribution(ctx.user.id, input.days);
+      }),
+    getCheckInActivity: protectedProcedure
+      .input(z.object({ days: z.union([z.literal(30), z.literal(90)]).default(30) }))
+      .query(async ({ ctx, input }) => {
+        return getCheckInActivity(ctx.user.id, input.days);
+      }),
+    getWellnessLogbook: protectedProcedure
+      .input(z.object({ limit: z.number().min(1).max(100).default(30), offset: z.number().min(0).default(0) }))
+      .query(async ({ ctx, input }) => {
+        return getWellnessLogbook(ctx.user.id, input.limit, input.offset);
+      }),
+    getPersonalizedRecommendations: protectedProcedure.query(async ({ ctx }) => {
+      return getPersonalizedRecommendations(ctx.user.id);
+    }),
+    exportCheckIns: protectedProcedure
+      .input(z.object({ days: z.union([z.literal(30), z.literal(90), z.literal(365)]).default(90) }))
+      .query(async ({ ctx, input }) => {
+        const since = new Date(Date.now() - input.days * 24 * 60 * 60 * 1000);
+        const all = await getCheckInsByUser(ctx.user.id, 365);
+        return all.filter((ci) => new Date(ci.createdAt) >= since).map((ci) => ({
+          date: new Date(ci.createdAt).toISOString().slice(0, 10),
+          time: new Date(ci.createdAt).toTimeString().slice(0, 5),
+          emotion: ci.emotion,
+          intensity: ci.intensity,
+          context: ci.context,
+          journalEntry: ci.journalEntry ?? "",
+        }));
+      }),
   }),
   // ─── Facilitator Dashboard ────────────────────────────────────────────────────
   facilitator: router({

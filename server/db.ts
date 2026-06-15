@@ -1633,3 +1633,111 @@ export async function markPatternFlagsShown(userId: number) {
   if (!db) return;
   await db.update(patternFlags).set({ shownToUser: true }).where(eq(patternFlags.userId, userId));
 }
+
+// ─── Dashboard Enhancements ───────────────────────────────────────────────────
+
+/** Emotion distribution: count of each emotion in the last N days */
+export async function getEmotionDistribution(userId: number, days = 30) {
+  const db = await getDb();
+  if (!db) return [];
+  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+  const rows = await db
+    .select({ emotion: checkIns.emotion, emotionEmoji: checkIns.emotionEmoji })
+    .from(checkIns)
+    .where(and(eq(checkIns.userId, userId), gte(checkIns.createdAt, since)));
+  const counts: Record<string, { count: number; emoji: string }> = {};
+  for (const r of rows) {
+    if (!counts[r.emotion]) counts[r.emotion] = { count: 0, emoji: r.emotionEmoji ?? "💭" };
+    counts[r.emotion].count++;
+  }
+  return Object.entries(counts)
+    .map(([emotion, { count, emoji }]) => ({ emotion, count, emoji }))
+    .sort((a, b) => b.count - a.count);
+}
+
+/** Check-in activity by date for the last N days */
+export async function getCheckInActivity(userId: number, days = 30) {
+  const db = await getDb();
+  if (!db) return [];
+  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+  const rows = await db
+    .select({ createdAt: checkIns.createdAt, intensity: checkIns.intensity })
+    .from(checkIns)
+    .where(and(eq(checkIns.userId, userId), gte(checkIns.createdAt, since)))
+    .orderBy(desc(checkIns.createdAt));
+  const byDate: Record<string, { count: number; totalIntensity: number }> = {};
+  for (const r of rows) {
+    const d = new Date(r.createdAt).toISOString().slice(0, 10);
+    if (!byDate[d]) byDate[d] = { count: 0, totalIntensity: 0 };
+    byDate[d].count++;
+    byDate[d].totalIntensity += r.intensity;
+  }
+  return Object.entries(byDate).map(([date, { count, totalIntensity }]) => ({
+    date,
+    count,
+    avgIntensity: Math.round((totalIntensity / count) * 10) / 10,
+  }));
+}
+
+/** Wellness logbook: journal entries with emotion + date, paginated */
+export async function getWellnessLogbook(userId: number, limit = 30, offset = 0) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select({
+      id: checkIns.id,
+      emotion: checkIns.emotion,
+      emotionEmoji: checkIns.emotionEmoji,
+      intensity: checkIns.intensity,
+      context: checkIns.context,
+      journalEntry: checkIns.journalEntry,
+      createdAt: checkIns.createdAt,
+    })
+    .from(checkIns)
+    .where(and(
+      eq(checkIns.userId, userId),
+      sql`${checkIns.journalEntry} IS NOT NULL AND ${checkIns.journalEntry} != ''`
+    ))
+    .orderBy(desc(checkIns.createdAt))
+    .limit(limit)
+    .offset(offset);
+}
+
+/** Personalized recommendations: based on most frequent emotion in last 30 days */
+export async function getPersonalizedRecommendations(userId: number) {
+  const db = await getDb();
+  if (!db) return { totalCheckIns: 0, topEmotion: null as string | null, recommendations: [] as string[] };
+  const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+  const rows = await db
+    .select({ emotion: checkIns.emotion, intensity: checkIns.intensity })
+    .from(checkIns)
+    .where(and(eq(checkIns.userId, userId), gte(checkIns.createdAt, since)));
+  if (rows.length < 3) return { totalCheckIns: rows.length, topEmotion: null as string | null, recommendations: [] as string[] };
+  const counts: Record<string, number> = {};
+  let totalIntensity = 0;
+  for (const r of rows) {
+    counts[r.emotion] = (counts[r.emotion] ?? 0) + 1;
+    totalIntensity += r.intensity;
+  }
+  const topEmotion = Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+  const avgIntensity = totalIntensity / rows.length;
+  const recs: string[] = [];
+  if (topEmotion === "Anxious" || topEmotion === "Stressed") {
+    recs.push("Try the 4-4-6 breathing exercise before your next check-in");
+    recs.push("Explore the Grounding section in your Self Trust Compass");
+  } else if (topEmotion === "Sad" || topEmotion === "Numb") {
+    recs.push("Consider journaling your thoughts — even a few words help");
+    recs.push("Reach out to a trusted person or counselor this week");
+  } else if (topEmotion === "Angry" || topEmotion === "Frustrated") {
+    recs.push("Try the Body Scan grounding practice to release tension");
+    recs.push("Explore the Boundaries mirror in your Self Trust Compass");
+  } else if (topEmotion === "Happy" || topEmotion === "Grateful" || topEmotion === "Calm") {
+    recs.push("Keep building on this positive momentum — log your wins");
+    recs.push("Take the EI Quiz to measure your emotional intelligence growth");
+  } else {
+    recs.push("Complete your Self Trust Compass to deepen self-awareness");
+    recs.push("Explore the Resources Library for tools tailored to your journey");
+  }
+  if (avgIntensity >= 7) recs.push("Your intensity has been high — consider scheduling a coaching session");
+  return { totalCheckIns: rows.length, topEmotion, recommendations: recs };
+}

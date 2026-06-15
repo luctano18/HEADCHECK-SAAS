@@ -1,17 +1,23 @@
+import { useState } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
 import {
   Brain, Heart, Sparkles, ArrowRight, Loader2, LogOut, User,
-  TrendingUp, Calendar, Award, Plus, ChevronRight, LayoutDashboard
+  TrendingUp, Calendar, Award, Plus, ChevronRight, LayoutDashboard,
+  BookOpen, Download
 } from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell } from "recharts";
 import { format } from "date-fns";
 import MoodTrendChart from "@/components/MoodTrendChart";
-import { PieChartSkeleton, AreaChartSkeleton, StatCardsSkeleton } from "@/components/ChartSkeleton";
+import { PieChartSkeleton, AreaChartSkeleton } from "@/components/ChartSkeleton";
+import EmotionDistributionChart from "@/components/EmotionDistributionChart";
+import CheckInActivityChart from "@/components/CheckInActivityChart";
+import PersonalizedRecommendations from "@/components/PersonalizedRecommendations";
 
 // Brand-aligned emotion palette: Indigo primary, Coral accent, Teal, Amber, Rose
 const EMOTION_COLORS: Record<string, string> = {
@@ -35,6 +41,37 @@ export default function Dashboard() {
 
   const { data, isLoading } = trpc.dashboard.getHistory.useQuery(undefined, { enabled: isAuthenticated });
   const { data: quizHistory } = trpc.quiz.getHistory.useQuery(undefined, { enabled: isAuthenticated });
+  const [isExporting, setIsExporting] = useState(false);
+  const { refetch: refetchExport } = trpc.dashboard.exportCheckIns.useQuery(
+    { days: 90 },
+    { enabled: false }
+  );
+
+  const handleExportCSV = async () => {
+    setIsExporting(true);
+    try {
+      const result = await refetchExport();
+      const rows = result.data ?? [];
+      if (rows.length === 0) {
+        toast.info("No check-ins to export yet.");
+        return;
+      }
+      const header = "Date,Time,Emotion,Intensity,Context,Journal Entry";
+      const csvRows = rows.map((r) =>
+        [r.date, r.time, r.emotion, r.intensity, `"${r.context}"`, `"${(r.journalEntry ?? "").replace(/"/g, "'")}"`].join(",")
+      );
+      const blob = new Blob([[header, ...csvRows].join("\n")], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = `headcheck-history-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click(); URL.revokeObjectURL(url);
+      toast.success(`Exported ${rows.length} check-ins.`);
+    } catch {
+      toast.error("Export failed. Please try again.");
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   // Show skeleton layout while data loads (instead of full-page spinner)
   const showSkeleton = loading || isLoading;
@@ -379,6 +416,15 @@ export default function Dashboard() {
               </Card>
             )}
 
+            {/* Emotion Distribution (new component) */}
+            <EmotionDistributionChart days={30} />
+
+            {/* Check-In Activity Heatmap */}
+            <CheckInActivityChart days={30} />
+
+            {/* Personalized Recommendations */}
+            <PersonalizedRecommendations />
+
             {/* Mood Trend Chart — 30 / 90 days */}
             <MoodTrendChart />
 
@@ -440,6 +486,16 @@ export default function Dashboard() {
                 </CardContent>
               </Card>
             )}
+
+            {/* Wellness Logbook + CSV Export */}
+            <div className="flex gap-3 flex-wrap">
+              <Button variant="outline" className="flex-1 sm:flex-none gap-2" onClick={() => navigate("/wellness-logbook")}>
+                <BookOpen className="w-4 h-4" /> Wellness Logbook
+              </Button>
+              <Button variant="outline" className="flex-1 sm:flex-none gap-2" onClick={handleExportCSV} disabled={isExporting}>
+                <Download className={`w-4 h-4 ${isExporting ? "animate-spin" : ""}`} /> {isExporting ? "Exporting..." : "Export CSV"}
+              </Button>
+            </div>
 
             {/* CTA for Seven Mirrors */}
             {mirrorSessions.length === 0 && (
