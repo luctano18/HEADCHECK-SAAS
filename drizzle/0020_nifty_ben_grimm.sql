@@ -1,0 +1,1 @@
+ALTER TABLE `users` ADD `weeklyReflectionEnabled` boolean DEFAULT true NOT NULL;

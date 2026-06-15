@@ -335,6 +335,7 @@ export const REFLECTION_BADGES = [
   { id: "boundaries", label: "Boundaries", emoji: "🛡️", color: "oklch(0.65 0.18 220)" },
   { id: "inner-peace", label: "Inner Peace", emoji: "☮️", color: "oklch(0.72 0.18 48)" },
   { id: "emotional-safety", label: "Emotional Safety", emoji: "🏡", color: "oklch(0.65 0.18 140)" },
+  { id: "self-compassion", label: "Self-Compassion", emoji: "🤍", color: "oklch(0.65 0.18 350)" },
 ];
 
 // ─── Check-In Steps Data ──────────────────────────────────────────────────────

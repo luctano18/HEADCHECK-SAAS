@@ -141,6 +141,13 @@
       "when": 1781546088029,
       "tag": "0019_bizarre_scarlet_witch",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "5",
+      "when": 1781547057541,
+      "tag": "0020_nifty_ben_grimm",
+      "breakpoints": true
     }
   ]
 }

@@ -1357,6 +1357,7 @@ export const appRouter = router({
           reminderEnabled: users.reminderEnabled,
           reminderTime: users.reminderTime,
           reminderDays: users.reminderDays,
+          weeklyReflectionEnabled: users.weeklyReflectionEnabled,
         })
         .from(users)
         .where(eq(users.id, ctx.user.id))
@@ -1369,6 +1370,7 @@ export const appRouter = router({
         reminderEnabled: z.boolean(),
         reminderTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/).optional(),
         reminderDays: z.string().regex(/^[0-6](,[0-6])*$/).optional(),
+        weeklyReflectionEnabled: z.boolean().optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         const { getDb } = await import("./db");
@@ -1382,6 +1384,7 @@ export const appRouter = router({
             reminderEnabled: input.reminderEnabled,
             ...(input.reminderTime !== undefined && { reminderTime: input.reminderTime }),
             ...(input.reminderDays !== undefined && { reminderDays: input.reminderDays }),
+            ...(input.weeklyReflectionEnabled !== undefined && { weeklyReflectionEnabled: input.weeklyReflectionEnabled }),
           })
           .where(eq(users.id, ctx.user.id));
         return { success: true };

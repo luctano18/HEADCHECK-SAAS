@@ -8,6 +8,7 @@ import { registerSocialAuthRoutes } from "./socialAuth";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
+import { sendWeeklyReflections } from "../weeklyReflection";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -38,6 +39,25 @@ async function startServer() {
   registerOAuthRoutes(app);
   // Social auth routes (Google + GitHub)
   registerSocialAuthRoutes(app);
+  // ─── Cron Routes ─────────────────────────────────────────────────────────────
+  // GET /api/cron/weekly-reflection — triggered every Monday at 9:00 AM UTC
+  app.get("/api/cron/weekly-reflection", async (req: import("express").Request, res: import("express").Response) => {
+    const secret = req.headers["x-cron-secret"] as string | undefined;
+    const appUrl = req.headers.origin as string || `${req.protocol}://${req.get("host")}`;
+    try {
+      const result = await sendWeeklyReflections(appUrl, secret);
+      res.json({ ok: true, ...result });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Unknown error";
+      if (message === "Unauthorized") {
+        res.status(401).json({ ok: false, error: "Unauthorized" });
+      } else {
+        console.error("[WeeklyReflection] Error:", err);
+        res.status(500).json({ ok: false, error: message });
+      }
+    }
+  });
+
   // tRPC API
   app.use(
     "/api/trpc",

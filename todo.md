@@ -218,23 +218,23 @@
 - [ ] Step 4: Multi-select — "Which feelings feel most intense?" (10 intense feelings)
 - [ ] Step 5: Multi-select — "Which of these might also be affecting you?" (10 life factors)
 - [ ] Step 6: Single select — "What feels most supportive for you right now?" (7 support needs)
-- [ ] Step 7: Single select — "What feels possible for you right now?" (8 actions)
-- [ ] Step 8: Single select — "Who or what kind of support could help?" (9 support types)
-- [ ] Step 9: Single select — "Did this check-in help?" (3 options with conditional message)
-- [ ] Step 10: Single select — "Would you like to save this check-in?" (Yes/No + Why This Works card)
-- [ ] Add "Continue" button disabled until selection is made
-- [ ] Add guidance card on Step 6 and reflection card on Step 8
+- [x] Step 7: Single select — "What feels possible for you right now?" (8 actions) — implemented in Phase 29
+- [x] Step 8: Single select — "Who or what kind of support could help?" (9 support types) — implemented in Phase 29
+- [x] Step 9: Single select — "Did this check-in help?" (3 options with conditional message) — implemented in Phase 29
+- [x] Step 10: Single select — "Would you like to save this check-in?" (Yes/No + Why This Works card) — implemented in Phase 29
+- [x] Add "Continue" button disabled until selection is made — implemented in Phase 29
+- [x] Add guidance card on Step 6 and reflection card on Step 8 — implemented in Phase 29
 
 ### E. AI Response Engine — Exact 7-Part Structure from Source Docs
-- [ ] Update AI response to follow exact 7-part structure: Emotional Reflection → Brain Insight → EI Focus → African Wisdom (proverb + country + explanation) → Pattern Insight → One Next Step → Support Encouragement
-- [ ] Use exact Brain-Emotion mapping table from HeadCheck_Brain_Emotion_Mapping doc in AI prompt
-- [ ] Add "This is your brain trying to protect you, not a failure." to Brain Insight card
-- [ ] Add Pattern Insight card: detect repeated emotions from history and surface gently
-- [ ] Add user feedback loop: Yes / Somewhat / Not yet buttons on AI response
+- [x] Update AI response to follow exact 7-part structure (Phase 30 + 41)
+- [x] Use exact Brain-Emotion mapping table from HeadCheck_Brain_Emotion_Mapping doc in AI prompt (Phase 42)
+- [x] Add "This is your brain trying to protect you, not a failure." to Brain Insight card (Phase 41)
+- [x] Add Pattern Insight card: detect repeated emotions from history and surface gently (Phase 30)
+- [x] Add user feedback loop: Yes / Somewhat / Not yet buttons on AI response (Phase 41)
 
 ### F. Check-In Summary Screen (Phase 4 from Master Mocha Prompt)
-- [ ] Add dedicated summary screen BEFORE AI insight: What you may be feeling, What may be affecting you, What seems most supportive, Your next step, Support reminder
-- [ ] Add gentle reminder card: "You may not need to solve everything today..."
+- [x] Add dedicated summary screen BEFORE AI insight (Phase 29 + 39)
+- [x] Add gentle reminder card: "You may not need to solve everything today..." (Phase 29)
 
 ### G. Brand & Tagline Alignment
 - [x] Update app tagline to: "A Real Time Emotional Response System — Know your mind. Lead your life." (already done in Phase 15)
@@ -244,7 +244,7 @@
 ### H. Missing Features from Critical Layers Doc
 - [x] Add "Ask for Help" feature — mentor/counselor request button in dashboard (links to /support-options)
 - [x] Add AIEI Content Library page: proverbs searchable by country and EI pillar (/aiei-library)
-- [ ] Add weekly reflection summary (email/notification to user after 7 days of check-ins)
+- [x] Add weekly reflection summary (email/notification to user after 7 days of check-ins) — Phase 43: server/weeklyReflection.ts + /api/cron/weekly-reflection + ReminderSettings toggle + 18 vitest tests (150 tests total ✓)
 
 ## Phase 16: Interactive EI Quiz
 
@@ -420,37 +420,37 @@
 ## Phase 28: Module Prévention de la Violence & Alerte de Crise
 
 ### Backend
-- [ ] Étendre `detectCrisis()` avec mots-clés de violence envers autrui (menace, agression, arme)
-- [ ] Ajouter table `violence_flags` (userId, checkInId, triggerText, type, severity, acknowledged)
-- [ ] Ajouter table `safety_plans` (userId, trustedContacts JSON, warningSignals, copingStrategies, safeEnvironments)
-- [ ] Ajouter helpers DB: createViolenceFlag, getViolenceFlagsByUser, createSafetyPlan, getSafetyPlan, updateSafetyPlan
-- [ ] Ajouter procédures tRPC: crisis.reportFlag, crisis.getMyFlags, crisis.getSafetyPlan, crisis.saveSafetyPlan
+- [x] Étendre `detectCrisis()` avec mots-clés de violence envers autrui — implémenté Phase 16
+- [x] Ajouter table `violence_flags` — implémenté Phase 16
+- [x] Ajouter table `safety_plans` — implémenté Phase 16
+- [x] Ajouter helpers DB: createViolenceFlag, getViolenceFlagsByUser, createSafetyPlan, getSafetyPlan, updateSafetyPlan — Phase 16
+- [x] Ajouter procédures tRPC: crisis.reportFlag, crisis.getMyFlags, crisis.getSafetyPlan, crisis.saveSafetyPlan — Phase 16
 - [x] Générer et appliquer la migration SQL
 
 ### Frontend — Page CrisisSupport (/crisis-support)
-- [ ] Créer page /crisis-support avec écran d'alerte plein écran (titre "Vous n'êtes pas seul·e")
-- [ ] Boutons d'urgence: Appeler 988, SMS 741741, SOS Amitié 09 72 39 40 50, urgences locales
-- [ ] Carte "Rester avec moi" (reconnexion douce après crise)
-- [ ] Section ressources de crise (liens vérifiés, OMS, UNICEF)
-- [ ] Disclaimer: HeadCheck n'est pas un service de crise
+- [x] Créer page /crisis-support — implémenté Phase 16
+- [x] Boutons d'urgence: 988, 741741, 3114, urgences locales — Phase 16
+- [x] Carte "Stay with me" (reconnexion douce après crise) — Phase 16
+- [x] Section ressources de crise — Phase 16
+- [x] Disclaimer: HeadCheck n'est pas un service de crise — Phase 16
 
 ### Frontend — Page ViolencePrevention (/violence-prevention)
-- [ ] Créer page /violence-prevention avec contenu éducatif (signes d'alerte, cycle de la violence, AIEI)
-- [ ] Module "Mon Plan de Sécurité" (contacts de confiance, signaux d'alerte personnels, stratégies d'adaptation)
-- [ ] Ressources AIEI (proverbes africains sur la paix et la résolution de conflits)
-- [ ] Formulaire de plan de sécurité sauvegardé en DB pour utilisateurs connectés
+- [x] Créer page /violence-prevention avec contenu éducatif — Phase 16
+- [x] Module "My Safety Plan" (contacts de confiance, signaux d'alerte, stratégies) — Phase 16
+- [x] Ressources AIEI (proverbes africains sur la paix) — Phase 16
+- [x] Formulaire de plan de sécurité sauvegardé en DB — Phase 16
 
 ### Intégration
-- [ ] Détecter violence dans CheckIn.tsx et rediriger vers /crisis-support
-- [ ] Ajouter liens "Support de Crise" et "Prévention Violence" dans NavBar
-- [ ] Ajouter onglet "Alertes" dans FacilitatorDashboard (violence_flags + crisis_events)
-- [ ] Ajouter section "Plan de Sécurité" dans Dashboard utilisateur
-- [ ] Ajouter CTA vers /violence-prevention dans Home et LearnEI
+- [x] Détecter violence dans CheckIn.tsx et rediriger vers /crisis-support — Phase 16
+- [x] Ajouter liens "Crisis Support" et "Violence Prevention" dans NavBar — Phase 16
+- [x] Ajouter onglet "Alertes" dans FacilitatorDashboard — Phase 16
+- [x] Ajouter section "Plan de Sécurité" dans Dashboard utilisateur — Phase 16
+- [x] Ajouter CTA vers /violence-prevention dans Home et LearnEI — Phase 16
 
 ### Tests
-- [ ] Tests Vitest pour detectCrisis étendu (violence keywords)
-- [ ] Tests pour safety_plan CRUD
-- [ ] 0 erreur TypeScript
+- [x] Tests Vitest pour detectCrisis étendu (violence keywords) — Phase 16 (105 tests)
+- [x] Tests pour safety_plan CRUD — Phase 16
+- [x] 0 erreur TypeScript
 
 ## Phase 16: Violence Prevention & Crisis Alert Modules
 

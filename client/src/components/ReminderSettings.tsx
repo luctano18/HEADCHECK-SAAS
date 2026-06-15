@@ -9,7 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Bell, Clock, Calendar } from "lucide-react";
+import { Loader2, Bell, Clock, Calendar, Mail } from "lucide-react";
 import { toast } from "sonner";
 
 const DAYS = [
@@ -29,6 +29,7 @@ export default function ReminderSettings() {
   const [enabled, setEnabled] = useState(false);
   const [time, setTime] = useState("08:00");
   const [selectedDays, setSelectedDays] = useState<number[]>([1, 2, 3, 4, 5]);
+  const [weeklyReflection, setWeeklyReflection] = useState(true);
   const [dirty, setDirty] = useState(false);
 
   // Sync from server
@@ -42,6 +43,7 @@ export default function ReminderSettings() {
         .map((d) => parseInt(d.trim(), 10))
         .filter((d) => !isNaN(d))
     );
+    setWeeklyReflection(settings.weeklyReflectionEnabled ?? true);
   }, [settings]);
 
   const updateMutation = trpc.profile.updateReminderSettings.useMutation({
@@ -71,6 +73,7 @@ export default function ReminderSettings() {
       reminderEnabled: enabled,
       reminderTime: time,
       reminderDays: selectedDays.join(","),
+      weeklyReflectionEnabled: weeklyReflection,
     });
   };
 
@@ -175,6 +178,29 @@ export default function ReminderSettings() {
           </div>
         </div>
       )}
+
+      {/* Weekly Reflection Toggle */}
+      <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+        <div className="flex items-center gap-2">
+          <Mail className="w-4 h-4 text-indigo-500" />
+          <div>
+            <Label htmlFor="weekly-reflection-toggle" className="text-sm font-semibold">
+              Weekly Reflection Summary
+            </Label>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Receive a personalized email every Monday with your week's emotional summary
+            </p>
+          </div>
+        </div>
+        <Switch
+          id="weekly-reflection-toggle"
+          checked={weeklyReflection}
+          onCheckedChange={(v) => {
+            setWeeklyReflection(v);
+            setDirty(true);
+          }}
+        />
+      </div>
 
       {/* Save button */}
       {dirty && (

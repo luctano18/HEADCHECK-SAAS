@@ -32,6 +32,8 @@ export const users = mysqlTable("users", {
   reminderEnabled: boolean("reminderEnabled").default(false).notNull(),
   reminderTime: varchar("reminderTime", { length: 5 }).default("08:00"), // HH:MM format
   reminderDays: varchar("reminderDays", { length: 32 }).default("1,2,3,4,5"), // comma-separated 0-6 (0=Sun)
+  // Weekly reflection summary (opt-in email every Monday)
+  weeklyReflectionEnabled: boolean("weeklyReflectionEnabled").default(true).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
