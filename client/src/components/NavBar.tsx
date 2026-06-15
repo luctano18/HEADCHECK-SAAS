@@ -27,6 +27,7 @@ const NAV_LINKS = [
   { href: "/mindset", label: "Mindset", emoji: "💡" },
   { href: "/zera-cards", label: "Zera Cards", emoji: "🃏" },
   { href: "/coaching", label: "Coaching", emoji: "🎯" },
+  { href: "/support-options", label: "Support Options", emoji: "🤝" },
   { href: "/about", label: "About", emoji: "💜" },
 ];
 

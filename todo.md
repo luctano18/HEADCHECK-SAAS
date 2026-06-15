@@ -237,13 +237,13 @@
 - [ ] Add gentle reminder card: "You may not need to solve everything today..."
 
 ### G. Brand & Tagline Alignment
-- [ ] Update app tagline to: "A Real Time Emotional Response System — Know your mind. Lead your life."
-- [ ] Update Home hero subtitle to match: "HeadCheck helps you understand your feelings, reflect with honesty, and take your next step with clarity."
-- [ ] Add "Support Options" link in nav (links to crisis resources / coaching)
+- [x] Update app tagline to: "A Real Time Emotional Response System — Know your mind. Lead your life." (already done in Phase 15)
+- [x] Update Home hero subtitle to match (already done in Phase 15)
+- [x] Add "Support Options" link in nav (links to crisis resources / coaching)
 
 ### H. Missing Features from Critical Layers Doc
-- [ ] Add "Ask for Help" feature — mentor/counselor request button in dashboard
-- [ ] Add AIEI Content Library page: proverbs searchable by country and EI pillar
+- [x] Add "Ask for Help" feature — mentor/counselor request button in dashboard (links to /support-options)
+- [x] Add AIEI Content Library page: proverbs searchable by country and EI pillar (/aiei-library)
 - [ ] Add weekly reflection summary (email/notification to user after 7 days of check-ins)
 
 ## Phase 16: Interactive EI Quiz

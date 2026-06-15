@@ -487,13 +487,21 @@ export default function Dashboard() {
               </Card>
             )}
 
-            {/* Wellness Logbook + CSV Export */}
+            {/* Wellness Logbook + CSV Export + Ask for Help */}
             <div className="flex gap-3 flex-wrap">
               <Button variant="outline" className="flex-1 sm:flex-none gap-2" onClick={() => navigate("/wellness-logbook")}>
                 <BookOpen className="w-4 h-4" /> Wellness Logbook
               </Button>
               <Button variant="outline" className="flex-1 sm:flex-none gap-2" onClick={handleExportCSV} disabled={isExporting}>
                 <Download className={`w-4 h-4 ${isExporting ? "animate-spin" : ""}`} /> {isExporting ? "Exporting..." : "Export CSV"}
+              </Button>
+              <Button
+                variant="outline"
+                className="flex-1 sm:flex-none gap-2"
+                style={{ borderColor: "oklch(0.85 0.06 25)", color: "oklch(0.50 0.22 25)" }}
+                onClick={() => navigate("/support-options")}
+              >
+                <Heart className="w-4 h-4" /> Ask for Help
               </Button>
             </div>
 

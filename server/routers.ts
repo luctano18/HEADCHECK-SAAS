@@ -113,6 +113,7 @@ import {
   getEILevel,
 } from "../shared/eiQuizData";
 import { getResourcesForEmotion } from "../shared/emotionResources";
+import { getBrainInsightContext } from "../shared/brainEmotionMap";
 
 // ─── Notification Helper ────────────────────────────────────────────────────
 /**
@@ -249,13 +250,14 @@ async function generateAiResponse(params: {
   const patternSection = patternContext
     ? `\nRecent emotional history: ${patternContext}\n`
     : "";
+  const brainContext = getBrainInsightContext(emotion);
   const prompt = `You are HeadCheck AI, a compassionate emotional wellness assistant that integrates neuroscience, Emotional Intelligence (EI), and African-Inspired Emotional Intelligence (AIEI).
 
 A user is experiencing: Emotion: "${emotion}" | Intensity: ${intensity}/10 | Context: ${context}
 ${journalEntry ? `Journal: "${journalEntry}"` : ""}${patternSection}
 Generate a structured JSON response with EXACTLY these 11 fields:
 1. "emotionalReflection": A warm, validating 2-3 sentence reflection on what the user is feeling. Use a compassionate, non-judgmental tone.
-2. "brainInsight": A 2-sentence neuroscience explanation of what's happening in the brain (mention specific brain regions like amygdala, prefrontal cortex, hippocampus, etc.). End with: "This is your brain trying to protect you, not a failure."
+2. "brainInsight": A 2-sentence neuroscience explanation of what's happening in the brain. Use this brain-emotion mapping as your scientific reference: ${brainContext}. End with: "This is your brain trying to protect you, not a failure."
 3. "eiPillar": The most relevant EI pillar name (one of: Self-Awareness, Self-Regulation, Motivation, Empathy, Social Skills).
 4. "eiPillarDescription": A 2-sentence explanation of how this EI pillar applies to their current state and what growth looks like.
 5. "aieiProverb": An authentic African proverb relevant to their situation.
