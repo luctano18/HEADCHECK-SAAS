@@ -33,6 +33,8 @@ import Messages from "./pages/Messages";
 import WellnessLogbook from "./pages/WellnessLogbook";
 import SupportOptions from "./pages/SupportOptions";
 import AIEILibrary from "./pages/AIEILibrary";
+import PulseSurveys from "./pages/PulseSurveys";
+import TeamSentiment from "./pages/TeamSentiment";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -80,6 +82,9 @@ function Router() {
       <Route path="/support-options" component={SupportOptions} />
       {/* AIEI Content Library */}
       <Route path="/aiei-library" component={AIEILibrary} />
+      {/* Business / Team features */}
+      <Route path="/pulse-surveys" component={PulseSurveys} />
+      <Route path="/team-sentiment" component={TeamSentiment} />
       {/* Alert Detail pages (admin/facilitator only) */}
       <Route path="/alert/crisis/:id" component={AlertDetail} />
       <Route path="/alert/violence/:id" component={AlertDetail} />

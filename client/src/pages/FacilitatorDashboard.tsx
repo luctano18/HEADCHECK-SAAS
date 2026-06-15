@@ -20,6 +20,70 @@ import {
 import { format } from "date-fns";
 import { BarChartSkeleton, PieChartSkeleton } from "@/components/ChartSkeleton";
 
+// ─── Employee Resources Panel ───────────────────────────────────────────────
+function EmployeeResourcesPanel() {
+  const [resTitle, setResTitle] = useState("");
+  const [resUrl, setResUrl] = useState("");
+  const [resType, setResType] = useState<"article" | "video" | "book" | "exercise" | "tool" | "podcast">("article");
+  const { data: resources, refetch: refetchResources } = trpc.business.getResources.useQuery();
+  const addMutation = trpc.business.addResource.useMutation({
+    onSuccess: () => { toast.success("Resource added!"); setResTitle(""); setResUrl(""); refetchResources(); },
+    onError: (err) => toast.error(err.message),
+  });
+  const removeMutation = trpc.business.removeResource.useMutation({
+    onSuccess: () => { toast.success("Resource removed."); refetchResources(); },
+    onError: (err) => toast.error(err.message),
+  });
+  return (
+    <Card className="mt-2">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base">Employee Wellness Resources</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <Input placeholder="Resource title" value={resTitle} onChange={e => setResTitle(e.target.value)} />
+          <Input placeholder="URL (optional)" value={resUrl} onChange={e => setResUrl(e.target.value)} />
+          <select
+            value={resType}
+            onChange={e => setResType(e.target.value as typeof resType)}
+            className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
+          >
+            {["article","video","book","exercise","tool","podcast"].map(t => (
+              <option key={t} value={t}>{t.charAt(0).toUpperCase()+t.slice(1)}</option>
+            ))}
+          </select>
+        </div>
+        <Button
+          size="sm"
+          onClick={() => {
+            if (!resTitle.trim()) { toast.error("Title required"); return; }
+            addMutation.mutate({ title: resTitle.trim(), url: resUrl.trim() || undefined, resourceType: resType });
+          }}
+          disabled={addMutation.isPending}
+          className="bg-indigo-600 hover:bg-indigo-700 text-white"
+        >
+          <Plus className="w-4 h-4 mr-1" />
+          {addMutation.isPending ? "Adding..." : "Add Resource"}
+        </Button>
+        {resources && resources.length > 0 && (
+          <div className="space-y-2">
+            {resources.map((r: any) => (
+              <div key={r.id} className="flex items-center justify-between gap-2 p-2 rounded-lg border text-sm">
+                <div className="flex-1 min-w-0">
+                  <span className="font-medium">{r.title}</span>
+                  {r.url && <a href={r.url} target="_blank" rel="noopener noreferrer" className="ml-2 text-xs text-indigo-500 hover:underline">Link</a>}
+                  <Badge variant="secondary" className="ml-2 text-xs">{r.resourceType}</Badge>
+                </div>
+                <Button size="sm" variant="ghost" onClick={() => removeMutation.mutate({ resourceId: r.id })} className="text-destructive hover:text-destructive shrink-0">Remove</Button>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 const SEVERITY_COLORS: Record<string, string> = {
   moderate: "#f59e0b",
   high: "#f97316",
@@ -42,7 +106,9 @@ export default function FacilitatorDashboard() {
   const [groupName, setGroupName] = useState("");
   const [inviteLink, setInviteLink] = useState<string | null>(null);
   const [selectedGroupId, setSelectedGroupId] = useState<number | "">("");
-  const [activeTab, setActiveTab] = useState<"overview" | "alerts" | "violence" | "groups" | "assigned" | "eeis">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "alerts" | "violence" | "groups" | "assigned" | "eeis" | "pulse" | "sentiment">("overview");
+  const [newSurveyTitle, setNewSurveyTitle] = useState("");
+  const [newSurveyQuestion, setNewSurveyQuestion] = useState("");
   // EEIS config state
   const { data: eeisConfig, refetch: refetchConfig } = trpc.intervention.getConfig.useQuery(undefined, { enabled: isAuthenticated });
   const updateConfigMutation = trpc.intervention.updateConfig.useMutation({
@@ -50,6 +116,16 @@ export default function FacilitatorDashboard() {
     onError: (err) => toast.error(err.message),
   });
   const { data: escalationAlerts } = trpc.intervention.getEscalationAlerts.useQuery(undefined, { enabled: isAuthenticated });
+  const { data: pulseSurveys, refetch: refetchSurveys } = trpc.business.getSurveys.useQuery(undefined, { enabled: isAuthenticated });
+  const { data: teamSentiment, isLoading: sentimentLoading } = trpc.business.getTeamSentiment.useQuery({ days: 30 }, { enabled: isAuthenticated });
+  const createSurveyMutation = trpc.business.createSurvey.useMutation({
+    onSuccess: () => { toast.success("Survey created!"); setNewSurveyTitle(""); setNewSurveyQuestion(""); refetchSurveys(); },
+    onError: (err) => toast.error(err.message),
+  });
+  const closeSurveyMutation = trpc.business.closeSurvey.useMutation({
+    onSuccess: () => { toast.success("Survey closed."); refetchSurveys(); },
+    onError: (err) => toast.error(err.message),
+  });
   const [eeisForm, setEeisForm] = useState<{ greenMaxScore: number; yellowMaxScore: number; yellowRepeatDays: number; yellowRepeatCount: number; lowResolutionCount: number } | null>(null);
   const { data: myAssignments } = trpc.crisis.getMyAssignments.useQuery(undefined, { enabled: isAuthenticated });
   const [crisisFilterUnresolved, setCrisisFilterUnresolved] = useState(true);
@@ -154,6 +230,8 @@ export default function FacilitatorDashboard() {
     { id: "groups", label: "Groups & Invites", icon: <Users className="w-4 h-4" /> },
     { id: "assigned", label: "Assigned to Me", icon: <Mail className="w-4 h-4" />, badge: totalAssignedCount },
     { id: "eeis", label: "Intervention Config", icon: <Sliders className="w-4 h-4" /> },
+    { id: "pulse", label: "Pulse Surveys", icon: <Heart className="w-4 h-4" /> },
+    { id: "sentiment", label: "Team Sentiment", icon: <TrendingUp className="w-4 h-4" /> },
   ];
 
   return (
@@ -933,6 +1011,167 @@ export default function FacilitatorDashboard() {
                   </CardContent>
                 </Card>
               </>
+            )}
+
+            {/* ── Pulse Surveys Tab ── */}
+            {activeTab === "pulse" && (
+              <div className="p-6 space-y-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-xl font-bold text-foreground">Pulse Surveys</h2>
+                    <p className="text-sm text-muted-foreground mt-1">Create and manage team wellness surveys.</p>
+                  </div>
+                </div>
+
+                {/* Create Survey Form */}
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base">Create New Survey</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div>
+                      <Label htmlFor="survey-title" className="text-sm">Survey Title</Label>
+                      <Input
+                        id="survey-title"
+                        placeholder="e.g. Weekly Wellness Check"
+                        value={newSurveyTitle}
+                        onChange={(e) => setNewSurveyTitle(e.target.value)}
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="survey-question" className="text-sm">Question</Label>
+                      <Input
+                        id="survey-question"
+                        placeholder="e.g. How supported do you feel at work this week?"
+                        value={newSurveyQuestion}
+                        onChange={(e) => setNewSurveyQuestion(e.target.value)}
+                        className="mt-1"
+                      />
+                    </div>
+                    <Button
+                      onClick={() => {
+                        if (!newSurveyTitle.trim() || !newSurveyQuestion.trim()) {
+                          toast.error("Please fill in both title and question.");
+                          return;
+                        }
+                        createSurveyMutation.mutate({ title: newSurveyTitle.trim(), question: newSurveyQuestion.trim() });
+                      }}
+                      disabled={createSurveyMutation.isPending}
+                      className="bg-indigo-600 hover:bg-indigo-700 text-white"
+                    >
+                      <Plus className="w-4 h-4 mr-1" />
+                      {createSurveyMutation.isPending ? "Creating..." : "Create Survey"}
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                {/* Survey List */}
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base">All Surveys</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {!pulseSurveys || pulseSurveys.length === 0 ? (
+                      <p className="text-sm text-muted-foreground text-center py-6">No surveys created yet.</p>
+                    ) : (
+                      <div className="space-y-3">
+                        {pulseSurveys.map((survey: any) => (
+                          <div key={survey.id} className="flex items-start justify-between gap-3 p-3 rounded-lg border">
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-sm">{survey.title}</p>
+                              <p className="text-xs text-muted-foreground mt-0.5 truncate">{survey.question}</p>
+                              <p className="text-xs text-muted-foreground mt-1">{new Date(survey.createdAt).toLocaleDateString("en-US")}</p>
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0">
+                              <Badge variant="outline" className={survey.isActive ? "text-green-600 border-green-300" : "text-muted-foreground"}>
+                                {survey.isActive ? "Active" : "Closed"}
+                              </Badge>
+                              {survey.isActive && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => closeSurveyMutation.mutate({ surveyId: survey.id })}
+                                  disabled={closeSurveyMutation.isPending}
+                                  className="text-xs"
+                                >
+                                  Close
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Employee Wellness Resources */}
+                <EmployeeResourcesPanel />
+              </div>
+            )}
+
+            {/* ── Team Sentiment Tab ── */}
+            {activeTab === "sentiment" && (
+              <div className="p-6 space-y-6">
+                <div>
+                  <h2 className="text-xl font-bold text-foreground">Team Sentiment</h2>
+                  <p className="text-sm text-muted-foreground mt-1">Aggregate emotional wellness analytics for your team (last 30 days).</p>
+                </div>
+
+                {/* Stat Cards */}
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {sentimentLoading ? (
+                    [1,2,3].map(i => <Card key={i} className="animate-pulse"><CardContent className="py-5"><div className="h-8 bg-muted rounded w-1/2 mb-2" /><div className="h-3 bg-muted rounded w-3/4" /></CardContent></Card>)
+                  ) : (
+                    <>
+                      <Card><CardContent className="flex items-center gap-3 py-5"><div className="p-2 rounded-lg bg-indigo-500"><TrendingUp className="w-4 h-4 text-white" /></div><div><p className="text-2xl font-bold">{teamSentiment?.avgIntensity ?? 0}/10</p><p className="text-xs text-muted-foreground">Avg Intensity</p></div></CardContent></Card>
+                      <Card><CardContent className="flex items-center gap-3 py-5"><div className="p-2 rounded-lg bg-teal-500"><Users className="w-4 h-4 text-white" /></div><div><p className="text-2xl font-bold">{teamSentiment?.totalCheckIns ?? 0}</p><p className="text-xs text-muted-foreground">Total Check-ins</p></div></CardContent></Card>
+                      <Card><CardContent className="flex items-center gap-3 py-5"><div className="p-2 rounded-lg bg-amber-500"><Heart className="w-4 h-4 text-white" /></div><div><p className="text-2xl font-bold">{teamSentiment?.topEmotions?.[0]?.emotion ?? "—"}</p><p className="text-xs text-muted-foreground">Top Emotion</p></div></CardContent></Card>
+                    </>
+                  )}
+                </div>
+
+                {/* Top Emotions Bar Chart */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base">Top Emotions</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {sentimentLoading ? <div className="h-48 bg-muted/30 rounded animate-pulse" /> : (
+                      <ResponsiveContainer width="100%" height={200}>
+                        <BarChart data={teamSentiment?.topEmotions ?? []} margin={{ top: 4, right: 8, left: -10, bottom: 0 }}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="emotion" tick={{ fontSize: 12 }} />
+                          <YAxis tick={{ fontSize: 12 }} />
+                          <Tooltip />
+                          <Bar dataKey="count" name="Check-ins" fill="#4338CA" radius={[4,4,0,0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Daily Trend */}
+                {!sentimentLoading && (teamSentiment?.trendData?.length ?? 0) > 0 && (
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-base">Daily Intensity Trend</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <ResponsiveContainer width="100%" height={200}>
+                        <BarChart data={teamSentiment!.trendData} margin={{ top: 4, right: 8, left: -10, bottom: 0 }}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="date" tick={{ fontSize: 11 }} tickFormatter={(v: string) => v.slice(5)} />
+                          <YAxis domain={[0, 10]} tick={{ fontSize: 12 }} />
+                          <Tooltip formatter={(v: number) => [`${v}/10`, "Avg Intensity"]} />
+                          <Bar dataKey="avgIntensity" name="Avg Intensity" fill="#F97316" radius={[4,4,0,0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
             )}
 
         </main>

@@ -1738,5 +1738,108 @@ export const appRouter = router({
         return rows;
       }),
   }),
+
+  business: router({
+    // ─── Pulse Surveys ──────────────────────────────────────────────────────────
+    createSurvey: protectedProcedure
+      .input(z.object({ title: z.string().min(1), question: z.string().min(1) }))
+      .mutation(async ({ ctx, input }) => {
+        if (!ctx.user.institutionId) throw new TRPCError({ code: 'FORBIDDEN', message: 'Institution required' });
+        const { createPulseSurvey } = await import('./db');
+        const id = await createPulseSurvey({
+          institutionId: ctx.user.institutionId,
+          createdByUserId: ctx.user.id,
+          title: input.title,
+          question: input.question,
+        });
+        return { id };
+      }),
+
+    getSurveys: protectedProcedure.query(async ({ ctx }) => {
+      if (!ctx.user.institutionId) return [];
+      const { getPulseSurveysByInstitution } = await import('./db');
+      return getPulseSurveysByInstitution(ctx.user.institutionId);
+    }),
+
+    getActiveSurveys: protectedProcedure.query(async ({ ctx }) => {
+      if (!ctx.user.institutionId) return [];
+      const { getActivePulseSurveys } = await import('./db');
+      return getActivePulseSurveys(ctx.user.institutionId);
+    }),
+
+    submitResponse: protectedProcedure
+      .input(z.object({ surveyId: z.number(), rating: z.number().min(1).max(5), comment: z.string().optional() }))
+      .mutation(async ({ ctx, input }) => {
+        const { submitPulseSurveyResponse } = await import('./db');
+        await submitPulseSurveyResponse({ surveyId: input.surveyId, userId: ctx.user.id, rating: input.rating, comment: input.comment });
+        return { ok: true };
+      }),
+
+    getSurveyResults: protectedProcedure
+      .input(z.object({ surveyId: z.number() }))
+      .query(async ({ input }) => {
+        const { getPulseSurveyResults } = await import('./db');
+        return getPulseSurveyResults(input.surveyId);
+      }),
+
+    closeSurvey: protectedProcedure
+      .input(z.object({ surveyId: z.number() }))
+      .mutation(async ({ input }) => {
+        const { closePulseSurvey } = await import('./db');
+        await closePulseSurvey(input.surveyId);
+        return { ok: true };
+      }),
+
+    // ─── Team Sentiment ─────────────────────────────────────────────────────────
+    getTeamSentiment: protectedProcedure
+      .input(z.object({ days: z.number().min(7).max(90).default(30) }))
+      .query(async ({ ctx, input }) => {
+        if (!ctx.user.institutionId) return { avgIntensity: 0, topEmotions: [], totalCheckIns: 0, trendData: [] };
+        const { getTeamSentimentByInstitution } = await import('./db');
+        return getTeamSentimentByInstitution(ctx.user.institutionId, input.days);
+      }),
+
+    exportBusinessReport: protectedProcedure
+      .input(z.object({ days: z.number().min(7).max(90).default(30) }))
+      .query(async ({ ctx, input }) => {
+        if (!ctx.user.institutionId) throw new TRPCError({ code: 'FORBIDDEN' });
+        const { getTeamSentimentByInstitution, getPulseSurveysByInstitution } = await import('./db');
+        const [sentiment, surveys] = await Promise.all([
+          getTeamSentimentByInstitution(ctx.user.institutionId, input.days),
+          getPulseSurveysByInstitution(ctx.user.institutionId),
+        ]);
+        return { sentiment, surveys, generatedAt: new Date().toISOString(), institutionId: ctx.user.institutionId };
+      }),
+
+    // ─── Wellness Resources ──────────────────────────────────────────────────────
+    addResource: protectedProcedure
+      .input(z.object({
+        title: z.string().min(1),
+        description: z.string().optional(),
+        url: z.string().url().optional(),
+        resourceType: z.enum(['article', 'video', 'book', 'exercise', 'tool', 'podcast']),
+        eiPillar: z.enum(['Self-Awareness', 'Self-Regulation', 'Motivation', 'Empathy', 'Social Skills', 'All']).optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (!ctx.user.institutionId) throw new TRPCError({ code: 'FORBIDDEN' });
+        const { addWellnessResource } = await import('./db');
+        await addWellnessResource({ ...input, institutionId: ctx.user.institutionId, addedByUserId: ctx.user.id });
+        return { ok: true };
+      }),
+
+    getResources: protectedProcedure.query(async ({ ctx }) => {
+      if (!ctx.user.institutionId) return [];
+      const { getWellnessResourcesByInstitution } = await import('./db');
+      return getWellnessResourcesByInstitution(ctx.user.institutionId);
+    }),
+
+    removeResource: protectedProcedure
+      .input(z.object({ resourceId: z.number() }))
+      .mutation(async ({ input }) => {
+        const { deleteWellnessResource } = await import('./db');
+        await deleteWellnessResource(input.resourceId);
+        return { ok: true };
+      }),
+  }),
 });
 export type AppRouter = typeof appRouter;

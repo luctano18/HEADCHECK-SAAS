@@ -19,7 +19,7 @@ export default function Home() {
       <NavBar />
 
       {/* ── HERO ── */}
-      <section className="pt-32 pb-16 px-6 text-center">
+      <section className="pt-32 pb-16 px-6 text-center animate-fade-in-up">
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white border border-[oklch(0.88_0.06_285)] text-[oklch(0.45_0.18_285)] text-sm font-medium mb-8 shadow-sm">
           <Heart className="w-4 h-4 fill-[oklch(0.45_0.18_285)]" />
           A Real Time Emotional Response System
@@ -63,7 +63,7 @@ export default function Home() {
             { icon: "❤️", color: "oklch(0.88 0.08 10)", label: "Name Your Feelings", desc: "Understand what you're experiencing and why it matters" },
             { icon: "✨", color: "oklch(0.88 0.08 155)", label: "Find Direction", desc: "Identify next steps and connect with support" },
           ].map((card) => (
-            <div key={card.label} className="bg-white rounded-2xl p-6 shadow-sm border border-[oklch(0.92_0.03_260)] text-center hover:shadow-md transition-shadow">
+            <div key={card.label} className="bg-white rounded-2xl p-6 shadow-sm border border-[oklch(0.92_0.03_260)] text-center card-glow animate-fade-in-up">
               <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl mx-auto mb-4"
                 style={{ background: card.color }}>
                 {card.icon}
@@ -77,7 +77,7 @@ export default function Home() {
 
       {/* ── WHAT IS HEADCHECK ── */}
       <section className="max-w-3xl mx-auto px-6 pb-16">
-        <div className="bg-white rounded-3xl p-8 shadow-sm border border-[oklch(0.92_0.03_260)]">
+        <div className="bg-white rounded-3xl p-8 shadow-sm border border-[oklch(0.92_0.03_260)] card-glow-indigo">
           <h2 className="text-2xl font-bold text-[oklch(0.18_0.04_260)] mb-4">What is HeadCheck?</h2>
           <p className="text-[oklch(0.35_0.04_260)] leading-relaxed mb-5">
             HeadCheck is a <span className="font-semibold text-[oklch(0.45_0.18_285)]">mental wellness tool</span> designed to help you pause, reflect, and process what you're experiencing. Whether you're feeling overwhelmed, stuck, or just need a moment to check in with yourself, HeadCheck guides you through a structured reflection process.
@@ -115,7 +115,7 @@ export default function Home() {
 
       {/* ── SELF TRUST COMPASS SECTION ── */}
       <section className="max-w-3xl mx-auto px-6 pb-16">
-        <div className="bg-white rounded-3xl p-8 shadow-sm border border-[oklch(0.92_0.03_260)]">
+        <div className="bg-white rounded-3xl p-8 shadow-sm border border-[oklch(0.92_0.03_260)] card-glow-indigo">
           <div className="flex items-center gap-3 mb-5">
             <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl"
               style={{ background: "linear-gradient(135deg, oklch(0.45 0.18 285), oklch(0.72 0.18 48))" }}>

@@ -3,12 +3,12 @@ import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Brain, ArrowLeft, Search, BookOpen, Video, FileText, Dumbbell, Wrench, Clock } from "lucide-react";
+import { Brain, ArrowLeft, Search, BookOpen, Video, FileText, Dumbbell, Wrench, Clock, Mic } from "lucide-react";
 import NavBar from "@/components/NavBar";
 import Footer from "@/components/Footer";
 
 type Category = "All" | "Self-Awareness" | "Self-Management" | "Social Awareness" | "Relationship Management" | "Neuroscience" | "African Wisdom";
-type ResourceType = "All" | "Article" | "Video" | "Book" | "Exercise" | "Tool";
+type ResourceType = "All" | "Article" | "Video" | "Book" | "Exercise" | "Tool" | "Podcast";
 
 interface Resource {
   id: number;
@@ -44,10 +44,19 @@ const RESOURCES: Resource[] = [
   { id: 20, type: "Book", category: "Self-Awareness", title: "Emotional Intelligence by Daniel Goleman", description: "The foundational text on emotional intelligence. Goleman explains the science behind EI and its impact on success in all areas of life.", duration: "Book" },
   { id: 21, type: "Book", category: "Neuroscience", title: "The Upward Spiral by Alex Korb", description: "A neuroscientist explains how small changes can create positive feedback loops in your brain, reducing anxiety and depression.", duration: "Book" },
   { id: 22, type: "Book", category: "Self-Management", title: "Self-Compassion by Kristin Neff", description: "Research-backed approaches to treating yourself with kindness, especially during struggles and setbacks.", duration: "Book" },
+  // 8 new curated resources
+  { id: 23, type: "Tool", category: "Self-Awareness", title: "The Feeling Wheel", description: "A visual tool developed by Dr. Gloria Willcox to expand your emotional vocabulary. Start with a core emotion and explore nuanced feelings — moving from the center outward helps you name what you're truly experiencing.", duration: "Interactive tool" },
+  { id: 24, type: "Exercise", category: "Social Awareness", title: "Empathy Mapping", description: "A structured exercise to step into another person's perspective. Map what they say, think, feel, and do to deepen understanding and strengthen your empathic response in relationships and conflict.", duration: "20 min" },
+  { id: 25, type: "Book", category: "Relationship Management", title: "Nonviolent Communication by Marshall Rosenberg", description: "A transformative framework for expressing needs and hearing others without blame or judgment. NVC replaces reactive patterns with compassionate language that preserves connection even in conflict.", duration: "Book" },
+  { id: 26, type: "Book", category: "Relationship Management", title: "Difficult Conversations by Stone, Patton & Heen", description: "Harvard Negotiation Project research on how to navigate hard conversations. Learn to separate impact from intent, manage emotions, and find your way to productive dialogue.", duration: "Book" },
+  { id: 27, type: "Book", category: "Self-Management", title: "Drive by Daniel H. Pink", description: "Pink's research reveals that autonomy, mastery, and purpose — not external rewards — are the true drivers of motivation. Essential reading for understanding intrinsic motivation and emotional engagement.", duration: "Book" },
+  { id: 28, type: "Book", category: "Self-Awareness", title: "Insight by Tasha Eurich", description: "Organizational psychologist Tasha Eurich reveals that only 10–15% of people are truly self-aware, and shows how to develop the internal and external self-awareness that transforms leadership and relationships.", duration: "Book" },
+  { id: 29, type: "Podcast", category: "Neuroscience", title: "Hidden Brain Podcast", description: "NPR's Shankar Vedantam uses science and storytelling to reveal the unconscious patterns that drive human behavior. Each episode explores the intersection of psychology, neuroscience, and everyday life.", duration: "~45 min/episode" },
+  { id: 30, type: "Podcast", category: "Self-Awareness", title: "Unlocking Us by Brené Brown", description: "Brené Brown explores the ideas, stories, and experiences that bring meaning to our lives. Her conversations on vulnerability, courage, and connection are grounded in 20 years of research.", duration: "~60 min/episode" },
 ];
 
 const CATEGORIES: Category[] = ["All", "Self-Awareness", "Self-Management", "Social Awareness", "Relationship Management", "Neuroscience", "African Wisdom"];
-const TYPES: ResourceType[] = ["All", "Article", "Video", "Book", "Exercise", "Tool"];
+const TYPES: ResourceType[] = ["All", "Article", "Video", "Book", "Exercise", "Tool", "Podcast"];
 
 const TYPE_ICONS: Record<ResourceType, React.ReactNode> = {
   All: <BookOpen className="w-3.5 h-3.5" />,
@@ -56,6 +65,7 @@ const TYPE_ICONS: Record<ResourceType, React.ReactNode> = {
   Book: <BookOpen className="w-3.5 h-3.5" />,
   Exercise: <Dumbbell className="w-3.5 h-3.5" />,
   Tool: <Wrench className="w-3.5 h-3.5" />,
+  Podcast: <Mic className="w-3.5 h-3.5" />,
 };
 
 const TYPE_COLORS: Record<ResourceType, string> = {
@@ -65,6 +75,7 @@ const TYPE_COLORS: Record<ResourceType, string> = {
   Book: "bg-amber-100 text-amber-700",
   Exercise: "bg-green-100 text-green-700",
   Tool: "bg-orange-100 text-orange-700",
+  Podcast: "bg-pink-100 text-pink-700",
 };
 
 const CATEGORY_ICONS: Record<Category, string> = {

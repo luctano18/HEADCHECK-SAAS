@@ -25,6 +25,9 @@ import {
   interventionConfig,
   patternFlags,
   InsertInterventionSession,
+  pulseSurveys,
+  pulseSurveyResponses,
+  wellnessResources,
 } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
@@ -1741,4 +1744,142 @@ export async function getPersonalizedRecommendations(userId: number) {
   }
   if (avgIntensity >= 7) recs.push("Your intensity has been high — consider scheduling a coaching session");
   return { totalCheckIns: rows.length, topEmotion, recommendations: recs };
+}
+
+// ─── Pulse Surveys ────────────────────────────────────────────────────────────
+export async function createPulseSurvey(data: {
+  institutionId: number;
+  createdByUserId: number;
+  title: string;
+  question: string;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+  const result = await db.insert(pulseSurveys).values({ ...data, isActive: true });
+  const insertId = (result as unknown as [{ insertId: number }])[0]?.insertId;
+  return insertId;
+}
+
+export async function getPulseSurveysByInstitution(institutionId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(pulseSurveys)
+    .where(eq(pulseSurveys.institutionId, institutionId))
+    .orderBy(desc(pulseSurveys.createdAt));
+}
+
+export async function getActivePulseSurveys(institutionId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(pulseSurveys)
+    .where(and(eq(pulseSurveys.institutionId, institutionId), eq(pulseSurveys.isActive, true)))
+    .orderBy(desc(pulseSurveys.createdAt));
+}
+
+export async function submitPulseSurveyResponse(data: {
+  surveyId: number;
+  userId: number;
+  rating: number;
+  comment?: string;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+  await db.insert(pulseSurveyResponses).values(data);
+}
+
+export async function getPulseSurveyResults(surveyId: number) {
+  const db = await getDb();
+  if (!db) return { avgRating: 0, totalResponses: 0, distribution: [] as { rating: number; count: number }[], comments: [] as string[] };
+  const responses = await db
+    .select()
+    .from(pulseSurveyResponses)
+    .where(eq(pulseSurveyResponses.surveyId, surveyId));
+  if (responses.length === 0) return { avgRating: 0, totalResponses: 0, distribution: [], comments: [] };
+  const avgRating = responses.reduce((sum, r) => sum + r.rating, 0) / responses.length;
+  const dist: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+  for (const r of responses) dist[r.rating] = (dist[r.rating] ?? 0) + 1;
+  const distribution = Object.entries(dist).map(([rating, count]) => ({ rating: Number(rating), count }));
+  const comments = responses.filter(r => r.comment).map(r => r.comment as string);
+  return { avgRating: Math.round(avgRating * 10) / 10, totalResponses: responses.length, distribution, comments };
+}
+
+export async function closePulseSurvey(surveyId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(pulseSurveys).set({ isActive: false }).where(eq(pulseSurveys.id, surveyId));
+}
+
+// ─── Team Sentiment Analysis ──────────────────────────────────────────────────
+export async function getTeamSentimentByInstitution(institutionId: number, days = 30) {
+  const db = await getDb();
+  if (!db) return { avgIntensity: 0, topEmotions: [] as { emotion: string; count: number }[], totalCheckIns: 0, trendData: [] as { date: string; avgIntensity: number; count: number }[] };
+  const since = new Date(Date.now() - days * 86400000);
+  const rows = await db
+    .select({
+      emotion: checkIns.emotion,
+      intensity: checkIns.intensity,
+      createdAt: checkIns.createdAt,
+    })
+    .from(checkIns)
+    .innerJoin(users, eq(checkIns.userId, users.id))
+    .where(and(eq(users.institutionId, institutionId), gte(checkIns.createdAt, since)));
+
+  if (rows.length === 0) return { avgIntensity: 0, topEmotions: [], totalCheckIns: 0, trendData: [] };
+
+  const avgIntensity = Math.round((rows.reduce((s, r) => s + (r.intensity ?? 5), 0) / rows.length) * 10) / 10;
+  const emotionCounts: Record<string, number> = {};
+  for (const r of rows) emotionCounts[r.emotion] = (emotionCounts[r.emotion] ?? 0) + 1;
+  const topEmotions = Object.entries(emotionCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 6)
+    .map(([emotion, count]) => ({ emotion, count }));
+
+  // Daily trend
+  const dailyMap: Record<string, { sum: number; count: number }> = {};
+  for (const r of rows) {
+    const date = r.createdAt.toISOString().split("T")[0]!;
+    if (!dailyMap[date]) dailyMap[date] = { sum: 0, count: 0 };
+    dailyMap[date]!.sum += r.intensity ?? 5;
+    dailyMap[date]!.count += 1;
+  }
+  const trendData = Object.entries(dailyMap)
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([date, { sum, count }]) => ({ date, avgIntensity: Math.round((sum / count) * 10) / 10, count }));
+
+  return { avgIntensity, topEmotions, totalCheckIns: rows.length, trendData };
+}
+
+// ─── Wellness Resources (Institution-curated) ─────────────────────────────────
+export async function addWellnessResource(data: {
+  institutionId?: number;
+  addedByUserId?: number;
+  title: string;
+  description?: string;
+  url?: string;
+  resourceType: "article" | "video" | "book" | "exercise" | "tool" | "podcast";
+  eiPillar?: "Self-Awareness" | "Self-Regulation" | "Motivation" | "Empathy" | "Social Skills" | "All";
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+  await db.insert(wellnessResources).values({ ...data, eiPillar: data.eiPillar ?? "All", isActive: true });
+}
+
+export async function getWellnessResourcesByInstitution(institutionId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(wellnessResources)
+    .where(and(eq(wellnessResources.institutionId, institutionId), eq(wellnessResources.isActive, true)))
+    .orderBy(desc(wellnessResources.createdAt));
+}
+
+export async function deleteWellnessResource(resourceId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(wellnessResources).set({ isActive: false }).where(eq(wellnessResources.id, resourceId));
 }

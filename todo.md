@@ -158,66 +158,59 @@
 - [x] Backend: coaching sessions table, booking procedure
 
 ### Business/Enterprise Enhancements
-- [ ] Add Pulse Surveys feature (create surveys, gather team feedback)
-- [ ] Add Team Sentiment Analysis (from check-in comments)
-- [ ] Add CSV export for business reports
-- [ ] Add "Add Resources for Employees" feature in Facilitator Dashboard
+- [x] Add Pulse Surveys feature (create surveys, gather team feedback) — PulseSurveys.tsx + business router
+- [x] Add Team Sentiment Analysis (from check-in comments) — TeamSentiment.tsx + getTeamSentiment procedure
+- [x] Add CSV export for business reports — exportBusinessReport procedure + CSV download in TeamSentiment.tsx
+- [x] Add "Add Resources for Employees" feature in Facilitator Dashboard — addResource/getResources/removeResource procedures
 - [ ] Add company registration form with industry selector (Finance, Professional Services, etc.)
 
 ### Resources Library Enhancements
-- [ ] Add 8 new curated resources: Feeling Wheel, Empathy Mapping, Nonviolent Communication, Difficult Conversations, Drive (Daniel Pink), Mindful Self-Compassion (Neff), Self-Awareness (Eurich), Hidden Brain Podcast
+- [x] Add 8 new curated resources: Feeling Wheel, Empathy Mapping, Nonviolent Communication, Difficult Conversations, Drive (Daniel Pink), Mindful Self-Compassion (Neff), Self-Awareness (Eurich), Hidden Brain Podcast
 - [ ] Add interactive Feeling Wheel tool (expand emotional vocabulary)
-- [ ] Add resource type filter: Article, Video, Book, Exercise, Tool, Podcast
+- [x] Add resource type filter: Article, Video, Book, Exercise, Tool, Podcast
 
 ### Learn EI Enhancements
-- [ ] Add "Benefits of EI" section with 8 research-backed benefits
-- [ ] Add "How It Works" 4-step section: Check In → Grounding → Guidance → Grow
-- [ ] Add interactive EI self-assessment quiz (score per pillar)
+- [x] Add "Benefits of EI" section with 8 research-backed benefits (already in LearnEI.tsx line 132)
+- [x] Add "How It Works" 4-step section: Check In → Grounding → Guidance → Grow (already in LearnEI.tsx line 46)
+- [x] Add interactive EI self-assessment quiz (score per pillar) — /ei-quiz page with 25 questions and radar chart
 
 ### About Page (New)
 - [x] Create About page with platform description, mission, how it works, and team section
 
 ### Design & UX
-- [ ] Add floating card glow effects on hover (amber/orange gradient)
-- [ ] Add animate-scale-in / animate-fade-in-up CSS animations
-- [ ] Update Home hero copy to match heartcheck.app warmth and tone
+- [x] Add floating card glow effects on hover (amber/orange gradient) — card-glow utility in index.css
+- [x] Add animate-scale-in / animate-fade-in-up CSS animations — animate-scale-in + stagger in index.css
+- [x] Update Home hero copy to match heartcheck.app warmth and tone — Home.tsx updated
 
 ## Phase 15: Consolidation & Enrichment from Source Files
 
 ### A. Route & Navigation Consolidation (Eliminate Duplicates)
-- [ ] Remove duplicate routes: keep /checkin (drop /check-in), keep /compass (drop /seven-mirrors), keep /checkin/result/:id (drop /check-in/:id), keep /checkin/guest-result (drop /check-in/guest)
-- [ ] Remove ComponentShowcase.tsx page (dev-only, 1437 lines, not linked in nav)
-- [ ] Merge ForInstitutions content into a dedicated tab/section within FacilitatorDashboard or keep as standalone but remove duplicate institution copy from Home.tsx
-- [ ] Create a shared NavBar component used by ALL pages (currently each page has its own nav)
-- [ ] Create a shared Footer component with links to all pages
+- [x] Remove duplicate routes (no /check-in or /seven-mirrors duplicates exist in App.tsx)
+- [x] Remove ComponentShowcase.tsx page (already deleted)
+- [x] ForInstitutions kept as standalone page, no duplicate copy in Home.tsx
+- [x] Shared NavBar component used by all pages (NavBar.tsx)
+- [x] Shared Footer component created (Phase 15)
 
 ### B. Content Deduplication
-- [ ] Extract African proverbs into a shared data file (shared/proverbs.ts) — currently duplicated across LearnEI, ZeraCards, Mindset, About
-- [ ] Extract EI pillars data into shared/eiPillars.ts — currently duplicated across LearnEI, ZeraCards, About
-- [ ] Extract Brain-Emotion mapping table into shared/brainEmotionMap.ts (from HeadCheck_Brain_Emotion_Mapping doc)
+- [x] Extract African proverbs into shared/proverbs.ts (re-exports AFRICAN_PROVERBS from headcheckData.ts)
+- [x] Extract EI pillars data into shared/eiPillars.ts (re-exports EI_PILLARS from headcheckData.ts)
+- [x] Extract Brain-Emotion mapping table into shared/brainEmotionMap.ts (Phase 42)
 
 ### C. Seven Mirrors / Compass — Full Rebuild from Source Docs
-- [ ] Replace current generic Compass prompts with EXACT questions from 7 mirrors.docx:
-  - Mirror 1: "What do I value most in my relationship with myself?" (9 options)
-  - Mirror 2: "What does loyalty to me look like?" (8 options)
-  - Mirror 3: "How do I handle conflict within myself?" (8 options)
-  - Mirror 4: "What makes me feel appreciated by myself?" (8 options)
-  - Mirror 5: "What red flags do I ignore within myself?" (8 options)
-  - Mirror 6: "What am I currently working on within myself?" (8 options)
-  - Mirror 7: "What does peace with me look like?" (8 options)
-- [ ] Add "Other" option with revealed text input on every mirror
-- [ ] Add optional "Write freely here" journal box on every mirror
-- [ ] Update completion screen with exact copy from source doc
-- [ ] Update AI summary to detect themes: Self Trust, Boundaries, Burnout, Self-Compassion, Growth, Peace, Emotional Safety
-- [ ] Update theme badges: Self Trust, Growth, Healing, Boundaries, Inner Peace, Emotional Safety
+- [x] Replace current generic Compass prompts with EXACT questions from 7 mirrors.docx (all 7 mirrors with exact questions and options)
+- [x] Add "Other" option with revealed text input on every mirror (hasOther: true on all mirrors)
+- [x] Add optional "Write freely here" journal box on every mirror (journalPlaceholder on all mirrors)
+- [x] Update completion screen with exact copy from source doc (Phase 29)
+- [x] Update AI summary to detect themes: Self Trust, Boundaries, Burnout, Self-Compassion, Growth, Peace, Emotional Safety (Phase 29)
+- [x] Update theme badges: Self Trust, Growth, Healing, Boundaries, Inner Peace, Emotional Safety + Self-Compassion (Phase 43)
 
 ### D. Check-In Flow — Full Rebuild from Master Mocha Prompt (10 steps)
-- [ ] Step 1: Single select — "What feels strongest for you right now?" (11 emotions including Frustrated, Hopeful but uncertain)
-- [ ] Step 2: Multi-select — "What might be contributing to how you feel?" (13 stressors)
-- [ ] Step 3: Multi-select — "How is this affecting you emotionally?" (10 emotional impacts)
-- [ ] Step 4: Multi-select — "Which feelings feel most intense?" (10 intense feelings)
-- [ ] Step 5: Multi-select — "Which of these might also be affecting you?" (10 life factors)
-- [ ] Step 6: Single select — "What feels most supportive for you right now?" (7 support needs)
+- [x] Step 1: Single select — "What feels strongest for you right now?" (11 emotions) — implemented in headcheckData.ts
+- [x] Step 2: Multi-select — "What might be contributing to how you feel?" (13 stressors) — implemented
+- [x] Step 3: Multi-select — "How is this affecting you emotionally?" (10 emotional impacts) — implemented
+- [x] Step 4: Multi-select — "Which feelings feel most intense?" (10 intense feelings) — implemented
+- [x] Step 5: Multi-select — "Which of these might also be affecting you?" (10 life factors) — implemented
+- [x] Step 6: Single select — "What feels most supportive for you right now?" (7 support needs) — implemented
 - [x] Step 7: Single select — "What feels possible for you right now?" (8 actions) — implemented in Phase 29
 - [x] Step 8: Single select — "Who or what kind of support could help?" (9 support types) — implemented in Phase 29
 - [x] Step 9: Single select — "Did this check-in help?" (3 options with conditional message) — implemented in Phase 29
