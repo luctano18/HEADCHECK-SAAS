@@ -546,7 +546,7 @@
 
 ## Phase 26: Real-Time Notifications + Resend Email
 
-- [ ] Configure RESEND_API_KEY secret
+- [x] Configure RESEND_API_KEY secret — already injected as system secret
 - [x] Add notifications table to DB schema (userId, type, title, body, link, read, createdAt)
 - [x] Add DB helpers: createNotification, getNotificationsForUser, markNotificationRead, markAllRead
 - [x] Create server/resend.ts email service with HTML templates for each event type
