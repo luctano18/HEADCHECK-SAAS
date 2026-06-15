@@ -7,10 +7,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
 import {
-  Brain, Heart, Sparkles, ArrowRight, Loader2, LogOut, User,
-  TrendingUp, Calendar, Award, Plus, ChevronRight, LayoutDashboard,
+  Brain, Heart, Sparkles, ArrowRight, Loader2,
+  TrendingUp, Calendar, Award, Plus, ChevronRight,
   BookOpen, Download
 } from "lucide-react";
+import NavBar from "@/components/NavBar";
+import Footer from "@/components/Footer";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell } from "recharts";
 import { format } from "date-fns";
 import MoodTrendChart from "@/components/MoodTrendChart";
@@ -102,92 +104,10 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* ── Sidebar Layout ── */}
-      <div className="flex h-screen overflow-hidden">
-        {/* Sidebar */}
-        <aside className="w-64 bg-sidebar text-sidebar-foreground flex flex-col border-r border-sidebar-border hidden md:flex">
-          <div className="p-5 border-b border-sidebar-border">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-xl bg-sidebar-primary flex items-center justify-center">
-                <Brain className="w-4 h-4 text-sidebar-primary-foreground" />
-              </div>
-              <span className="font-semibold text-sidebar-foreground">HeadCheck <span className="text-sidebar-primary">AI</span></span>
-            </div>
-          </div>
-          <nav className="flex-1 p-4 space-y-1">
-            {[
-              { icon: <TrendingUp className="w-4 h-4" />, label: "Dashboard", path: "/dashboard", active: true },
-              { icon: <Heart className="w-4 h-4" />, label: "Emotional Check-In", path: "/checkin" },
-              { icon: <Sparkles className="w-4 h-4" />, label: "Self Trust Compass", path: "/compass" },
-              { icon: <Brain className="w-4 h-4" />, label: "EI Quiz", path: "/ei-quiz" },
-            ].map((item) => (
-              <button
-                key={item.path}
-                onClick={() => navigate(item.path)}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-                  item.active
-                    ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                    : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
-                }`}
-              >
-                {item.icon}{item.label}
-              </button>
-            ))}
-          </nav>
-          <div className="p-4 border-t border-sidebar-border space-y-2">
-            <div className="flex items-center gap-3 px-3 py-2">
-              <div className="w-8 h-8 rounded-full bg-sidebar-accent flex items-center justify-center">
-                <User className="w-4 h-4 text-sidebar-foreground" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-medium text-sidebar-foreground truncate">{user?.name ?? "User"}</p>
-                <p className="text-xs text-sidebar-foreground/50 truncate">{user?.email ?? ""}</p>
-              </div>
-            </div>
-            {(user?.role === "admin" || user?.role === "superadmin") && (
-              <button
-                onClick={() => navigate("/facilitator")}
-                className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium text-purple-400 hover:text-purple-200 hover:bg-purple-900/30 border border-purple-700/30 transition-colors"
-              >
-                <LayoutDashboard className="w-4 h-4" /> Facilitator View
-              </button>
-            )}
-            <button
-              onClick={logout}
-              className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/50 transition-colors"
-            >
-              <LogOut className="w-4 h-4" /> Sign Out
-            </button>
-          </div>
-        </aside>
+      <NavBar />
+      <div className="hc-gradient-bar h-1.5" />
 
-        {/* Main Content */}
-        <main className="flex-1 overflow-y-auto">
-          {/* Mobile Header */}
-          <div className="md:hidden border-b bg-card/80 backdrop-blur-sm sticky top-0 z-10">
-            <div className="container flex items-center justify-between h-14">
-              <div className="flex items-center gap-2">
-                <Brain className="w-5 h-5 text-primary" />
-                <span className="font-semibold text-sm">HeadCheck AI</span>
-              </div>
-              <div className="flex items-center gap-1">
-                {(user?.role === "admin" || user?.role === "superadmin") && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => navigate("/facilitator")}
-                    className="text-purple-400 hover:text-purple-200 text-xs gap-1 px-2"
-                    title="Switch to Facilitator View"
-                  >
-                    <LayoutDashboard className="w-4 h-4" />
-                  </Button>
-                )}
-                <Button variant="ghost" size="sm" onClick={logout}><LogOut className="w-4 h-4" /></Button>
-              </div>
-            </div>
-          </div>
-
-          <div className="p-6 md:p-8 space-y-8 max-w-5xl">
+      <div className="container max-w-5xl py-8 space-y-8">
             {/* Greeting */}
             <div className="flex items-center justify-between">
               <div>
@@ -516,9 +436,8 @@ export default function Dashboard() {
                 </Button>
               </div>
             )}
-          </div>
-        </main>
       </div>
+      <Footer />
     </div>
   );
 }

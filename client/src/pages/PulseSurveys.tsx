@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
-import DashboardLayout from "@/components/DashboardLayout";
+import NavBar from "@/components/NavBar";
+import Footer from "@/components/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -126,8 +127,10 @@ export default function PulseSurveys() {
   });
 
   return (
-    <DashboardLayout>
-      <div className="max-w-2xl mx-auto space-y-6">
+    <div className="min-h-screen bg-background">
+      <NavBar />
+      <div className="hc-gradient-bar h-1.5" />
+      <div className="container max-w-2xl py-8 space-y-6">
         {/* Header */}
         <div className="flex items-center gap-3">
           <div className="p-2 rounded-lg bg-indigo-100 dark:bg-indigo-900/40">
@@ -167,6 +170,7 @@ export default function PulseSurveys() {
           </div>
         )}
       </div>
-    </DashboardLayout>
+      <Footer />
+    </div>
   );
 }

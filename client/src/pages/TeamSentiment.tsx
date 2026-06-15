@@ -1,7 +1,8 @@
 import { useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
-import DashboardLayout from "@/components/DashboardLayout";
+import NavBar from "@/components/NavBar";
+import Footer from "@/components/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -86,8 +87,10 @@ export default function TeamSentiment() {
   };
 
   return (
-    <DashboardLayout>
-      <div className="space-y-6">
+    <div className="min-h-screen bg-background">
+      <NavBar />
+      <div className="hc-gradient-bar h-1.5" />
+      <div className="container max-w-5xl py-8 space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -257,6 +260,7 @@ export default function TeamSentiment() {
           </Card>
         )}
       </div>
-    </DashboardLayout>
+      <Footer />
+    </div>
   );
 }
