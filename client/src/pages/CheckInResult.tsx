@@ -25,7 +25,7 @@ const RESPONSE_SECTIONS = [
 
 // ─── Feedback Bar ─────────────────────────────────────────────────────────────
 function FeedbackBar({ checkInId }: { checkInId: number }) {
-  const [selected, setSelected] = useState<"helpful" | "not_helpful" | null>(null);
+  const [selected, setSelected] = useState<"yes" | "somewhat" | "not_yet" | null>(null);
   const [comment, setComment] = useState("");
   const [submitted, setSubmitted] = useState(false);
 
@@ -48,27 +48,37 @@ function FeedbackBar({ checkInId }: { checkInId: number }) {
 
   return (
     <div className="rounded-2xl border bg-card p-5 space-y-4 animate-fade-in-up">
-      <p className="text-sm font-semibold text-foreground">Were these insights helpful?</p>
-      <div className="flex gap-3">
+      <p className="text-sm font-semibold text-foreground">Did this response feel helpful?</p>
+      <div className="flex gap-2 flex-wrap">
         <button
-          onClick={() => setSelected("helpful")}
+          onClick={() => setSelected("yes")}
           className={`flex items-center gap-2 px-4 py-2 rounded-xl border text-sm font-medium transition-all ${
-            selected === "helpful"
+            selected === "yes"
               ? "bg-green-100 border-green-300 text-green-700"
               : "bg-background border-border text-muted-foreground hover:border-green-300 hover:text-green-600"
           }`}
         >
-          <ThumbsUp className="w-4 h-4" /> Yes, helpful
+          <ThumbsUp className="w-4 h-4" /> Yes
         </button>
         <button
-          onClick={() => setSelected("not_helpful")}
+          onClick={() => setSelected("somewhat")}
           className={`flex items-center gap-2 px-4 py-2 rounded-xl border text-sm font-medium transition-all ${
-            selected === "not_helpful"
+            selected === "somewhat"
+              ? "bg-yellow-100 border-yellow-300 text-yellow-700"
+              : "bg-background border-border text-muted-foreground hover:border-yellow-300 hover:text-yellow-600"
+          }`}
+        >
+          <span className="text-base leading-none">🤔</span> Somewhat
+        </button>
+        <button
+          onClick={() => setSelected("not_yet")}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl border text-sm font-medium transition-all ${
+            selected === "not_yet"
               ? "bg-red-100 border-red-300 text-red-700"
               : "bg-background border-border text-muted-foreground hover:border-red-300 hover:text-red-600"
           }`}
         >
-          <ThumbsDown className="w-4 h-4" /> Not really
+          <ThumbsDown className="w-4 h-4" /> Not yet
         </button>
       </div>
 
@@ -77,7 +87,7 @@ function FeedbackBar({ checkInId }: { checkInId: number }) {
           <textarea
             value={comment}
             onChange={(e) => setComment(e.target.value)}
-            placeholder={selected === "helpful" ? "What resonated most with you? (optional)" : "What could be improved? (optional)"}
+            placeholder={selected === "yes" ? "What resonated most with you? (optional)" : "What could be improved? (optional)"}
             className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground resize-none focus:outline-none focus:ring-2 focus:ring-primary/30"
             rows={2}
             maxLength={500}
@@ -206,6 +216,9 @@ export default function CheckInResult() {
                       </blockquote>
                       {aiResponse.aieiProverbOrigin && (
                         <p className="text-xs text-muted-foreground mt-2 pl-4">— {aiResponse.aieiProverbOrigin}</p>
+                      )}
+                      {typeof (aiResponse as Record<string, unknown>).aieiProverbExplanation === "string" && (
+                        <p className="text-sm text-orange-700/80 mt-3 leading-relaxed">{String((aiResponse as Record<string, unknown>).aieiProverbExplanation)}</p>
                       )}
                     </div>
                   ) : section.isAffirmation ? (

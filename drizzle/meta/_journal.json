@@ -134,6 +134,13 @@
       "when": 1776877839375,
       "tag": "0018_good_madripoor",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "5",
+      "when": 1781546088029,
+      "tag": "0019_bizarre_scarlet_witch",
+      "breakpoints": true
     }
   ]
 }

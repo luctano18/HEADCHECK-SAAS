@@ -204,6 +204,7 @@ export async function saveAiResponse(data: {
   eiPillarDescription: string;
   aieiProverb: string;
   aieiProverbOrigin?: string;
+  aieiProverbExplanation?: string;
   personalizedNextStep: string;
   supportInvitation: string;
   affirmation?: string;
@@ -230,7 +231,7 @@ export async function getRecentEmotionPatterns(userId: number, limit = 5) {
 export async function updateAiResponseFeedback(
   checkInId: number,
   userId: number,
-  rating: "helpful" | "not_helpful",
+  rating: "helpful" | "not_helpful" | "yes" | "somewhat" | "not_yet",
   feedbackText?: string
 ) {
   const db = await getDb();

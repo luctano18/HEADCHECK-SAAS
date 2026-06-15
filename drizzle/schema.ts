@@ -127,11 +127,12 @@ export const aiResponses = mysqlTable("ai_responses", {
   eiPillarDescription: text("eiPillarDescription").notNull(),
   aieiProverb: text("aieiProverb").notNull(),
   aieiProverbOrigin: varchar("aieiProverbOrigin", { length: 128 }),
+  aieiProverbExplanation: text("aieiProverbExplanation"),
   personalizedNextStep: text("personalizedNextStep").notNull(),
   supportInvitation: text("supportInvitation").notNull(),
   affirmation: text("mochaAffirmation"),
   patternInsight: text("patternInsight"),
-  feedbackRating: mysqlEnum("feedbackRating", ["helpful", "not_helpful"]),
+  feedbackRating: mysqlEnum("feedbackRating", ["helpful", "not_helpful", "yes", "somewhat", "not_yet"]),
   feedbackText: text("feedbackText"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });

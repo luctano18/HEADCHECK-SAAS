@@ -253,17 +253,18 @@ async function generateAiResponse(params: {
 
 A user is experiencing: Emotion: "${emotion}" | Intensity: ${intensity}/10 | Context: ${context}
 ${journalEntry ? `Journal: "${journalEntry}"` : ""}${patternSection}
-Generate a structured JSON response with EXACTLY these 10 fields:
+Generate a structured JSON response with EXACTLY these 11 fields:
 1. "emotionalReflection": A warm, validating 2-3 sentence reflection on what the user is feeling. Use a compassionate, non-judgmental tone.
-2. "brainInsight": A 2-sentence neuroscience explanation of what's happening in the brain (mention specific brain regions like amygdala, prefrontal cortex, hippocampus, etc.).
+2. "brainInsight": A 2-sentence neuroscience explanation of what's happening in the brain (mention specific brain regions like amygdala, prefrontal cortex, hippocampus, etc.). End with: "This is your brain trying to protect you, not a failure."
 3. "eiPillar": The most relevant EI pillar name (one of: Self-Awareness, Self-Regulation, Motivation, Empathy, Social Skills).
 4. "eiPillarDescription": A 2-sentence explanation of how this EI pillar applies to their current state and what growth looks like.
 5. "aieiProverb": An authentic African proverb relevant to their situation.
 6. "aieiProverbOrigin": The country or culture of origin for the proverb (e.g., "Yoruba, Nigeria" or "Swahili, East Africa").
-7. "personalizedNextStep": A specific, actionable 2-3 sentence recommendation for their immediate next step.
-8. "supportInvitation": A gentle 1-2 sentence invitation to seek additional support if needed.
-9. "affirmation": A short, powerful 1-sentence affirmation from your HeadCheck AI companion that the user can carry with them. Make it personal, warm, and rooted in their specific emotional state.
-10. "patternInsight": ${patternContext ? `Based on the recent emotional history provided, give a 2-3 sentence compassionate insight about the emotional pattern you notice. Highlight what this pattern might mean and one gentle suggestion for breaking or nurturing it.` : `Return an empty string "".`}
+7. "aieiProverbExplanation": A 1-2 sentence explanation of how this proverb applies to the user's current emotional state.
+8. "personalizedNextStep": A specific, actionable 2-3 sentence recommendation for their immediate next step.
+9. "supportInvitation": A gentle 1-2 sentence invitation to seek additional support if needed.
+10. "affirmation": A short, powerful 1-sentence affirmation from your HeadCheck AI companion that the user can carry with them. Make it personal, warm, and rooted in their specific emotional state.
+11. "patternInsight": ${patternContext ? `Based on the recent emotional history provided, give a 2-3 sentence compassionate insight about the emotional pattern you notice. Highlight what this pattern might mean and one gentle suggestion for breaking or nurturing it.` : `Return an empty string "".`}
 Respond ONLY with valid JSON, no markdown.`;
 
   const response = await invokeLLM({
@@ -282,12 +283,13 @@ Respond ONLY with valid JSON, no markdown.`;
             eiPillarDescription: { type: "string" },
             aieiProverb: { type: "string" },
             aieiProverbOrigin: { type: "string" },
+            aieiProverbExplanation: { type: "string" },
             personalizedNextStep: { type: "string" },
             supportInvitation: { type: "string" },
             affirmation: { type: "string" },
             patternInsight: { type: "string" },
           },
-          required: ["emotionalReflection", "brainInsight", "eiPillar", "eiPillarDescription", "aieiProverb", "aieiProverbOrigin", "personalizedNextStep", "supportInvitation", "affirmation", "patternInsight"],
+          required: ["emotionalReflection", "brainInsight", "eiPillar", "eiPillarDescription", "aieiProverb", "aieiProverbOrigin", "aieiProverbExplanation", "personalizedNextStep", "supportInvitation", "affirmation", "patternInsight"],
           additionalProperties: false,
         },
       },
@@ -304,6 +306,7 @@ Respond ONLY with valid JSON, no markdown.`;
     eiPillarDescription: string;
     aieiProverb: string;
     aieiProverbOrigin: string;
+    aieiProverbExplanation: string;
     personalizedNextStep: string;
     supportInvitation: string;
     affirmation: string;
@@ -798,7 +801,7 @@ export const appRouter = router({
     submitFeedback: protectedProcedure
       .input(z.object({
         checkInId: z.number(),
-        rating: z.enum(["helpful", "not_helpful"]),
+        rating: z.enum(["helpful", "not_helpful", "yes", "somewhat", "not_yet"]),
         feedbackText: z.string().max(500).optional(),
       }))
       .mutation(async ({ ctx, input }) => {

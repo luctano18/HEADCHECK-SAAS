@@ -766,15 +766,25 @@
 
 ## Phase 40: Dashboard Enhancements (Phase 14 items)
 
-- [ ] Add tRPC procedure dashboard.getEmotionDistribution (pie chart data)
-- [ ] Add tRPC procedure dashboard.getCheckInActivity (heatmap/bar chart data by day)
-- [ ] Add tRPC procedure dashboard.getWellnessLogbook (journal entries with emotion + date)
-- [ ] Add tRPC procedure dashboard.getPersonalizedRecommendations (after 3+ check-ins)
-- [ ] Build EmotionDistributionChart component (PieChart/DonutChart with Recharts)
-- [ ] Build CheckInActivityChart component (bar chart by day of week + calendar heatmap)
-- [ ] Integrate EmotionDistributionChart + CheckInActivityChart into Dashboard.tsx
-- [ ] Add CSV export button in Dashboard (browser-side generation, privacy-first)
-- [ ] Create /wellness-logbook page with journal entries list, emotion filter, date range
-- [ ] Add Personalized Recommendations section in Dashboard (after 3+ check-ins)
-- [ ] Register /wellness-logbook route in App.tsx
-- [ ] Vérifier TypeScript et tests
+- [x] Add tRPC procedure dashboard.getEmotionDistribution (pie chart data)
+- [x] Add tRPC procedure dashboard.getCheckInActivity (heatmap/bar chart data by day)
+- [x] Add tRPC procedure dashboard.getWellnessLogbook (journal entries with emotion + date)
+- [x] Add tRPC procedure dashboard.getPersonalizedRecommendations (after 3+ check-ins)
+- [x] Build EmotionDistributionChart component (PieChart/DonutChart with Recharts)
+- [x] Build CheckInActivityChart component (bar chart by day of week + calendar heatmap)
+- [x] Integrate EmotionDistributionChart + CheckInActivityChart into Dashboard.tsx
+- [x] Add CSV export button in Dashboard (browser-side generation, privacy-first)
+- [x] Create /wellness-logbook page with journal entries list, emotion filter, date range
+- [x] Add Personalized Recommendations section in Dashboard (after 3+ check-ins)
+- [x] Register /wellness-logbook route in App.tsx
+- [x] Vérifier TypeScript et tests (0 erreurs, 132 tests ✓)
+
+## Phase 41: AI Response Enhancements
+
+- [x] Add aieiProverbExplanation field to ai_responses table (migration SQL applied)
+- [x] Update AI response prompt and schema to include aieiProverbExplanation
+- [x] Update saveAiResponse DB helper with aieiProverbExplanation field
+- [x] Update submitFeedback procedure to accept yes/somewhat/not_yet ratings
+- [x] Update FeedbackBar in CheckInResult.tsx: Yes / Somewhat / Not yet buttons
+- [x] Display aieiProverbExplanation in proverb card (orange text below origin)
+- [x] Vérifier TypeScript et tests (0 erreurs, 132 tests ✓)

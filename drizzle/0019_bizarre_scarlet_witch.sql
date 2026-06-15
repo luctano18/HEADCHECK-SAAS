@@ -1,0 +1,2 @@
+ALTER TABLE `ai_responses` MODIFY COLUMN `feedbackRating` enum('helpful','not_helpful','yes','somewhat','not_yet');--> statement-breakpoint
+ALTER TABLE `ai_responses` ADD `aieiProverbExplanation` text;
