@@ -162,11 +162,11 @@
 - [x] Add Team Sentiment Analysis (from check-in comments) — TeamSentiment.tsx + getTeamSentiment procedure
 - [x] Add CSV export for business reports — exportBusinessReport procedure + CSV download in TeamSentiment.tsx
 - [x] Add "Add Resources for Employees" feature in Facilitator Dashboard — addResource/getResources/removeResource procedures
-- [ ] Add company registration form with industry selector (Finance, Professional Services, etc.)
+- [x] Add company registration form with industry selector (Finance, Professional Services, etc.) — CompanyRegistrationForm in ForInstitutions.tsx with 11 industries
 
 ### Resources Library Enhancements
 - [x] Add 8 new curated resources: Feeling Wheel, Empathy Mapping, Nonviolent Communication, Difficult Conversations, Drive (Daniel Pink), Mindful Self-Compassion (Neff), Self-Awareness (Eurich), Hidden Brain Podcast
-- [ ] Add interactive Feeling Wheel tool (expand emotional vocabulary)
+- [x] Add interactive Feeling Wheel tool (expand emotional vocabulary) — /feeling-wheel page with 7 core xd7 6 secondary xd7 3 tertiary emotions, search, and check-in integration
 - [x] Add resource type filter: Article, Video, Book, Exercise, Tool, Podcast
 
 ### Learn EI Enhancements

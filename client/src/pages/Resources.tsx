@@ -19,6 +19,7 @@ interface Resource {
   duration: string;
   proverb?: string;
   proverbOrigin?: string;
+  internalLink?: string;
 }
 
 const RESOURCES: Resource[] = [
@@ -45,7 +46,7 @@ const RESOURCES: Resource[] = [
   { id: 21, type: "Book", category: "Neuroscience", title: "The Upward Spiral by Alex Korb", description: "A neuroscientist explains how small changes can create positive feedback loops in your brain, reducing anxiety and depression.", duration: "Book" },
   { id: 22, type: "Book", category: "Self-Management", title: "Self-Compassion by Kristin Neff", description: "Research-backed approaches to treating yourself with kindness, especially during struggles and setbacks.", duration: "Book" },
   // 8 new curated resources
-  { id: 23, type: "Tool", category: "Self-Awareness", title: "The Feeling Wheel", description: "A visual tool developed by Dr. Gloria Willcox to expand your emotional vocabulary. Start with a core emotion and explore nuanced feelings — moving from the center outward helps you name what you're truly experiencing.", duration: "Interactive tool" },
+  { id: 23, type: "Tool", category: "Self-Awareness", title: "The Feeling Wheel", description: "A visual tool developed by Dr. Gloria Willcox to expand your emotional vocabulary. Start with a core emotion and explore nuanced feelings — moving from the center outward helps you name what you're truly experiencing.", duration: "Interactive tool", internalLink: "/feeling-wheel" },
   { id: 24, type: "Exercise", category: "Social Awareness", title: "Empathy Mapping", description: "A structured exercise to step into another person's perspective. Map what they say, think, feel, and do to deepen understanding and strengthen your empathic response in relationships and conflict.", duration: "20 min" },
   { id: 25, type: "Book", category: "Relationship Management", title: "Nonviolent Communication by Marshall Rosenberg", description: "A transformative framework for expressing needs and hearing others without blame or judgment. NVC replaces reactive patterns with compassionate language that preserves connection even in conflict.", duration: "Book" },
   { id: 26, type: "Book", category: "Relationship Management", title: "Difficult Conversations by Stone, Patton & Heen", description: "Harvard Negotiation Project research on how to navigate hard conversations. Learn to separate impact from intent, manage emotions, and find your way to productive dialogue.", duration: "Book" },
@@ -192,9 +193,16 @@ export default function Resources() {
                   <p className="text-xs text-amber-600 mt-0.5">— {resource.proverbOrigin}</p>
                 </div>
               )}
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                <Clock className="w-3.5 h-3.5" />
-                {resource.duration}
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <Clock className="w-3.5 h-3.5" />
+                  {resource.duration}
+                </div>
+                {resource.internalLink && (
+                  <Button size="sm" variant="outline" className="text-xs h-7 px-3" onClick={() => navigate(resource.internalLink!)}>
+                    Open Tool
+                  </Button>
+                )}
               </div>
             </div>
           ))}

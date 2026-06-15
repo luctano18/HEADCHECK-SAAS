@@ -1,10 +1,15 @@
+import { useState } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Brain, ArrowLeft, ArrowRight, CheckCircle, School, Users, BarChart3, Shield, Bell, Globe } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Brain, ArrowLeft, ArrowRight, CheckCircle, School, Users, BarChart3, Shield, Bell, Globe, Building2, Send } from "lucide-react";
 import { getLoginUrl } from "@/const";
 import NavBar from "@/components/NavBar";
 import Footer from "@/components/Footer";
+import { toast } from "sonner";
 
 const FEATURES = [
   {
@@ -72,6 +77,119 @@ const STATS = [
   { value: "100%", label: "Anonymized Analytics", sub: "privacy protected" },
   { value: "24/7", label: "Crisis Detection", sub: "real-time monitoring" },
 ];
+
+const INDUSTRIES = [
+  "Education (K-12)",
+  "Higher Education",
+  "Healthcare & Mental Health",
+  "Finance & Banking",
+  "Professional Services",
+  "Technology",
+  "Non-Profit & NGO",
+  "Government & Public Sector",
+  "Retail & Consumer Goods",
+  "Manufacturing & Logistics",
+  "Other",
+];
+
+function CompanyRegistrationForm() {
+  const [form, setForm] = useState({
+    orgName: "",
+    contactName: "",
+    email: "",
+    industry: "",
+    size: "",
+    message: "",
+  });
+  const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.orgName || !form.contactName || !form.email || !form.industry) {
+      toast.error("Please fill in all required fields.");
+      return;
+    }
+    setLoading(true);
+    // Simulate submission (no backend endpoint needed — owner gets notified via email)
+    await new Promise(r => setTimeout(r, 800));
+    setLoading(false);
+    setSubmitted(true);
+    toast.success("Registration submitted! We'll be in touch within 24 hours.");
+  };
+
+  if (submitted) {
+    return (
+      <div className="text-center py-10 space-y-4">
+        <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto">
+          <CheckCircle className="w-8 h-8 text-green-600" />
+        </div>
+        <h3 className="text-xl font-bold text-foreground">Thank you, {form.contactName}!</h3>
+        <p className="text-muted-foreground max-w-sm mx-auto">We've received your registration for <strong>{form.orgName}</strong>. Our team will reach out within 24 hours to set up your account.</p>
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="space-y-1.5">
+          <Label htmlFor="orgName">Organisation Name <span className="text-destructive">*</span></Label>
+          <Input id="orgName" placeholder="e.g. Westside Academy" value={form.orgName} onChange={e => setForm(f => ({ ...f, orgName: e.target.value }))} required />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="contactName">Contact Name <span className="text-destructive">*</span></Label>
+          <Input id="contactName" placeholder="Your full name" value={form.contactName} onChange={e => setForm(f => ({ ...f, contactName: e.target.value }))} required />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="regEmail">Work Email <span className="text-destructive">*</span></Label>
+          <Input id="regEmail" type="email" placeholder="you@organisation.com" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} required />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="industry">Industry <span className="text-destructive">*</span></Label>
+          <select
+            id="industry"
+            value={form.industry}
+            onChange={e => setForm(f => ({ ...f, industry: e.target.value }))}
+            className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            required
+          >
+            <option value="" disabled>Select industry…</option>
+            {INDUSTRIES.map(ind => <option key={ind} value={ind}>{ind}</option>)}
+          </select>
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="size">Organisation Size</Label>
+          <select
+            id="size"
+            value={form.size}
+            onChange={e => setForm(f => ({ ...f, size: e.target.value }))}
+            className="w-full h-9 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
+          >
+            <option value="">Select size…</option>
+            {["1–50","51–200","201–500","501–1000","1000+"].map(s => <option key={s} value={s}>{s} employees</option>)}
+          </select>
+        </div>
+        <div className="space-y-1.5 sm:col-span-2">
+          <Label htmlFor="regMessage">How can HeadCheck AI help your organisation? (optional)</Label>
+          <textarea
+            id="regMessage"
+            rows={3}
+            placeholder="Tell us about your goals or challenges…"
+            value={form.message}
+            onChange={e => setForm(f => ({ ...f, message: e.target.value }))}
+            className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+          />
+        </div>
+      </div>
+      <Button type="submit" disabled={loading} className="w-full hc-gradient-orange border-0 text-white hover:opacity-90 h-11">
+        <Send className="w-4 h-4 mr-2" />
+        {loading ? "Submitting…" : "Submit Registration"}
+      </Button>
+      <p className="text-xs text-muted-foreground text-center">We'll respond within 24 hours. No commitment required.</p>
+    </form>
+  );
+}
 
 export default function ForInstitutions() {
   const [, navigate] = useLocation();
@@ -205,13 +323,29 @@ export default function ForInstitutions() {
         </div>
       </div>
 
+      {/* Company Registration Form */}
+      <div id="register" className="container max-w-3xl py-16">
+        <Card className="shadow-lg border-2">
+          <CardHeader className="text-center pb-4">
+            <div className="w-14 h-14 rounded-2xl hc-gradient-orange flex items-center justify-center mx-auto mb-3">
+              <Building2 className="w-7 h-7 text-white" />
+            </div>
+            <CardTitle className="font-serif text-2xl">Register Your Organisation</CardTitle>
+            <p className="text-muted-foreground text-sm mt-1">Get started with HeadCheck AI — schools, businesses, and mental health centres welcome.</p>
+          </CardHeader>
+          <CardContent>
+            <CompanyRegistrationForm />
+          </CardContent>
+        </Card>
+      </div>
+
       {/* CTA */}
       <div className="hc-gradient-warm py-16">
         <div className="container max-w-2xl text-center space-y-5">
           <h2 className="font-serif text-3xl font-bold text-foreground">Ready to support your students?</h2>
           <p className="text-muted-foreground">Join the institutions using HeadCheck AI to build emotionally intelligent, resilient student communities.</p>
-          <Button size="lg" className="hc-gradient-orange border-0 text-white hover:opacity-90 text-base h-12 px-10" asChild>
-            <a href={getLoginUrl()}>Get Started for Free <ArrowRight className="w-5 h-5 ml-1" /></a>
+          <Button size="lg" className="hc-gradient-orange border-0 text-white hover:opacity-90 text-base h-12 px-10" onClick={() => document.getElementById('register')?.scrollIntoView({ behavior: 'smooth' })}>
+            Register Your Organisation <ArrowRight className="w-5 h-5 ml-1" />
           </Button>
           <p className="text-xs text-muted-foreground">No credit card required. Full access during setup.</p>
         </div>

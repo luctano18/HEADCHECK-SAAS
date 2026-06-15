@@ -35,6 +35,7 @@ import SupportOptions from "./pages/SupportOptions";
 import AIEILibrary from "./pages/AIEILibrary";
 import PulseSurveys from "./pages/PulseSurveys";
 import TeamSentiment from "./pages/TeamSentiment";
+import FeelingWheel from "./pages/FeelingWheel";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -85,6 +86,8 @@ function Router() {
       {/* Business / Team features */}
       <Route path="/pulse-surveys" component={PulseSurveys} />
       <Route path="/team-sentiment" component={TeamSentiment} />
+      {/* Feeling Wheel */}
+      <Route path="/feeling-wheel" component={FeelingWheel} />
       {/* Alert Detail pages (admin/facilitator only) */}
       <Route path="/alert/crisis/:id" component={AlertDetail} />
       <Route path="/alert/violence/:id" component={AlertDetail} />
