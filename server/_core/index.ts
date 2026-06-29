@@ -1,5 +1,31 @@
 import "dotenv/config";
 import express from "express";
+import cors from "cors";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
+
+// ============================================
+// ENVIRONMENT VALIDATION
+// ============================================
+const requiredEnvVars = [
+  "DATABASE_URL",
+  "JWT_SECRET",
+  "GOOGLE_CLIENT_ID",
+  "GOOGLE_CLIENT_SECRET",
+  "RESEND_API_KEY",
+  "OPENAI_API_KEY",
+] as const;
+
+const missingVars = requiredEnvVars.filter((key) => !process.env[key]);
+
+if (missingVars.length > 0) {
+  console.error("❌ Missing required environment variables:");
+  missingVars.forEach((key) => console.error(`   - ${key}`));
+  console.error("\nPlease copy .env.example to .env and fill in the values.");
+  process.exit(1);
+}
+
+console.log("✅ All required environment variables are set");
 import { createServer } from "http";
 import net from "net";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
@@ -9,6 +35,7 @@ import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { sendWeeklyReflections } from "../weeklyReflection";
+import stripe from "../stripe";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -32,9 +59,74 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
 async function startServer() {
   const app = express();
   const server = createServer(app);
+
+  // ─── Security Middleware ───────────────────────────────────────────────────
+  app.use(helmet()); // Secure HTTP headers
+
+  // CORS configuration
+  const allowedOrigins = process.env.CORS_ORIGIN
+    ? process.env.CORS_ORIGIN.split(",")
+    : ["http://localhost:3000", "https://headcheck.app"];
+
+  app.use(
+    cors({
+      origin: allowedOrigins,
+      credentials: true,
+    })
+  );
+
+  // Global rate limiting (100 requests per 15 minutes per IP)
+  const globalRateLimit = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 100,
+    message: "Too many requests from this IP, please try again later.",
+    standardHeaders: true,
+    legacyHeaders: false,
+  });
+  app.use(globalRateLimit);
+
   // Configure body parser with larger size limit for file uploads
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
+
+  // ─── Health Check Endpoint ─────────────────────────────────────────────────
+  app.get("/health", (req, res) => {
+    res.json({
+      status: "ok",
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      environment: process.env.NODE_ENV || "development",
+    });
+  });
+
+  // ─── Stripe Webhook ────────────────────────────────────────────────────────
+  app.post("/api/webhook/stripe", express.raw({ type: "application/json" }), async (req, res) => {
+    const sig = req.headers["stripe-signature"] as string;
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+    if (!webhookSecret) {
+      console.error("[Stripe] Webhook secret not configured");
+      return res.status(400).send("Webhook secret not configured");
+    }
+
+    let event;
+    try {
+      event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
+    } catch (err: any) {
+      console.error("[Stripe] Webhook signature verification failed:", err.message);
+      return res.status(400).send(`Webhook Error: ${err.message}`);
+    }
+
+    try {
+      const { handleWebhookEvent } = await import("../stripe");
+      await handleWebhookEvent(event);
+      res.json({ received: true });
+    } catch (err) {
+      console.error("[Stripe] Webhook handler error:", err);
+      res.status(500).send("Webhook handler failed");
+    }
+  });
+
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);
   // Social auth routes (Google + GitHub)
