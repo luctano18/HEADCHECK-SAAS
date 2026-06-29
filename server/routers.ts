@@ -1,4 +1,5 @@
 import { TRPCError } from "@trpc/server";
+import { createCheckoutSession, createPortalSession, PLANS } from "./stripe";
 import { authEmailRouter } from "./routers/authEmail";
 import { nanoid } from "nanoid";
 import { z } from "zod";
@@ -37,6 +38,13 @@ import {
   updateUserStreak,
   getUserStreak,
   getUserAchievements,
+  getUserLevel,
+  addUserXp,
+  getOrCreateWeeklyChallenges,
+  updateWeeklyChallengeProgress,
+  checkAndCreateGroupRiskAlerts,
+  getGroupRiskAlerts,
+  acknowledgeGroupRiskAlert,
   createCoachingSession,
   getCoachingSessionsByUser,
   createQuizAttempt,
@@ -244,29 +252,57 @@ async function generateAiResponse(params: {
   intensity: number;
   context: string;
   journalEntry?: string;
-  patternContext?: string; // Recent emotion history for Pattern Insight
+  patternContext?: string;
+  responseStyle?: "short" | "normal" | "coach";
 }) {
-  const { emotion, intensity, context, journalEntry, patternContext } = params;
+  const { emotion, intensity, context, journalEntry, patternContext, responseStyle = "normal" } = params;
   const patternSection = patternContext
     ? `\nRecent emotional history: ${patternContext}\n`
     : "";
   const brainContext = getBrainInsightContext(emotion);
+
+  // Style-specific instructions
+  let styleInstructions = "";
+  if (responseStyle === "short") {
+    styleInstructions = `
+RESPONSE STYLE: SHORT
+- Keep every field to 1 sentence maximum.
+- Be concise, warm, and direct.
+- Focus only on the most important insight.`;
+  } else if (responseStyle === "coach") {
+    styleInstructions = `
+RESPONSE STYLE: COACH
+- Be more motivational and action-oriented.
+- Use empowering language ("You have the strength to...", "This is your moment to...").
+- Make the personalizedNextStep more detailed and practical (3-4 sentences).
+- Add a gentle challenge or growth invitation in the affirmation.`;
+  } else {
+    styleInstructions = `
+RESPONSE STYLE: NORMAL
+- Balanced length and depth (2-3 sentences for most fields).
+- Compassionate, insightful, and culturally grounded.`;
+  }
+
   const prompt = `You are HeadCheck AI, a compassionate emotional wellness assistant that integrates neuroscience, Emotional Intelligence (EI), and African-Inspired Emotional Intelligence (AIEI).
 
 A user is experiencing: Emotion: "${emotion}" | Intensity: ${intensity}/10 | Context: ${context}
 ${journalEntry ? `Journal: "${journalEntry}"` : ""}${patternSection}
+
+${styleInstructions}
+
 Generate a structured JSON response with EXACTLY these 11 fields:
-1. "emotionalReflection": A warm, validating 2-3 sentence reflection on what the user is feeling. Use a compassionate, non-judgmental tone.
-2. "brainInsight": A 2-sentence neuroscience explanation of what's happening in the brain. Use this brain-emotion mapping as your scientific reference: ${brainContext}. End with: "This is your brain trying to protect you, not a failure."
+1. "emotionalReflection": A warm, validating reflection on what the user is feeling. Use a compassionate, non-judgmental tone.
+2. "brainInsight": A neuroscience explanation of what's happening in the brain. Use this brain-emotion mapping as your scientific reference: ${brainContext}. End with: "This is your brain trying to protect you, not a failure."
 3. "eiPillar": The most relevant EI pillar name (one of: Self-Awareness, Self-Regulation, Motivation, Empathy, Social Skills).
-4. "eiPillarDescription": A 2-sentence explanation of how this EI pillar applies to their current state and what growth looks like.
-5. "aieiProverb": An authentic African proverb relevant to their situation.
-6. "aieiProverbOrigin": The country or culture of origin for the proverb (e.g., "Yoruba, Nigeria" or "Swahili, East Africa").
-7. "aieiProverbExplanation": A 1-2 sentence explanation of how this proverb applies to the user's current emotional state.
-8. "personalizedNextStep": A specific, actionable 2-3 sentence recommendation for their immediate next step.
-9. "supportInvitation": A gentle 1-2 sentence invitation to seek additional support if needed.
-10. "affirmation": A short, powerful 1-sentence affirmation from your HeadCheck AI companion that the user can carry with them. Make it personal, warm, and rooted in their specific emotional state.
-11. "patternInsight": ${patternContext ? `Based on the recent emotional history provided, give a 2-3 sentence compassionate insight about the emotional pattern you notice. Highlight what this pattern might mean and one gentle suggestion for breaking or nurturing it.` : `Return an empty string "".`}
+4. "eiPillarDescription": An explanation of how this EI pillar applies to their current state and what growth looks like.
+5. "aieiProverb": An authentic, meaningful African proverb relevant to their situation. Prioritize proverbs from diverse African cultures (West, East, Southern, North Africa). Choose proverbs that feel timeless and wise.
+6. "aieiProverbOrigin": The country or culture of origin for the proverb (e.g., "Yoruba, Nigeria", "Swahili, East Africa", "Zulu, South Africa", "Akan, Ghana").
+7. "aieiProverbExplanation": A thoughtful explanation of how this proverb applies to the user's current emotional state and offers perspective.
+8. "personalizedNextStep": A specific, actionable recommendation for their immediate next step.
+9. "supportInvitation": A gentle invitation to seek additional support if needed.
+10. "affirmation": A short, powerful affirmation from your HeadCheck AI companion that the user can carry with them. Make it personal and rooted in their emotional state.
+11. "patternInsight": ${patternContext ? `Based on the recent emotional history provided, give a compassionate insight about the emotional pattern you notice. Highlight what this pattern might mean and one gentle suggestion.` : `Return an empty string "".`}
+
 Respond ONLY with valid JSON, no markdown.`;
 
   const response = await invokeLLM({
@@ -579,7 +615,10 @@ export const appRouter = router({
         didHelp: z.enum(["yes_clearer", "somewhat_calmer", "not_yet"]).optional(),
         journalNotes: z.string().optional(),
         otherInputs: z.record(z.string(), z.string()).optional(),
+        // ── AI Response Style ────────────────────────────────────────────────
+        responseStyle: z.enum(["short", "normal", "coach"]).optional(),
       }))
+
       .mutation(async ({ ctx, input }) => {
         const crisis = detectCrisis(input.journalEntry ?? "", input.intensity);
 
@@ -745,17 +784,35 @@ export const appRouter = router({
         // Skip AI response generation if risk_override (crisis screen takes over)
         let aiData = null;
         if (!interventionResult?.risk.riskOverride) {
+          // Check subscription for Coach mode
+          if (input.responseStyle === "coach") {
+            const { getUserSubscriptionStatus } = await import("./db");
+            const sub = await getUserSubscriptionStatus(ctx.user.id);
+            if (sub.status === "free") {
+              throw new TRPCError({
+                code: "FORBIDDEN",
+                message: "Coach mode is only available for Pro and Institution plans.",
+              });
+            }
+          }
+
           aiData = await generateAiResponse({
             emotion: input.emotion,
             intensity: input.intensity,
             context: input.context,
             journalEntry: input.journalEntry,
             patternContext,
+            responseStyle: input.responseStyle ?? "normal",
           });
           await saveAiResponse({ checkInId, userId: ctx.user.id, ...aiData });
         }
 
         const streakData = await updateUserStreak(ctx.user.id);
+
+        // Mettre à jour le défi "Self Trust Compass"
+        if (input.context === "Self") {
+          await updateWeeklyChallengeProgress(ctx.user.id, "compass_complete", 1);
+        }
 
         return {
           checkInId,
@@ -971,6 +1028,16 @@ export const appRouter = router({
     getPersonalizedRecommendations: protectedProcedure.query(async ({ ctx }) => {
       return getPersonalizedRecommendations(ctx.user.id);
     }),
+
+    // ─── Level & XP ─────────────────────────────────────────────────────────
+    getLevel: protectedProcedure.query(async ({ ctx }) => {
+      return getUserLevel(ctx.user.id);
+    }),
+
+    // ─── Weekly Challenges ──────────────────────────────────────────────────
+    getWeeklyChallenges: protectedProcedure.query(async ({ ctx }) => {
+      return getOrCreateWeeklyChallenges(ctx.user.id);
+    }),
     exportCheckIns: protectedProcedure
       .input(z.object({ days: z.union([z.literal(30), z.literal(90), z.literal(365)]).default(90) }))
       .query(async ({ ctx, input }) => {
@@ -996,6 +1063,126 @@ export const appRouter = router({
         return isSuperadmin && !ctx.user.institutionId
           ? getAllCheckInTrends(input.days ?? 30)
           : getCohortCheckInTrends(ctx.user.institutionId!, input.days ?? 30);
+      }),
+
+    // ─── Risk Score Overview (new) ─────────────────────────────────────────
+    getRiskOverview: protectedProcedure.query(async ({ ctx }) => {
+      const isSuperadmin = ctx.user.role === "superadmin";
+      if (!ctx.user.institutionId && !isSuperadmin) throw new TRPCError({ code: "FORBIDDEN" });
+
+      const institutionId = ctx.user.institutionId;
+      if (!institutionId) return { riskScore: 0, riskLevel: "low", topEmotions: [], highRiskStudents: 0 };
+
+      // Récupérer les tendances des 30 derniers jours
+      const trends = await getCohortCheckInTrends(institutionId, 30);
+      
+      if (trends.length === 0) {
+        return { riskScore: 0, riskLevel: "low", topEmotions: [], highRiskStudents: 0 };
+      }
+
+      // Calculer le score de risque moyen
+      const avgIntensity = trends.reduce((sum, t) => sum + t.intensity, 0) / trends.length;
+      
+      // Compter les alertes critiques non résolues
+      const crisisAlerts = await getCrisisEventsByInstitution(institutionId);
+      const unresolvedCritical = crisisAlerts.filter((a: any) => !a.acknowledged && a.severity === "critical").length;
+      
+      // Score de risque (0-100)
+      let riskScore = Math.round((avgIntensity / 10) * 60); // 60% basé sur l'intensité
+      riskScore += Math.min(unresolvedCritical * 10, 40); // +10 par alerte critique (max 40)
+
+      const riskLevel = riskScore >= 70 ? "high" : riskScore >= 40 ? "medium" : "low";
+
+      // Top émotions
+      const emotionCounts: Record<string, number> = {};
+      trends.forEach((t) => {
+        emotionCounts[t.emotion] = (emotionCounts[t.emotion] ?? 0) + 1;
+      });
+      const topEmotions = Object.entries(emotionCounts)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 3)
+        .map(([emotion, count]) => ({ emotion, count }));
+
+      return {
+        riskScore,
+        riskLevel,
+        topEmotions,
+        highRiskStudents: unresolvedCritical,
+        totalCheckIns: trends.length,
+      };
+    }),
+
+    // ─── Group Risk Breakdown (new) ─────────────────────────────────────────
+    getGroupRiskBreakdown: protectedProcedure.query(async ({ ctx }) => {
+      const isSuperadmin = ctx.user.role === "superadmin";
+      if (!ctx.user.institutionId && !isSuperadmin) throw new TRPCError({ code: "FORBIDDEN" });
+
+      const institutionId = ctx.user.institutionId;
+      if (!institutionId) return [];
+
+      const groups = await getGroupsByInstitution(institutionId);
+      const result = [];
+
+      for (const group of groups) {
+        // Récupérer les utilisateurs du groupe
+        const db = await import("./db").then(m => m.getDb());
+        if (!db) continue;
+
+        const { users, checkIns } = await import("../drizzle/schema");
+        const { eq, and, gte } = await import("drizzle-orm");
+
+        const groupUsers = await db.select({ id: users.id }).from(users).where(eq(users.groupId, group.id));
+        if (groupUsers.length === 0) continue;
+
+        const userIds = groupUsers.map(u => u.id);
+        const since = new Date(Date.now() - 30 * 86400000);
+
+        const checkinRows = await db
+          .select({ intensity: checkIns.intensity, emotion: checkIns.emotion })
+          .from(checkIns)
+          .where(and(
+            sql`${checkIns.userId} IN (${sql.join(userIds.map(id => sql`${id}`), sql`, `)})`,
+            gte(checkIns.createdAt, since)
+          ));
+
+        if (checkinRows.length === 0) continue;
+
+        const avgIntensity = checkinRows.reduce((s, r) => s + r.intensity, 0) / checkinRows.length;
+        const emotionCounts: Record<string, number> = {};
+        checkinRows.forEach(r => {
+          emotionCounts[r.emotion] = (emotionCounts[r.emotion] ?? 0) + 1;
+        });
+        const topEmotion = Object.entries(emotionCounts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? "—";
+
+        result.push({
+          groupId: group.id,
+          groupName: group.name,
+          memberCount: groupUsers.length,
+          avgIntensity: Math.round(avgIntensity * 10) / 10,
+          totalCheckIns: checkinRows.length,
+          topEmotion,
+          riskLevel: avgIntensity >= 7 ? "high" : avgIntensity >= 5 ? "medium" : "low",
+        });
+      }
+
+      return result.sort((a, b) => b.avgIntensity - a.avgIntensity);
+    }),
+
+    // ─── Proactive Group Risk Alerts ─────────────────────────────────────────
+    getGroupRiskAlerts: protectedProcedure.query(async ({ ctx }) => {
+      const isSuperadmin = ctx.user.role === "superadmin";
+      if (!ctx.user.institutionId && !isSuperadmin) throw new TRPCError({ code: "FORBIDDEN" });
+      return getGroupRiskAlerts(ctx.user.institutionId!);
+    }),
+
+    acknowledgeGroupRiskAlert: protectedProcedure
+      .input(z.object({ alertId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const isSuperadmin = ctx.user.role === "superadmin";
+        const isAdmin = ctx.user.role === "admin" || ctx.user.role === "facilitator";
+        if (!isSuperadmin && !isAdmin) throw new TRPCError({ code: "FORBIDDEN" });
+        await acknowledgeGroupRiskAlert(input.alertId);
+        return { success: true };
       }),
     getEngagement: protectedProcedure.query(async ({ ctx }) => {
       const isSuperadmin = ctx.user.role === "superadmin";
@@ -1292,6 +1479,9 @@ export const appRouter = router({
           answers: input.answers,
           aiInsight,
         });
+
+        // Mettre à jour le défi EI Quiz
+        await updateWeeklyChallengeProgress(ctx.user.id, "ei_quiz", 1);
 
         return { ...attempt, scores, level, aiInsight };
       }),
@@ -1620,6 +1810,124 @@ export const appRouter = router({
         }
         return { success: true, sent, total: admins.filter(a => a.email).length };
       }),
+
+    // ─── Monthly Report ─────────────────────────────────────────────────────
+    generateMonthlyReport: protectedProcedure.mutation(async ({ ctx }) => {
+      if (!['admin', 'superadmin'].includes(ctx.user.role)) {
+        throw new TRPCError({ code: 'FORBIDDEN' });
+      }
+      const institutionId = ctx.user.institutionId;
+      if (!institutionId) throw new TRPCError({ code: 'BAD_REQUEST', message: 'No institution found' });
+
+      const { getInstitutionById } = await import('./db');
+      const institution = await getInstitutionById(institutionId);
+
+      const { collectMonthlyReportData, buildReportHtml, generateReportPdf } = await import('./weeklyReport');
+      const data = await collectMonthlyReportData(institutionId, institution?.name ?? 'Your Institution');
+      const html = buildReportHtml(data as any);
+      const pdfBuffer = await generateReportPdf(html);
+      const pdfBase64 = pdfBuffer.toString('base64');
+
+      return {
+        success: true,
+        pdfBase64,
+        filename: `headcheck-monthly-report-${data.month.replace(/\s/g, '-')}.pdf`,
+        month: data.month,
+      };
+    }),
+
+    // ─── Group Report ───────────────────────────────────────────────────────
+    generateGroupReport: protectedProcedure
+      .input(z.object({ groupId: z.number(), groupName: z.string() }))
+      .mutation(async ({ ctx, input }) => {
+        if (!['admin', 'superadmin', 'facilitator'].includes(ctx.user.role)) {
+          throw new TRPCError({ code: 'FORBIDDEN' });
+        }
+        const institutionId = ctx.user.institutionId;
+        if (!institutionId) throw new TRPCError({ code: 'BAD_REQUEST', message: 'No institution found' });
+
+        const { getInstitutionById } = await import('./db');
+        const institution = await getInstitutionById(institutionId);
+
+        const { collectGroupReportData, buildReportHtml, generateReportPdf } = await import('./weeklyReport');
+        const data = await collectGroupReportData(input.groupId, input.groupName, institution?.name ?? 'Your Institution');
+        const html = buildReportHtml(data as any);
+        const pdfBuffer = await generateReportPdf(html);
+        const pdfBase64 = pdfBuffer.toString('base64');
+
+        return {
+          success: true,
+          pdfBase64,
+          filename: `headcheck-group-report-${input.groupName.replace(/\s/g, '-')}.pdf`,
+          groupName: input.groupName,
+        };
+      }),
+
+    // ─── Comparative Report (Two Periods) ─────────────────────────────────────
+    generateComparativeReport: protectedProcedure
+      .input(z.object({
+        days1: z.number().min(7).max(365).default(30),
+        days2: z.number().min(7).max(365).default(30),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (!['admin', 'superadmin', 'facilitator'].includes(ctx.user.role)) {
+          throw new TRPCError({ code: 'FORBIDDEN' });
+        }
+        const institutionId = ctx.user.institutionId;
+        if (!institutionId) throw new TRPCError({ code: 'BAD_REQUEST', message: 'No institution found' });
+
+        const { getInstitutionById } = await import('./db');
+        const institution = await getInstitutionById(institutionId);
+
+        const { collectComparativeReportData, buildReportHtml, generateReportPdf } = await import('./weeklyReport');
+        const data = await collectComparativeReportData(
+          institutionId,
+          institution?.name ?? 'Your Institution',
+          input.days1,
+          input.days2
+        );
+
+        // Build a simple comparative HTML report
+        const html = `
+          <html><body style="font-family: Arial, sans-serif; padding: 40px; max-width: 900px; margin: 0 auto;">
+            <h1>Comparative Emotional Wellness Report</h1>
+            <h2>${data.institutionName}</h2>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin: 30px 0;">
+              <div>
+                <h3>${data.period1.label}</h3>
+                <p><strong>Check-ins:</strong> ${data.period1.totalCheckIns}</p>
+                <p><strong>Avg Intensity:</strong> ${data.period1.avgIntensity}/10</p>
+                <p><strong>Crisis Alerts:</strong> ${data.period1.crisisAlerts}</p>
+                <p><strong>Violence Flags:</strong> ${data.period1.violenceFlags}</p>
+              </div>
+              <div>
+                <h3>${data.period2.label}</h3>
+                <p><strong>Check-ins:</strong> ${data.period2.totalCheckIns}</p>
+                <p><strong>Avg Intensity:</strong> ${data.period2.avgIntensity}/10</p>
+                <p><strong>Crisis Alerts:</strong> ${data.period2.crisisAlerts}</p>
+                <p><strong>Violence Flags:</strong> ${data.period2.violenceFlags}</p>
+              </div>
+            </div>
+            <h3>Comparison</h3>
+            <ul>
+              <li>Check-ins change: ${data.comparison.checkInsDelta >= 0 ? '+' : ''}${data.comparison.checkInsDelta}</li>
+              <li>Intensity change: ${data.comparison.intensityDelta >= 0 ? '+' : ''}${data.comparison.intensityDelta}</li>
+              <li>Crisis alerts change: ${data.comparison.crisisDelta >= 0 ? '+' : ''}${data.comparison.crisisDelta}</li>
+              <li>Violence flags change: ${data.comparison.violenceDelta >= 0 ? '+' : ''}${data.comparison.violenceDelta}</li>
+            </ul>
+          </body></html>
+        `;
+
+        const pdfBuffer = await generateReportPdf(html);
+        const pdfBase64 = pdfBuffer.toString('base64');
+
+        return {
+          success: true,
+          pdfBase64,
+          filename: `headcheck-comparative-report.pdf`,
+          data,
+        };
+      }),
   }),
 
   // ── EEIS: Intervention ────────────────────────────────────────────────────────────────────────────────
@@ -1739,6 +2047,42 @@ export const appRouter = router({
       }),
   }),
 
+  // ─── Stripe / Billing ─────────────────────────────────────────────────────
+  billing: router({
+    getPlans: publicProcedure.query(() => {
+      return PLANS;
+    }),
+
+    createCheckout: protectedProcedure
+      .input(z.object({
+        priceId: z.string(),
+        successUrl: z.string().url(),
+        cancelUrl: z.string().url(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        const session = await createCheckoutSession(
+          ctx.user.id,
+          input.priceId,
+          input.successUrl,
+          input.cancelUrl
+        );
+        return { url: session.url };
+      }),
+
+    createPortal: protectedProcedure
+      .input(z.object({ returnUrl: z.string().url() }))
+      .mutation(async ({ ctx, input }) => {
+        // In a real app, you would store the Stripe customer ID on the user
+        // For now, we'll create a customer on the fly if needed
+        const customer = await stripe.customers.create({
+          email: ctx.user.email || undefined,
+          metadata: { userId: ctx.user.id.toString() },
+        });
+        const session = await createPortalSession(customer.id, input.returnUrl);
+        return { url: session.url };
+      }),
+  }),
+
   business: router({
     // ─── Pulse Surveys ──────────────────────────────────────────────────────────
     createSurvey: protectedProcedure
@@ -1809,6 +2153,90 @@ export const appRouter = router({
           getPulseSurveysByInstitution(ctx.user.institutionId),
         ]);
         return { sentiment, surveys, generatedAt: new Date().toISOString(), institutionId: ctx.user.institutionId };
+      }),
+
+    // ─── Advanced Excel Export (new) ─────────────────────────────────────────
+    exportAdvancedReport: protectedProcedure
+      .input(z.object({
+        days: z.number().min(7).max(365).default(90),
+        includeGroups: z.boolean().default(true),
+        anonymized: z.boolean().default(true),
+      }))
+      .query(async ({ ctx, input }) => {
+        if (!ctx.user.institutionId) throw new TRPCError({ code: 'FORBIDDEN' });
+
+        const db = await import('./db').then(m => m.getDb());
+        if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
+
+        const { checkIns, users, groups } = await import('../drizzle/schema');
+        const { and, eq, gte } = await import('drizzle-orm');
+
+        const since = new Date(Date.now() - input.days * 86400000);
+
+        // Récupérer tous les check-ins de l'institution
+        const rows = await db
+          .select({
+            date: checkIns.createdAt,
+            emotion: checkIns.emotion,
+            intensity: checkIns.intensity,
+            context: checkIns.context,
+            groupId: users.groupId,
+            groupName: groups.name,
+          })
+          .from(checkIns)
+          .innerJoin(users, eq(checkIns.userId, users.id))
+          .leftJoin(groups, eq(users.groupId, groups.id))
+          .where(
+            and(
+              eq(users.institutionId, ctx.user.institutionId),
+              gte(checkIns.createdAt, since)
+            )
+          )
+          .orderBy(desc(checkIns.createdAt));
+
+        // Agrégation par jour
+        const dailyMap: Record<string, { count: number; sumIntensity: number; emotions: Record<string, number> }> = {};
+        const groupMap: Record<string, { count: number; avgIntensity: number }> = {};
+
+        rows.forEach((r) => {
+          const day = r.date.toISOString().split('T')[0]!;
+          if (!dailyMap[day]) dailyMap[day] = { count: 0, sumIntensity: 0, emotions: {} };
+          dailyMap[day].count++;
+          dailyMap[day].sumIntensity += r.intensity;
+          dailyMap[day].emotions[r.emotion] = (dailyMap[day].emotions[r.emotion] ?? 0) + 1;
+
+          if (r.groupName) {
+            if (!groupMap[r.groupName]) groupMap[r.groupName] = { count: 0, avgIntensity: 0 };
+            groupMap[r.groupName].count++;
+            groupMap[r.groupName].avgIntensity += r.intensity;
+          }
+        });
+
+        const dailyData = Object.entries(dailyMap).map(([date, d]) => ({
+          date,
+          checkIns: d.count,
+          avgIntensity: Math.round((d.sumIntensity / d.count) * 10) / 10,
+          topEmotion: Object.entries(d.emotions).sort((a, b) => b[1] - a[1])[0]?.[0] ?? '—',
+        }));
+
+        const groupData = Object.entries(groupMap).map(([name, g]) => ({
+          group: name,
+          checkIns: g.count,
+          avgIntensity: Math.round((g.avgIntensity / g.count) * 10) / 10,
+        }));
+
+        return {
+          institutionId: ctx.user.institutionId,
+          period: { days: input.days, from: since.toISOString(), to: new Date().toISOString() },
+          summary: {
+            totalCheckIns: rows.length,
+            avgIntensity: rows.length ? Math.round((rows.reduce((s, r) => s + r.intensity, 0) / rows.length) * 10) / 10 : 0,
+            uniqueDays: Object.keys(dailyMap).length,
+          },
+          daily: dailyData,
+          byGroup: input.includeGroups ? groupData : [],
+          generatedAt: new Date().toISOString(),
+        };
       }),
 
     // ─── Wellness Resources ──────────────────────────────────────────────────────
