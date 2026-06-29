@@ -34,6 +34,11 @@ export const users = mysqlTable("users", {
   reminderDays: varchar("reminderDays", { length: 32 }).default("1,2,3,4,5"), // comma-separated 0-6 (0=Sun)
   // Weekly reflection summary (opt-in email every Monday)
   weeklyReflectionEnabled: boolean("weeklyReflectionEnabled").default(true).notNull(),
+  // Stripe subscription fields
+  stripeCustomerId: varchar("stripeCustomerId", { length: 64 }),
+  stripeSubscriptionId: varchar("stripeSubscriptionId", { length: 64 }),
+  subscriptionStatus: mysqlEnum("subscriptionStatus", ["free", "pro", "institution", "cancelled"]).default("free").notNull(),
+  subscriptionEndsAt: timestamp("subscriptionEndsAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
@@ -208,6 +213,36 @@ export const userAchievements = mysqlTable("user_achievements", {
 });
 
 export type UserAchievement = typeof userAchievements.$inferSelect;
+
+// ─── User Levels & XP ─────────────────────────────────────────────────────────
+export const userLevels = mysqlTable("user_levels", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull().unique(),
+  level: int("level").default(1).notNull(),           // Niveau actuel (1-50)
+  xp: int("xp").default(0).notNull(),                // XP total accumulé
+  xpToNextLevel: int("xpToNextLevel").default(100).notNull(), // XP nécessaire pour le niveau suivant
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type UserLevel = typeof userLevels.$inferSelect;
+
+// ─── Weekly Challenges ────────────────────────────────────────────────────────
+export const weeklyChallenges = mysqlTable("weekly_challenges", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  weekStart: varchar("weekStart", { length: 10 }).notNull(), // YYYY-MM-DD (Monday)
+  challengeKey: varchar("challengeKey", { length: 64 }).notNull(),
+  title: varchar("title", { length: 128 }).notNull(),
+  description: varchar("description", { length: 256 }).notNull(),
+  xpReward: int("xpReward").default(30).notNull(),
+  progress: int("progress").default(0).notNull(),
+  target: int("target").default(1).notNull(),
+  completed: boolean("completed").default(false).notNull(),
+  completedAt: timestamp("completedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type WeeklyChallenge = typeof weeklyChallenges.$inferSelect;
 
 // ─── Coaching Sessions ────────────────────────────────────────────────────────
 export const coachingSessions = mysqlTable("coaching_sessions", {
@@ -516,4 +551,20 @@ export const patternFlags = mysqlTable("pattern_flags", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 export type PatternFlag = typeof patternFlags.$inferSelect;
+
+// ─── Group Risk Alerts (Proactive Alerts) ─────────────────────────────────────
+export const groupRiskAlerts = mysqlTable("group_risk_alerts", {
+  id: int("id").autoincrement().primaryKey(),
+  institutionId: int("institutionId").notNull(),
+  groupId: int("groupId"),
+  groupName: varchar("groupName", { length: 255 }).notNull(),
+  avgIntensity: float("avgIntensity").notNull(),
+  threshold: float("threshold").default(7.0).notNull(),
+  periodDays: int("periodDays").default(3).notNull(),
+  alertSentAt: timestamp("alertSentAt").defaultNow().notNull(),
+  acknowledged: boolean("acknowledged").default(false).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type GroupRiskAlert = typeof groupRiskAlerts.$inferSelect;
 export type InsertPatternFlag = typeof patternFlags.$inferInsert;
