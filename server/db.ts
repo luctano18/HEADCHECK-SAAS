@@ -15,7 +15,10 @@ import {
   users,
   userStreaks,
   userAchievements,
+  userLevels,
+  weeklyChallenges,
   violenceFlags,
+  groupRiskAlerts,
   alertComments,
   notifications,
   resourceRatings,
@@ -95,6 +98,28 @@ export async function getUserByOpenId(openId: string) {
   if (!db) return undefined;
   const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
   return result[0];
+}
+
+/** Get user's current subscription status */
+export async function getUserSubscriptionStatus(userId: number) {
+  const db = await getDb();
+  if (!db) return { status: "free", plan: "Free" };
+
+  const [user] = await db
+    .select({
+      subscriptionStatus: users.subscriptionStatus,
+      subscriptionEndsAt: users.subscriptionEndsAt,
+    })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1);
+
+  return {
+    status: user?.subscriptionStatus || "free",
+    plan: user?.subscriptionStatus === "pro" ? "Pro" :
+          user?.subscriptionStatus === "institution" ? "Institution" : "Free",
+    endsAt: user?.subscriptionEndsAt,
+  };
 }
 
 export async function updateUserOnboarding(userId: number, data: {
@@ -427,6 +452,17 @@ export async function updateUserStreak(userId: number): Promise<{ currentStreak:
       });
       newAchievements.push(`${milestone.emoji} ${milestone.title}`);
     }
+  }
+
+  // Ajouter de l'XP pour le check-in (10 XP par check-in)
+  await addUserXp(userId, 10);
+
+  // Mettre à jour les défis hebdomadaires
+  await updateWeeklyChallengeProgress(userId, "checkins_5", 1);
+
+  // Vérifier si on a fait 3 jours consécutifs
+  if (currentStreak >= 3) {
+    await updateWeeklyChallengeProgress(userId, "streak_3", 1);
   }
 
   return { currentStreak, longestStreak, totalCheckIns, newAchievements };
@@ -1882,4 +1918,272 @@ export async function deleteWellnessResource(resourceId: number) {
   const db = await getDb();
   if (!db) return;
   await db.update(wellnessResources).set({ isActive: false }).where(eq(wellnessResources.id, resourceId));
+}
+
+// ─── User Levels & XP ─────────────────────────────────────────────────────────
+
+/** XP requis pour passer au niveau suivant (formule exponentielle) */
+function getXpRequiredForLevel(level: number): number {
+  return Math.floor(100 * Math.pow(1.5, level - 1));
+}
+
+/** Ajoute de l'XP à un utilisateur et gère les montées de niveau */
+export async function addUserXp(userId: number, xpAmount: number): Promise<{ level: number; xp: number; xpToNextLevel: number; leveledUp: boolean }> {
+  const db = await getDb();
+  if (!db) return { level: 1, xp: 0, xpToNextLevel: 100, leveledUp: false };
+
+  const existing = await db.select().from(userLevels).where(eq(userLevels.userId, userId)).limit(1);
+  let currentLevel = existing[0]?.level ?? 1;
+  let currentXp = existing[0]?.xp ?? 0;
+  let xpToNext = existing[0]?.xpToNextLevel ?? getXpRequiredForLevel(currentLevel);
+
+  currentXp += xpAmount;
+  let leveledUp = false;
+
+  // Vérifier les montées de niveau
+  while (currentXp >= xpToNext) {
+    currentXp -= xpToNext;
+    currentLevel++;
+    xpToNext = getXpRequiredForLevel(currentLevel);
+    leveledUp = true;
+  }
+
+  if (existing[0]) {
+    await db.update(userLevels).set({
+      level: currentLevel,
+      xp: currentXp,
+      xpToNextLevel: xpToNext,
+    }).where(eq(userLevels.userId, userId));
+  } else {
+    await db.insert(userLevels).values({
+      userId,
+      level: currentLevel,
+      xp: currentXp,
+      xpToNextLevel: xpToNext,
+    });
+  }
+
+  return { level: currentLevel, xp: currentXp, xpToNextLevel: xpToNext, leveledUp };
+}
+
+/** Récupère le niveau et l'XP d'un utilisateur */
+export async function getUserLevel(userId: number) {
+  const db = await getDb();
+  if (!db) return { level: 1, xp: 0, xpToNextLevel: 100 };
+  const result = await db.select().from(userLevels).where(eq(userLevels.userId, userId)).limit(1);
+  if (result[0]) return result[0];
+  return { level: 1, xp: 0, xpToNextLevel: 100 };
+}
+
+// ─── Weekly Challenges ────────────────────────────────────────────────────────
+
+/** Génère les défis de la semaine pour un utilisateur (ou les récupère s'ils existent) */
+export async function getOrCreateWeeklyChallenges(userId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  // Calculer le lundi de la semaine courante
+  const today = new Date();
+  const day = today.getDay();
+  const diff = today.getDate() - day + (day === 0 ? -6 : 1); // lundi
+  const monday = new Date(today.setDate(diff));
+  const weekStart = monday.toISOString().split("T")[0]!;
+
+  // Vérifier si les défis existent déjà
+  const existing = await db
+    .select()
+    .from(weeklyChallenges)
+    .where(and(eq(weeklyChallenges.userId, userId), eq(weeklyChallenges.weekStart, weekStart)));
+
+  if (existing.length > 0) return existing;
+
+  // Créer les 4 défis de base
+  const challengesToCreate = [
+    {
+      userId,
+      weekStart,
+      challengeKey: "checkins_5",
+      title: "5 Check-ins",
+      description: "Complete 5 emotional check-ins this week",
+      xpReward: 50,
+      progress: 0,
+      target: 5,
+    },
+    {
+      userId,
+      weekStart,
+      challengeKey: "streak_3",
+      title: "3-Day Streak",
+      description: "Check in for 3 consecutive days",
+      xpReward: 40,
+      progress: 0,
+      target: 3,
+    },
+    {
+      userId,
+      weekStart,
+      challengeKey: "compass_complete",
+      title: "Complete the Compass",
+      description: "Finish your Self Trust Compass journey",
+      xpReward: 60,
+      progress: 0,
+      target: 1,
+    },
+    {
+      userId,
+      weekStart,
+      challengeKey: "ei_quiz",
+      title: "Take the EI Quiz",
+      description: "Measure your Emotional Intelligence",
+      xpReward: 30,
+      progress: 0,
+      target: 1,
+    },
+  ];
+
+  await db.insert(weeklyChallenges).values(challengesToCreate);
+  return db
+    .select()
+    .from(weeklyChallenges)
+    .where(and(eq(weeklyChallenges.userId, userId), eq(weeklyChallenges.weekStart, weekStart)));
+}
+
+/** Met à jour la progression d'un défi */
+export async function updateWeeklyChallengeProgress(userId: number, challengeKey: string, increment = 1) {
+  const db = await getDb();
+  if (!db) return;
+
+  const today = new Date();
+  const day = today.getDay();
+  const diff = today.getDate() - day + (day === 0 ? -6 : 1);
+  const monday = new Date(today.setDate(diff));
+  const weekStart = monday.toISOString().split("T")[0]!;
+
+  const challenge = await db
+    .select()
+    .from(weeklyChallenges)
+    .where(
+      and(
+        eq(weeklyChallenges.userId, userId),
+        eq(weeklyChallenges.weekStart, weekStart),
+        eq(weeklyChallenges.challengeKey, challengeKey)
+      )
+    )
+    .limit(1);
+
+  if (!challenge[0] || challenge[0].completed) return;
+
+  const newProgress = Math.min(challenge[0].progress + increment, challenge[0].target);
+  const isCompleted = newProgress >= challenge[0].target;
+
+  await db
+    .update(weeklyChallenges)
+    .set({
+      progress: newProgress,
+      completed: isCompleted,
+      completedAt: isCompleted ? new Date() : undefined,
+    })
+    .where(eq(weeklyChallenges.id, challenge[0].id));
+
+  // Si complété, donner l'XP
+  if (isCompleted) {
+    await addUserXp(userId, challenge[0].xpReward);
+  }
+}
+
+// ─── Group Risk Alerts (Proactive) ────────────────────────────────────────────
+
+/** Vérifie les seuils de risque par groupe et crée des alertes si nécessaire */
+export async function checkAndCreateGroupRiskAlerts(institutionId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const { checkIns, users, groups } = await import("../drizzle/schema");
+  const { and, eq, gte } = await import("drizzle-orm");
+
+  // Récupérer tous les groupes de l'institution
+  const institutionGroups = await db.select().from(groups).where(eq(groups.institutionId, institutionId));
+  if (institutionGroups.length === 0) return [];
+
+  const alertsCreated: any[] = [];
+  const THRESHOLD = 7.0;
+  const PERIOD_DAYS = 3;
+  const since = new Date(Date.now() - PERIOD_DAYS * 86400000);
+
+  for (const group of institutionGroups) {
+    // Récupérer les utilisateurs du groupe
+    const groupUsers = await db.select({ id: users.id }).from(users).where(eq(users.groupId, group.id));
+    if (groupUsers.length === 0) continue;
+
+    const userIds = groupUsers.map(u => u.id);
+
+    // Récupérer les check-ins des 3 derniers jours
+    const recentCheckins = await db
+      .select({ intensity: checkIns.intensity })
+      .from(checkIns)
+      .where(
+        and(
+          sql`${checkIns.userId} IN (${sql.join(userIds.map(id => sql`${id}`), sql`, `)})`,
+          gte(checkIns.createdAt, since)
+        )
+      );
+
+    if (recentCheckins.length < 5) continue; // Pas assez de données
+
+    const avgIntensity = recentCheckins.reduce((s, r) => s + r.intensity, 0) / recentCheckins.length;
+
+    // Si la moyenne dépasse le seuil
+    if (avgIntensity >= THRESHOLD) {
+      // Vérifier si une alerte récente existe déjà (dernières 24h)
+      const existingAlert = await db
+        .select()
+        .from(groupRiskAlerts)
+        .where(
+          and(
+            eq(groupRiskAlerts.groupId, group.id),
+            eq(groupRiskAlerts.acknowledged, false),
+            gte(groupRiskAlerts.alertSentAt, new Date(Date.now() - 86400000))
+          )
+        )
+        .limit(1);
+
+      if (existingAlert.length === 0) {
+        // Créer l'alerte
+        const [result] = await db.insert(groupRiskAlerts).values({
+          institutionId,
+          groupId: group.id,
+          groupName: group.name,
+          avgIntensity: Math.round(avgIntensity * 10) / 10,
+          threshold: THRESHOLD,
+          periodDays: PERIOD_DAYS,
+        });
+
+        alertsCreated.push({
+          groupId: group.id,
+          groupName: group.name,
+          avgIntensity: Math.round(avgIntensity * 10) / 10,
+        });
+      }
+    }
+  }
+
+  return alertsCreated;
+}
+
+/** Récupère les alertes de risque non acquittées d'une institution */
+export async function getGroupRiskAlerts(institutionId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(groupRiskAlerts)
+    .where(and(eq(groupRiskAlerts.institutionId, institutionId), eq(groupRiskAlerts.acknowledged, false)))
+    .orderBy(desc(groupRiskAlerts.alertSentAt));
+}
+
+/** Marque une alerte de risque comme acquittée */
+export async function acknowledgeGroupRiskAlert(alertId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(groupRiskAlerts).set({ acknowledged: true }).where(eq(groupRiskAlerts.id, alertId));
 }
