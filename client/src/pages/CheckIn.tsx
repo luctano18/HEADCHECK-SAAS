@@ -56,6 +56,7 @@ export default function CheckIn() {
   const [showCrisisModal, setShowCrisisModal] = useState(false);
   const [crisisType, setCrisisType] = useState<"self" | "violence">("self");
   const [showNotYetMessage, setShowNotYetMessage] = useState(false);
+  const [responseStyle, setResponseStyle] = useState<"short" | "normal" | "coach">("normal");
 
   const createCheckIn = trpc.checkIns.create.useMutation();
   const guestCreate = trpc.checkIns.guestCreate.useMutation();
@@ -212,6 +213,7 @@ export default function CheckIn() {
       supportSource: supportType || undefined,
       didHelp,
       journalNotes: allJournals || undefined,
+      responseStyle, // Nouveau : style de réponse AI
     };
 
     try {
@@ -525,6 +527,32 @@ export default function CheckIn() {
               className="rounded-2xl border-purple-100 focus:border-purple-300 resize-none text-sm"
               rows={3}
             />
+          </div>
+        )}
+
+        {/* Response Style Selector (visible on last steps) */}
+        {currentStep >= 8 && (
+          <div className="mb-4 p-3 bg-white rounded-2xl border border-purple-100">
+            <p className="text-xs font-medium text-gray-500 mb-2">AI Response Style</p>
+            <div className="flex gap-2">
+              {[
+                { value: "short", label: "Short" },
+                { value: "normal", label: "Balanced" },
+                { value: "coach", label: "Coach" },
+              ].map((style) => (
+                <button
+                  key={style.value}
+                  onClick={() => setResponseStyle(style.value as "short" | "normal" | "coach")}
+                  className={`flex-1 py-1.5 text-sm rounded-xl border transition-all ${
+                    responseStyle === style.value
+                      ? "border-primary bg-primary text-white"
+                      : "border-gray-200 hover:border-primary/50"
+                  }`}
+                >
+                  {style.label}
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
