@@ -28,19 +28,19 @@ export function LevelProgress() {
               <Trophy className="w-5 h-5 text-primary-foreground" />
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Niveau</p>
+              <p className="text-xs text-muted-foreground">Level</p>
               <p className="text-2xl font-bold text-primary">{level}</p>
             </div>
           </div>
           <div className="text-right">
             <p className="text-sm font-semibold">{xp} / {xpToNextLevel} XP</p>
-            <p className="text-xs text-muted-foreground">jusqu'au niveau {level + 1}</p>
+            <p className="text-xs text-muted-foreground">to level {level + 1}</p>
           </div>
         </div>
 
         <Progress value={progress} className="h-2" />
         <p className="text-[10px] text-center mt-1.5 text-muted-foreground">
-          {progress}% vers le niveau suivant
+          {progress}% to next level
         </p>
       </CardContent>
     </Card>
