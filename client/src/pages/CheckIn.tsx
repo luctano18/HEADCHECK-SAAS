@@ -226,11 +226,23 @@ export default function CheckIn() {
         checkInId = result.checkInId;
         interventionData = result.intervention;
 
-        if (result.streak?.leveledUp) {
-          toast.success(`🎉 Level up! You're now Level ${result.streak.level}`);
+        const streak = result.streak;
+        let toastDelay = 0;
+        if (streak?.checkinsChallenge?.completed) {
+          toast.success(`🏆 Challenge completed: ${streak.checkinsChallenge.title} (+${streak.checkinsChallenge.xpReward} XP)`);
+          toastDelay += 600;
         }
-        result.streak?.newAchievements?.forEach((achievement, i) => {
-          setTimeout(() => toast.success(achievement), (i + 1) * 600);
+        if (streak?.streakChallenge?.completed) {
+          setTimeout(() => toast.success(`🏆 Challenge completed: ${streak.streakChallenge!.title} (+${streak.streakChallenge!.xpReward} XP)`), toastDelay);
+          toastDelay += 600;
+        }
+        if (streak?.leveledUp) {
+          setTimeout(() => toast.success(`🎉 Level up! You're now Level ${streak.level}`), toastDelay);
+          toastDelay += 600;
+        }
+        streak?.newAchievements?.forEach((achievement) => {
+          setTimeout(() => toast.success(achievement), toastDelay);
+          toastDelay += 600;
         });
       } else {
         const result = await guestCreate.mutateAsync({

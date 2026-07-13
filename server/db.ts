@@ -394,9 +394,9 @@ export async function getCompletedSevenMirrorsSessions(userId: number) {
 }
 
 // ─── Streaks & Achievements ──────────────────────────────────────────────────
-export async function updateUserStreak(userId: number): Promise<{ currentStreak: number; longestStreak: number; totalCheckIns: number; newAchievements: string[]; leveledUp: boolean; level: number }> {
+export async function updateUserStreak(userId: number): Promise<{ currentStreak: number; longestStreak: number; totalCheckIns: number; newAchievements: string[]; leveledUp: boolean; level: number; checkinsChallenge: Awaited<ReturnType<typeof updateWeeklyChallengeProgress>>; streakChallenge: Awaited<ReturnType<typeof updateWeeklyChallengeProgress>> }> {
   const db = await getDb();
-  if (!db) return { currentStreak: 0, longestStreak: 0, totalCheckIns: 0, newAchievements: [], leveledUp: false, level: 1 };
+  if (!db) return { currentStreak: 0, longestStreak: 0, totalCheckIns: 0, newAchievements: [], leveledUp: false, level: 1, checkinsChallenge: null, streakChallenge: null };
 
   const today = new Date().toISOString().split("T")[0]!; // YYYY-MM-DD
   const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0]!;
@@ -456,16 +456,27 @@ export async function updateUserStreak(userId: number): Promise<{ currentStreak:
 
   // Ajouter de l'XP pour le check-in (10 XP par check-in)
   const xpResult = await addUserXp(userId, 10);
+  let leveledUp = xpResult.leveledUp;
+  let level = xpResult.level;
 
   // Mettre à jour les défis hebdomadaires
-  await updateWeeklyChallengeProgress(userId, "checkins_5", 1);
-
-  // Vérifier si on a fait 3 jours consécutifs
-  if (currentStreak >= 3) {
-    await updateWeeklyChallengeProgress(userId, "streak_3", 1);
+  const checkinsChallenge = await updateWeeklyChallengeProgress(userId, "checkins_5", 1);
+  if (checkinsChallenge?.completed) {
+    leveledUp = leveledUp || checkinsChallenge.leveledUp;
+    level = checkinsChallenge.newLevel;
   }
 
-  return { currentStreak, longestStreak, totalCheckIns, newAchievements, leveledUp: xpResult.leveledUp, level: xpResult.level };
+  // Vérifier si on a fait 3 jours consécutifs
+  let streakChallenge: Awaited<ReturnType<typeof updateWeeklyChallengeProgress>> = null;
+  if (currentStreak >= 3) {
+    streakChallenge = await updateWeeklyChallengeProgress(userId, "streak_3", 1);
+    if (streakChallenge?.completed) {
+      leveledUp = leveledUp || streakChallenge.leveledUp;
+      level = streakChallenge.newLevel;
+    }
+  }
+
+  return { currentStreak, longestStreak, totalCheckIns, newAchievements, leveledUp, level, checkinsChallenge, streakChallenge };
 }
 
 export async function getUserStreak(userId: number) {
