@@ -94,6 +94,30 @@ export const BRAIN_EMOTION_MAP: BrainEmotionEntry[] = [
     protectiveFunction: "Gratitude is your brain recognizing abundance and positive connection. It builds resilience and strengthens social bonds.",
     neurotransmitters: ["Dopamine", "Serotonin", "Oxytocin"],
   },
+  {
+    emotion: "Numb",
+    primaryRegion: "Default Mode Network",
+    secondaryRegions: ["Amygdala", "Insula"],
+    process: "Numbness reflects a low-activation, protective shutdown: amygdala reactivity is dampened and interoceptive signals from the insula are muted, reducing how strongly emotions are felt.",
+    protectiveFunction: "Numbness is your brain shielding you from emotional overload. It creates distance from pain when the intensity would otherwise be too much to process at once.",
+    neurotransmitters: ["Endorphins", "Serotonin (reduced)", "Dopamine (reduced)"],
+  },
+  {
+    emotion: "Discouraged",
+    primaryRegion: "Nucleus Accumbens",
+    secondaryRegions: ["Prefrontal Cortex", "Ventral Tegmental Area"],
+    process: "Discouragement is linked to reduced dopamine signaling in the brain's reward circuitry, reinforcing negative-outcome loops and making sustained effort feel harder to justify.",
+    protectiveFunction: "Discouragement is your brain conserving energy after effort hasn't paid off as hoped. It's a signal to reassess, not a verdict on your ability.",
+    neurotransmitters: ["Dopamine (reduced)", "Cortisol"],
+  },
+  {
+    emotion: "Hopeful But Uncertain",
+    primaryRegion: "Nucleus Accumbens",
+    secondaryRegions: ["Prefrontal Cortex", "Amygdala"],
+    process: "This state activates reward circuitry around a positive possibility while the amygdala stays mildly engaged around the unknown, producing a balanced but unsettled mix of anticipation and caution.",
+    protectiveFunction: "This mix of hope and uncertainty is your brain holding space for growth while staying alert to risk. It's forward motion that hasn't fully steadied yet.",
+    neurotransmitters: ["Dopamine", "Norepinephrine (mild)", "Serotonin"],
+  },
 ];
 
 /**
