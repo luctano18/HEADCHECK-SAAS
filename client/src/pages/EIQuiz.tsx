@@ -102,15 +102,16 @@ export default function EIQuiz() {
       // Submit
       setSubmitting(true);
       try {
-        let result: any;
+        let result: Awaited<ReturnType<typeof submitAuth.mutateAsync>> | Awaited<ReturnType<typeof submitGuest.mutateAsync>>;
         if (user) {
-          result = await submitAuth.mutateAsync({ answers });
-          if (result.challengeResult?.completed) {
-            toast.success(`🏆 Challenge completed: ${result.challengeResult.title} (+${result.challengeResult.xpReward} XP)`);
-            if (result.challengeResult.leveledUp) {
-              setTimeout(() => toast.success(`🎉 Level up! You're now Level ${result.challengeResult!.newLevel}`), 600);
+          const authResult = await submitAuth.mutateAsync({ answers });
+          if (authResult.challengeResult?.completed) {
+            toast.success(`🏆 Challenge completed: ${authResult.challengeResult.title} (+${authResult.challengeResult.xpReward} XP)`);
+            if (authResult.challengeResult.leveledUp) {
+              setTimeout(() => toast.success(`🎉 Level up! You're now Level ${authResult.challengeResult!.newLevel}`), 600);
             }
           }
+          result = authResult;
         } else {
           result = await submitGuest.mutateAsync({ answers });
         }
