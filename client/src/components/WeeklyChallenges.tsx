@@ -53,7 +53,7 @@ export function WeeklyChallenges() {
                   </p>
                 </div>
               </div>
-              <Progress value={progress} className="h-1.5" />
+              <Progress value={progress} className="h-1.5" indicatorClassName={challenge.completed ? "bg-support" : "bg-primary"} />
             </div>
           );
         })}

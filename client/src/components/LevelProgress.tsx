@@ -38,7 +38,7 @@ export function LevelProgress() {
           </div>
         </div>
 
-        <Progress value={progress} className="h-2" />
+        <Progress value={progress} className="h-2" indicatorClassName="bg-support" />
         <p className="text-[10px] text-center mt-1.5 text-muted-foreground">
           {progress}% to next level
         </p>
