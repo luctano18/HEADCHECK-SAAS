@@ -33,6 +33,7 @@ import Messages from "./pages/Messages";
 import WellnessLogbook from "./pages/WellnessLogbook";
 import SupportOptions from "./pages/SupportOptions";
 import AIEILibrary from "./pages/AIEILibrary";
+import Pricing from "./pages/Pricing";
 import PulseSurveys from "./pages/PulseSurveys";
 import TeamSentiment from "./pages/TeamSentiment";
 import FeelingWheel from "./pages/FeelingWheel";
@@ -83,6 +84,7 @@ function Router() {
       <Route path="/support-options" component={SupportOptions} />
       {/* AIEI Content Library */}
       <Route path="/aiei-library" component={AIEILibrary} />
+      <Route path="/pricing" component={Pricing} />
       {/* Business / Team features */}
       <Route path="/pulse-surveys" component={PulseSurveys} />
       <Route path="/team-sentiment" component={TeamSentiment} />

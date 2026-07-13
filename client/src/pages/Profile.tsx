@@ -9,7 +9,7 @@ import {
   User, Mail, Phone, Globe, Bell, BellOff, Camera,
   Flame, Trophy, Calendar, CheckCircle2, ArrowLeft,
   Shield, Star, Edit3, Save, X, Clock, BarChart3,
-  Heart, Zap, Award,
+  Heart, Zap, Award, CreditCard,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -462,6 +462,35 @@ export default function Profile() {
             <div>
               <p className="text-xs text-gray-500 mb-0.5">Member Since</p>
               <p className="text-gray-700">{joinDate}</p>
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Subscription Status */}
+          <div className="pt-2">
+            <p className="text-xs font-medium text-gray-500 mb-2 flex items-center gap-1.5">
+              <CreditCard className="w-3.5 h-3.5" /> Subscription
+            </p>
+            <div className="flex items-center justify-between">
+              <div>
+                <Badge variant="outline" className="text-sm">
+                  {(profile as any)?.subscriptionStatus?.toUpperCase() || "FREE"}
+                </Badge>
+                {(profile as any)?.subscriptionEndsAt && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    Renews {new Date((profile as any).subscriptionEndsAt).toLocaleDateString()}
+                  </p>
+                )}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate("/pricing")}
+                className="gap-1.5"
+              >
+                Manage Plan
+              </Button>
             </div>
           </div>
 

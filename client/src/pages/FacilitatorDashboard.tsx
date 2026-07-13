@@ -130,6 +130,48 @@ export default function FacilitatorDashboard() {
   const { data: myAssignments } = trpc.crisis.getMyAssignments.useQuery(undefined, { enabled: isAuthenticated });
   const [crisisFilterUnresolved, setCrisisFilterUnresolved] = useState(true);
   const [violenceFilterUnresolved, setViolenceFilterUnresolved] = useState(true);
+  const [isExporting, setIsExporting] = useState(false);
+  const { refetch: refetchAdvancedReport } = trpc.business.exportAdvancedReport.useQuery(
+    { days: 90, includeGroups: true, anonymized: true },
+    { enabled: false }
+  );
+
+  // Monthly & Group PDF Reports
+  const generateMonthlyMutation = trpc.admin.generateMonthlyReport.useMutation({
+    onSuccess: (data) => {
+      if (data.pdfBase64) {
+        const link = document.createElement("a");
+        link.href = `data:application/pdf;base64,${data.pdfBase64}`;
+        link.download = data.filename;
+        link.click();
+        toast.success(`Monthly report downloaded (${data.month})`);
+      }
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const generateGroupMutation = trpc.admin.generateGroupReport.useMutation({
+    onSuccess: (data) => {
+      if (data.pdfBase64) {
+        const link = document.createElement("a");
+        link.href = `data:application/pdf;base64,${data.pdfBase64}`;
+        link.download = data.filename;
+        link.click();
+        toast.success(`Group report downloaded (${data.groupName})`);
+      }
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  // Group Risk Alerts (Proactive)
+  const { data: groupRiskAlerts, refetch: refetchGroupAlerts } = trpc.facilitator.getGroupRiskAlerts.useQuery(undefined, { enabled: isAuthenticated });
+  const acknowledgeGroupAlertMutation = trpc.facilitator.acknowledgeGroupRiskAlert.useMutation({
+    onSuccess: () => {
+      toast.success("Alert acknowledged");
+      refetchGroupAlerts();
+    },
+    onError: (err) => toast.error(err.message),
+  });
 
   const isSuperadmin = user?.role === "superadmin";
   const hasInstitution = !!user?.institutionId;
@@ -138,6 +180,8 @@ export default function FacilitatorDashboard() {
     { days: 30 }, { enabled: isAuthenticated }
   );
   const { data: engagement } = trpc.facilitator.getEngagement.useQuery(undefined, { enabled: isAuthenticated });
+  const { data: riskOverview } = trpc.facilitator.getRiskOverview.useQuery(undefined, { enabled: isAuthenticated });
+  const { data: groupRisk } = trpc.facilitator.getGroupRiskBreakdown.useQuery(undefined, { enabled: isAuthenticated });
   const { data: crisisAlerts, refetch: refetchAlerts } = trpc.facilitator.getCrisisAlerts.useQuery(
     undefined, { enabled: isAuthenticated }
   );
@@ -227,6 +271,7 @@ export default function FacilitatorDashboard() {
     { id: "overview", label: "Overview", icon: <BarChart3 className="w-4 h-4" /> },
     { id: "alerts", label: "Crisis Alerts", icon: <AlertTriangle className="w-4 h-4" />, badge: criticalCount + highCount },
     { id: "violence", label: "Violence Flags", icon: <Shield className="w-4 h-4" />, badge: unacknowledgedViolence },
+    { id: "groupRisk", label: "Group Alerts", icon: <TrendingUp className="w-4 h-4" />, badge: groupRiskAlerts?.length ?? 0 },
     { id: "groups", label: "Groups & Invites", icon: <Users className="w-4 h-4" /> },
     { id: "assigned", label: "Assigned to Me", icon: <Mail className="w-4 h-4" />, badge: totalAssignedCount },
     { id: "eeis", label: "Intervention Config", icon: <Sliders className="w-4 h-4" /> },
@@ -332,6 +377,45 @@ export default function FacilitatorDashboard() {
                   <p className="text-muted-foreground text-sm mt-1">Anonymized emotional wellness trends — last 30 days</p>
                 </div>
 
+                {/* Risk Score Banner */}
+                {riskOverview && (
+                  <Card className={`border-2 ${
+                    riskOverview.riskLevel === "high" ? "border-red-300 bg-red-50" :
+                    riskOverview.riskLevel === "medium" ? "border-amber-300 bg-amber-50" :
+                    "border-emerald-300 bg-emerald-50"
+                  }`}>
+                    <CardContent className="p-5 flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Institution Risk Score</p>
+                        <div className="flex items-baseline gap-2 mt-1">
+                          <span className="text-4xl font-bold">{riskOverview.riskScore}</span>
+                          <span className="text-lg text-muted-foreground">/ 100</span>
+                        </div>
+                        <Badge className={`mt-2 ${
+                          riskOverview.riskLevel === "high" ? "bg-red-600" :
+                          riskOverview.riskLevel === "medium" ? "bg-amber-600" :
+                          "bg-emerald-600"
+                        }`}>
+                          {riskOverview.riskLevel.toUpperCase()} RISK
+                        </Badge>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm text-muted-foreground">Top Emotions</p>
+                        <div className="mt-1 space-x-1">
+                          {riskOverview.topEmotions?.slice(0, 3).map((e: any, i: number) => (
+                            <Badge key={i} variant="outline" className="text-xs">{e.emotion}</Badge>
+                          ))}
+                        </div>
+                        {riskOverview.highRiskStudents > 0 && (
+                          <p className="text-xs text-red-600 mt-2 font-medium">
+                            {riskOverview.highRiskStudents} critical alert{riskOverview.highRiskStudents > 1 ? "s" : ""}
+                          </p>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
                 {/* Summary Stats */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   {[
@@ -349,6 +433,42 @@ export default function FacilitatorDashboard() {
                     </Card>
                   ))}
                 </div>
+
+                {/* Group Risk Breakdown */}
+                {groupRisk && groupRisk.length > 0 && (
+                  <Card className="border shadow-sm">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                        <Users className="w-4 h-4" /> Risk by Group (Last 30 days)
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        {groupRisk.slice(0, 6).map((g: any, idx: number) => (
+                          <div key={idx} className="flex items-center justify-between p-3 rounded-xl border bg-card">
+                            <div>
+                              <p className="font-medium text-sm">{g.groupName}</p>
+                              <p className="text-xs text-muted-foreground">{g.memberCount} members • {g.totalCheckIns} check-ins</p>
+                            </div>
+                            <div className="flex items-center gap-3 text-right">
+                              <div>
+                                <p className="text-xs text-muted-foreground">Avg Intensity</p>
+                                <p className="font-semibold text-sm">{g.avgIntensity}/10</p>
+                              </div>
+                              <Badge className={
+                                g.riskLevel === "high" ? "bg-red-600" :
+                                g.riskLevel === "medium" ? "bg-amber-600" : "bg-emerald-600"
+                              }>
+                                {g.riskLevel}
+                              </Badge>
+                              <span className="text-xs text-muted-foreground w-16 truncate">{g.topEmotion}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
 
                 {/* Charts */}
                 {trendsLoading ? (
@@ -519,6 +639,57 @@ export default function FacilitatorDashboard() {
               </>
             )}
 
+            {/* ── GROUP RISK ALERTS TAB ── */}
+            {activeTab === "groupRisk" && (
+              <>
+                <div className="mb-6">
+                  <h1 className="font-serif text-2xl font-bold text-foreground">Group Risk Alerts</h1>
+                  <p className="text-muted-foreground text-sm mt-1">
+                    Automatic alerts when a group’s average emotional intensity exceeds the threshold (≥ 7.0) over the last 3 days.
+                  </p>
+                </div>
+
+                {!groupRiskAlerts || groupRiskAlerts.length === 0 ? (
+                  <div className="text-center py-12 space-y-3">
+                    <div className="text-4xl">✅</div>
+                    <p className="text-muted-foreground">No active group risk alerts. Your groups are within healthy ranges.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {groupRiskAlerts.map((alert: any) => (
+                      <Card key={alert.id} className="border border-orange-200 bg-orange-50/50">
+                        <CardContent className="p-5 flex items-start justify-between">
+                          <div>
+                            <div className="flex items-center gap-2 mb-1">
+                              <Badge className="bg-orange-600">HIGH INTENSITY</Badge>
+                              <span className="text-xs text-muted-foreground">
+                                {new Date(alert.alertSentAt).toLocaleDateString("en-US")}
+                              </span>
+                            </div>
+                            <p className="font-semibold text-lg">{alert.groupName}</p>
+                            <p className="text-sm text-muted-foreground mt-1">
+                              Average intensity over the last {alert.periodDays} days: <span className="font-semibold text-orange-700">{alert.avgIntensity}/10</span>
+                              (threshold: {alert.threshold})
+                            </p>
+                          </div>
+                          <div className="flex flex-col gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => acknowledgeGroupAlertMutation.mutate({ alertId: alert.id })}
+                              disabled={acknowledgeGroupAlertMutation.isPending}
+                            >
+                              Acknowledge
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+
             {/* ── VIOLENCE FLAGS TAB ── */}
             {activeTab === "violence" && (
               <>
@@ -677,7 +848,7 @@ export default function FacilitatorDashboard() {
                   </CardContent>
                 </Card>
 
-                {/* Groups List */}
+                {/* Groups List + PDF Report Button */}
                 {groups && groups.length > 0 && (
                   <Card className="border shadow-sm">
                     <CardHeader className="pb-2">
@@ -693,6 +864,14 @@ export default function FacilitatorDashboard() {
                           <span className="text-xs text-muted-foreground bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">
                             {g.memberCount ?? 0} member{g.memberCount !== 1 ? "s" : ""}
                           </span>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => generateGroupMutation.mutate({ groupId: g.id, groupName: g.name })}
+                            disabled={generateGroupMutation.isPending}
+                          >
+                            PDF Report
+                          </Button>
                           <span className="text-xs text-muted-foreground">Created {format(new Date(g.createdAt), "MMM d")}</span>
                         </div>
                       ))}
@@ -1108,6 +1287,59 @@ export default function FacilitatorDashboard() {
 
                 {/* Employee Wellness Resources */}
                 <EmployeeResourcesPanel />
+              </div>
+            )}
+
+            {/* Export Button (visible in Overview) */}
+            {activeTab === "overview" && (
+              <div className="flex justify-end gap-2 flex-wrap">
+                <Button
+                  variant="outline"
+                  onClick={() => generateMonthlyMutation.mutate()}
+                  disabled={generateMonthlyMutation.isPending}
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  {generateMonthlyMutation.isPending ? "Generating..." : "Monthly PDF Report"}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={async () => {
+                    setIsExporting(true);
+                    try {
+                      const result = await refetchAdvancedReport();
+                      const data = result.data;
+                      if (!data) {
+                        toast.error("No data to export");
+                        return;
+                      }
+                      // Generate CSV
+                      const csv = [
+                        "Date,Check-ins,Avg Intensity,Top Emotion",
+                        ...data.daily.map((d: any) => `${d.date},${d.checkIns},${d.avgIntensity},${d.topEmotion}`),
+                        "",
+                        "Group,Check-ins,Avg Intensity",
+                        ...data.byGroup.map((g: any) => `${g.group},${g.checkIns},${g.avgIntensity}`),
+                      ].join("\n");
+
+                      const blob = new Blob([csv], { type: "text/csv" });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement("a");
+                      a.href = url;
+                      a.download = `headcheck-advanced-report-${new Date().toISOString().slice(0, 10)}.csv`;
+                      a.click();
+                      URL.revokeObjectURL(url);
+                      toast.success("Advanced report exported!");
+                    } catch {
+                      toast.error("Export failed");
+                    } finally {
+                      setIsExporting(false);
+                    }
+                  }}
+                  disabled={isExporting}
+                >
+                  <Download className={`w-4 h-4 mr-2 ${isExporting ? "animate-spin" : ""}`} />
+                  {isExporting ? "Exporting..." : "Export Advanced CSV"}
+                </Button>
               </div>
             )}
 

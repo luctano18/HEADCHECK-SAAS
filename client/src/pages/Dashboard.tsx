@@ -20,6 +20,8 @@ import { PieChartSkeleton, AreaChartSkeleton } from "@/components/ChartSkeleton"
 import EmotionDistributionChart from "@/components/EmotionDistributionChart";
 import CheckInActivityChart from "@/components/CheckInActivityChart";
 import PersonalizedRecommendations from "@/components/PersonalizedRecommendations";
+import { LevelProgress } from "@/components/LevelProgress";
+import { WeeklyChallenges } from "@/components/WeeklyChallenges";
 
 // Brand-aligned emotion palette: Indigo primary, Coral accent, Teal, Amber, Rose
 const EMOTION_COLORS: Record<string, string> = {
@@ -120,6 +122,12 @@ export default function Dashboard() {
                 <Plus className="w-4 h-4 mr-2" /> New Check-In
               </Button>
             </div>
+
+            {/* Level & XP Progress */}
+            <LevelProgress />
+
+            {/* Weekly Challenges */}
+            <WeeklyChallenges />
 
             {/* Stats */}
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">

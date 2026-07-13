@@ -51,6 +51,375 @@ const EMOTION_SCORE: Record<string, number> = {
   "Frustrated": 2,
 };
 
+// ─── Monthly Report Data Collection ───────────────────────────────────────────
+
+export interface MonthlyReportData extends WeeklyReportData {
+  month: string; // e.g. "June 2026"
+}
+
+/** Collecte les données pour un rapport mensuel */
+export async function collectMonthlyReportData(
+  institutionId: number,
+  institutionName: string
+): Promise<MonthlyReportData> {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+
+  const now = new Date();
+  const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+
+  // Récupérer tous les check-ins du mois
+  const monthCheckIns = await db
+    .select({
+      id: checkIns.id,
+      userId: checkIns.userId,
+      emotion: checkIns.emotion,
+      createdAt: checkIns.createdAt,
+    })
+    .from(checkIns)
+    .innerJoin(users, eq(checkIns.userId, users.id))
+    .where(
+      and(
+        eq(users.institutionId, institutionId),
+        gte(checkIns.createdAt, monthStart)
+      )
+    )
+    .orderBy(desc(checkIns.createdAt));
+
+  // Crisis & Violence
+  const monthCrisis = await db
+    .select({ id: crisisEvents.id, acknowledged: crisisEvents.acknowledged })
+    .from(crisisEvents)
+    .innerJoin(users, eq(crisisEvents.userId, users.id))
+    .where(
+      and(
+        eq(users.institutionId, institutionId),
+        gte(crisisEvents.createdAt, monthStart)
+      )
+    );
+
+  const monthFlags = await db
+    .select({ id: violenceFlags.id, acknowledged: violenceFlags.acknowledged })
+    .from(violenceFlags)
+    .innerJoin(users, eq(violenceFlags.userId, users.id))
+    .where(
+      and(
+        eq(users.institutionId, institutionId),
+        gte(violenceFlags.createdAt, monthStart)
+      )
+    );
+
+  const totalCheckIns = monthCheckIns.length;
+  const uniqueStudents = new Set(monthCheckIns.map((c) => c.userId)).size;
+
+  // Emotion distribution
+  const emotionCounts: Record<string, number> = {};
+  for (const c of monthCheckIns) {
+    if (c.emotion) emotionCounts[c.emotion] = (emotionCounts[c.emotion] ?? 0) + 1;
+  }
+  const topEmotions = Object.entries(emotionCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([emotion, count]) => ({ emotion, count }));
+
+  const emotionDistribution = Object.entries(emotionCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 6)
+    .map(([emotion, count]) => ({
+      emotion,
+      percentage: totalCheckIns > 0 ? Math.round((count / totalCheckIns) * 100) : 0,
+    }));
+
+  const scores = monthCheckIns.map((c) => (c.emotion ? EMOTION_SCORE[c.emotion] ?? 2.5 : 2.5));
+  const avgEmotionScore =
+    scores.length > 0
+      ? Math.round((scores.reduce((a, b) => a + b, 0) / scores.length) * 10) / 10
+      : 0;
+
+  // Daily check-ins (grouped by day of month)
+  const dailyMap: Record<string, number> = {};
+  for (const c of monthCheckIns) {
+    const day = c.createdAt.getDate().toString();
+    dailyMap[day] = (dailyMap[day] ?? 0) + 1;
+  }
+  const dailyCheckIns = Object.entries(dailyMap).map(([day, count]) => ({ day, count }));
+
+  const resolvedAlerts =
+    monthCrisis.filter((c) => c.acknowledged).length +
+    monthFlags.filter((f) => f.acknowledged).length;
+
+  const monthName = now.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+
+  return {
+    institutionName,
+    weekStart: monthStart,
+    weekEnd: monthEnd,
+    month: monthName,
+    totalCheckIns,
+    uniqueStudents,
+    avgEmotionScore,
+    topEmotions,
+    crisisAlerts: monthCrisis.length,
+    violenceFlags: monthFlags.length,
+    resolvedAlerts,
+    avgFeedbackRating: null,
+    dailyCheckIns,
+    emotionDistribution,
+    emotionTrend: [],
+  };
+}
+
+// ─── Group Report Data Collection ─────────────────────────────────────────────
+
+export interface GroupReportData extends WeeklyReportData {
+  groupName: string;
+}
+
+/** Collecte les données pour un rapport d’un groupe spécifique */
+export async function collectGroupReportData(
+  groupId: number,
+  groupName: string,
+  institutionName: string
+): Promise<GroupReportData> {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+
+  const now = new Date();
+  const weekEnd = new Date(now);
+  weekEnd.setHours(23, 59, 59, 999);
+  const weekStart = new Date(now);
+  weekStart.setDate(weekStart.getDate() - 6);
+  weekStart.setHours(0, 0, 0, 0);
+
+  // Récupérer les utilisateurs du groupe
+  const groupUsers = await db.select({ id: users.id }).from(users).where(eq(users.groupId, groupId));
+  const userIds = groupUsers.map(u => u.id);
+
+  if (userIds.length === 0) {
+    return {
+      institutionName,
+      groupName,
+      weekStart,
+      weekEnd,
+      totalCheckIns: 0,
+      uniqueStudents: 0,
+      avgEmotionScore: 0,
+      topEmotions: [],
+      crisisAlerts: 0,
+      violenceFlags: 0,
+      resolvedAlerts: 0,
+      avgFeedbackRating: null,
+      dailyCheckIns: [],
+      emotionDistribution: [],
+      emotionTrend: [],
+    };
+  }
+
+  // Check-ins du groupe
+  const groupCheckIns = await db
+    .select({
+      id: checkIns.id,
+      userId: checkIns.userId,
+      emotion: checkIns.emotion,
+      createdAt: checkIns.createdAt,
+    })
+    .from(checkIns)
+    .where(
+      and(
+        sql`${checkIns.userId} IN (${sql.join(userIds.map(id => sql`${id}`), sql`, `)})`,
+        gte(checkIns.createdAt, weekStart)
+      )
+    )
+    .orderBy(desc(checkIns.createdAt));
+
+  const totalCheckIns = groupCheckIns.length;
+  const uniqueStudents = new Set(groupCheckIns.map((c) => c.userId)).size;
+
+  const emotionCounts: Record<string, number> = {};
+  for (const c of groupCheckIns) {
+    if (c.emotion) emotionCounts[c.emotion] = (emotionCounts[c.emotion] ?? 0) + 1;
+  }
+
+  const topEmotions = Object.entries(emotionCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([emotion, count]) => ({ emotion, count }));
+
+  const emotionDistribution = Object.entries(emotionCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 6)
+    .map(([emotion, count]) => ({
+      emotion,
+      percentage: totalCheckIns > 0 ? Math.round((count / totalCheckIns) * 100) : 0,
+    }));
+
+  const scores = groupCheckIns.map((c) => (c.emotion ? EMOTION_SCORE[c.emotion] ?? 2.5 : 2.5));
+  const avgEmotionScore =
+    scores.length > 0
+      ? Math.round((scores.reduce((a, b) => a + b, 0) / scores.length) * 10) / 10
+      : 0;
+
+  const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const dailyMap: Record<string, number> = {};
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i);
+    dailyMap[days[d.getDay()]] = 0;
+  }
+  for (const c of groupCheckIns) {
+    const dayName = days[new Date(c.createdAt).getDay()];
+    if (dayName in dailyMap) dailyMap[dayName]++;
+  }
+  const dailyCheckIns = Object.entries(dailyMap).map(([day, count]) => ({ day, count }));
+
+  return {
+    institutionName,
+    groupName,
+    weekStart,
+    weekEnd,
+    totalCheckIns,
+    uniqueStudents,
+    avgEmotionScore,
+    topEmotions,
+    crisisAlerts: 0,
+    violenceFlags: 0,
+    resolvedAlerts: 0,
+    avgFeedbackRating: null,
+    dailyCheckIns,
+    emotionDistribution,
+    emotionTrend: [],
+  };
+}
+
+// ─── Comparative Report (Two Periods) ─────────────────────────────────────────
+
+export interface ComparativeReportData {
+  institutionName: string;
+  period1: { label: string; start: Date; end: Date; totalCheckIns: number; avgIntensity: number; topEmotions: any[]; crisisAlerts: number; violenceFlags: number };
+  period2: { label: string; start: Date; end: Date; totalCheckIns: number; avgIntensity: number; topEmotions: any[]; crisisAlerts: number; violenceFlags: number };
+  comparison: {
+    checkInsDelta: number;
+    intensityDelta: number;
+    crisisDelta: number;
+    violenceDelta: number;
+  };
+}
+
+export async function collectComparativeReportData(
+  institutionId: number,
+  institutionName: string,
+  days1: number = 30,
+  days2: number = 30
+): Promise<ComparativeReportData> {
+  const db = await getDb();
+  if (!db) throw new Error("DB unavailable");
+
+  const now = new Date();
+
+  // Period 1 (most recent)
+  const p1End = new Date(now);
+  const p1Start = new Date(now);
+  p1Start.setDate(p1Start.getDate() - days1);
+
+  // Period 2 (previous)
+  const p2End = new Date(p1Start);
+  const p2Start = new Date(p1Start);
+  p2Start.setDate(p2Start.getDate() - days2);
+
+  const getPeriodData = async (start: Date, end: Date) => {
+    const checkInsData = await db
+      .select({
+        id: checkIns.id,
+        userId: checkIns.userId,
+        emotion: checkIns.emotion,
+        intensity: checkIns.intensity,
+        createdAt: checkIns.createdAt,
+      })
+      .from(checkIns)
+      .innerJoin(users, eq(checkIns.userId, users.id))
+      .where(
+        and(
+          eq(users.institutionId, institutionId),
+          gte(checkIns.createdAt, start),
+          sql`${checkIns.createdAt} <= ${end}`
+        )
+      );
+
+    const crisis = await db
+      .select({ id: crisisEvents.id })
+      .from(crisisEvents)
+      .innerJoin(users, eq(crisisEvents.userId, users.id))
+      .where(
+        and(
+          eq(users.institutionId, institutionId),
+          gte(crisisEvents.createdAt, start),
+          sql`${crisisEvents.createdAt} <= ${end}`
+        )
+      );
+
+    const violence = await db
+      .select({ id: violenceFlags.id })
+      .from(violenceFlags)
+      .innerJoin(users, eq(violenceFlags.userId, users.id))
+      .where(
+        and(
+          eq(users.institutionId, institutionId),
+          gte(violenceFlags.createdAt, start),
+          sql`${violenceFlags.createdAt} <= ${end}`
+        )
+      );
+
+    const total = checkInsData.length;
+    const avgIntensity = total > 0
+      ? Math.round((checkInsData.reduce((s, c) => s + c.intensity, 0) / total) * 10) / 10
+      : 0;
+
+    const emotionCounts: Record<string, number> = {};
+    checkInsData.forEach(c => {
+      emotionCounts[c.emotion] = (emotionCounts[c.emotion] ?? 0) + 1;
+    });
+    const topEmotions = Object.entries(emotionCounts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3)
+      .map(([emotion, count]) => ({ emotion, count }));
+
+    return {
+      totalCheckIns: total,
+      avgIntensity,
+      topEmotions,
+      crisisAlerts: crisis.length,
+      violenceFlags: violence.length,
+    };
+  };
+
+  const p1 = await getPeriodData(p1Start, p1End);
+  const p2 = await getPeriodData(p2Start, p2End);
+
+  return {
+    institutionName,
+    period1: {
+      label: `Last ${days1} days`,
+      start: p1Start,
+      end: p1End,
+      ...p1,
+    },
+    period2: {
+      label: `Previous ${days2} days`,
+      start: p2Start,
+      end: p2End,
+      ...p2,
+    },
+    comparison: {
+      checkInsDelta: p1.totalCheckIns - p2.totalCheckIns,
+      intensityDelta: Math.round((p1.avgIntensity - p2.avgIntensity) * 10) / 10,
+      crisisDelta: p1.crisisAlerts - p2.crisisAlerts,
+      violenceDelta: p1.violenceFlags - p2.violenceFlags,
+    },
+  };
+}
+
+// ─── Original Weekly Report (unchanged) ───────────────────────────────────────
 export async function collectWeeklyReportData(
   institutionId: number,
   institutionName: string
