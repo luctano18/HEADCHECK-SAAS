@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
+import { toast } from "sonner";
 import { useAuth } from "@/_core/hooks/useAuth";
 import NavBar from "@/components/NavBar";
 import Footer from "@/components/Footer";
@@ -101,9 +102,15 @@ export default function EIQuiz() {
       // Submit
       setSubmitting(true);
       try {
-        let result;
+        let result: any;
         if (user) {
           result = await submitAuth.mutateAsync({ answers });
+          if (result.challengeResult?.completed) {
+            toast.success(`🏆 Challenge completed: ${result.challengeResult.title} (+${result.challengeResult.xpReward} XP)`);
+            if (result.challengeResult.leveledUp) {
+              setTimeout(() => toast.success(`🎉 Level up! You're now Level ${result.challengeResult!.newLevel}`), 600);
+            }
+          }
         } else {
           result = await submitGuest.mutateAsync({ answers });
         }
