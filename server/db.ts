@@ -394,9 +394,9 @@ export async function getCompletedSevenMirrorsSessions(userId: number) {
 }
 
 // ─── Streaks & Achievements ──────────────────────────────────────────────────
-export async function updateUserStreak(userId: number): Promise<{ currentStreak: number; longestStreak: number; totalCheckIns: number; newAchievements: string[] }> {
+export async function updateUserStreak(userId: number): Promise<{ currentStreak: number; longestStreak: number; totalCheckIns: number; newAchievements: string[]; leveledUp: boolean; level: number }> {
   const db = await getDb();
-  if (!db) return { currentStreak: 0, longestStreak: 0, totalCheckIns: 0, newAchievements: [] };
+  if (!db) return { currentStreak: 0, longestStreak: 0, totalCheckIns: 0, newAchievements: [], leveledUp: false, level: 1 };
 
   const today = new Date().toISOString().split("T")[0]!; // YYYY-MM-DD
   const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0]!;
@@ -455,7 +455,7 @@ export async function updateUserStreak(userId: number): Promise<{ currentStreak:
   }
 
   // Ajouter de l'XP pour le check-in (10 XP par check-in)
-  await addUserXp(userId, 10);
+  const xpResult = await addUserXp(userId, 10);
 
   // Mettre à jour les défis hebdomadaires
   await updateWeeklyChallengeProgress(userId, "checkins_5", 1);
@@ -465,7 +465,7 @@ export async function updateUserStreak(userId: number): Promise<{ currentStreak:
     await updateWeeklyChallengeProgress(userId, "streak_3", 1);
   }
 
-  return { currentStreak, longestStreak, totalCheckIns, newAchievements };
+  return { currentStreak, longestStreak, totalCheckIns, newAchievements, leveledUp: xpResult.leveledUp, level: xpResult.level };
 }
 
 export async function getUserStreak(userId: number) {
