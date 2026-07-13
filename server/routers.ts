@@ -809,11 +809,6 @@ export const appRouter = router({
 
         const streakData = await updateUserStreak(ctx.user.id);
 
-        // Mettre à jour le défi "Self Trust Compass"
-        if (input.context === "Self") {
-          await updateWeeklyChallengeProgress(ctx.user.id, "compass_complete", 1);
-        }
-
         return {
           checkInId,
           crisisDetected: crisis.detected,
@@ -958,7 +953,8 @@ export const appRouter = router({
           const allResponses = await getSevenMirrorsResponsesBySession(input.sessionId);
           const { summary, badges } = await generateSevenMirrorsSummary(allResponses);
           await completeSevenMirrorsSession(input.sessionId, summary, badges);
-          return { completed: true, summary, badges };
+          const challengeResult = await updateWeeklyChallengeProgress(ctx.user.id, "compass_complete", 1);
+          return { completed: true, summary, badges, challengeResult };
         }
 
         return { completed: false, nextMirrorIndex: input.mirrorIndex + 1 };
@@ -1481,9 +1477,9 @@ export const appRouter = router({
         });
 
         // Mettre à jour le défi EI Quiz
-        await updateWeeklyChallengeProgress(ctx.user.id, "ei_quiz", 1);
+        const challengeResult = await updateWeeklyChallengeProgress(ctx.user.id, "ei_quiz", 1);
 
-        return { ...attempt, scores, level, aiInsight };
+        return { ...attempt, scores, level, aiInsight, challengeResult };
       }),
 
     // Guest quiz submission — no DB persistence, returns scores + AI insight
