@@ -225,6 +225,13 @@ export default function CheckIn() {
         const result = await createCheckIn.mutateAsync(payload);
         checkInId = result.checkInId;
         interventionData = result.intervention;
+
+        if (result.streak?.leveledUp) {
+          toast.success(`🎉 Level up! You're now Level ${result.streak.level}`);
+        }
+        result.streak?.newAchievements?.forEach((achievement, i) => {
+          setTimeout(() => toast.success(achievement), (i + 1) * 600);
+        });
       } else {
         const result = await guestCreate.mutateAsync({
           emotion: payload.emotion,
