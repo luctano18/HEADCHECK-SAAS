@@ -120,11 +120,17 @@ export default function SevenMirrors() {
 
     if (isAuthenticated && sessionId) {
       try {
-        await submitMirrorResponse.mutateAsync({
+        const response = await submitMirrorResponse.mutateAsync({
           sessionId,
           mirrorIndex: currentMirror,
           response: selected.join("; ") + (journalText ? "\n" + journalText : ""),
         });
+        if (response.completed && response.challengeResult?.completed) {
+          toast.success(`🏆 Challenge completed: ${response.challengeResult.title} (+${response.challengeResult.xpReward} XP)`);
+          if (response.challengeResult.leveledUp) {
+            setTimeout(() => toast.success(`🎉 Level up! You're now Level ${response.challengeResult!.newLevel}`), 600);
+          }
+        }
       } catch {
         toast.error("Could not save response. Continuing...");
       }
