@@ -2062,7 +2062,7 @@ export async function getOrCreateWeeklyChallenges(userId: number) {
 /** Met à jour la progression d'un défi */
 export async function updateWeeklyChallengeProgress(userId: number, challengeKey: string, increment = 1) {
   const db = await getDb();
-  if (!db) return;
+  if (!db) return null;
 
   const today = new Date();
   const day = today.getDay();
@@ -2082,10 +2082,12 @@ export async function updateWeeklyChallengeProgress(userId: number, challengeKey
     )
     .limit(1);
 
-  if (!challenge[0] || challenge[0].completed) return;
+  if (!challenge[0]) return null;
 
-  const newProgress = Math.min(challenge[0].progress + increment, challenge[0].target);
-  const isCompleted = newProgress >= challenge[0].target;
+  const progressUpdate = computeChallengeProgress(challenge[0], increment);
+  if (!progressUpdate) return null;
+
+  const { newProgress, isCompleted } = progressUpdate;
 
   await db
     .update(weeklyChallenges)
@@ -2096,10 +2098,19 @@ export async function updateWeeklyChallengeProgress(userId: number, challengeKey
     })
     .where(eq(weeklyChallenges.id, challenge[0].id));
 
-  // Si complété, donner l'XP
-  if (isCompleted) {
-    await addUserXp(userId, challenge[0].xpReward);
+  if (!isCompleted) {
+    return { completed: false, title: challenge[0].title, xpReward: challenge[0].xpReward, leveledUp: false, newLevel: 0 };
   }
+
+  // Complété : attribuer l'XP et remonter le résultat au caller
+  const xpResult = await addUserXp(userId, challenge[0].xpReward);
+  return {
+    completed: true,
+    title: challenge[0].title,
+    xpReward: challenge[0].xpReward,
+    leveledUp: xpResult.leveledUp,
+    newLevel: xpResult.level,
+  };
 }
 
 // ─── Group Risk Alerts (Proactive) ────────────────────────────────────────────
