@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { useLocation } from "wouter";
 import {
   Brain, Users, AlertTriangle, TrendingUp, Plus, LogOut, User,
-  Mail, Shield, BarChart3, Building2, Copy, Loader2, Home, Heart, Settings, Sliders
+  Mail, Shield, BarChart3, Building2, Copy, Loader2, Home, Heart, Settings, Sliders, Download
 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -106,7 +106,7 @@ export default function FacilitatorDashboard() {
   const [groupName, setGroupName] = useState("");
   const [inviteLink, setInviteLink] = useState<string | null>(null);
   const [selectedGroupId, setSelectedGroupId] = useState<number | "">("");
-  const [activeTab, setActiveTab] = useState<"overview" | "alerts" | "violence" | "groups" | "assigned" | "eeis" | "pulse" | "sentiment">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "alerts" | "violence" | "groups" | "assigned" | "eeis" | "pulse" | "sentiment" | "groupRisk">("overview");
   const [newSurveyTitle, setNewSurveyTitle] = useState("");
   const [newSurveyQuestion, setNewSurveyQuestion] = useState("");
   // EEIS config state

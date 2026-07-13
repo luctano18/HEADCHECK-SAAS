@@ -1,13 +1,10 @@
-import { useQuery } from "@tanstack/react-query";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Trophy, Target } from "lucide-react";
 
 export function WeeklyChallenges() {
-  const { data: challenges, isLoading } = useQuery(
-    trpc.dashboard.getWeeklyChallenges.queryOptions()
-  );
+  const { data: challenges, isLoading } = trpc.dashboard.getWeeklyChallenges.useQuery();
 
   if (isLoading) {
     return (

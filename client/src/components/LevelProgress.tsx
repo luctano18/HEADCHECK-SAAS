@@ -1,13 +1,10 @@
-import { useQuery } from "@tanstack/react-query";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Trophy } from "lucide-react";
 
 export function LevelProgress() {
-  const { data: levelData, isLoading } = useQuery(
-    trpc.dashboard.getLevel.queryOptions()
-  );
+  const { data: levelData, isLoading } = trpc.dashboard.getLevel.useQuery();
 
   if (isLoading || !levelData) {
     return (

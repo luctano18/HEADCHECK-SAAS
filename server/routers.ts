@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import { createCheckoutSession, createPortalSession, PLANS } from "./stripe";
+import stripe, { createCheckoutSession, createPortalSession, PLANS } from "./stripe";
 import { authEmailRouter } from "./routers/authEmail";
 import { nanoid } from "nanoid";
 import { z } from "zod";
@@ -1129,7 +1129,7 @@ export const appRouter = router({
         if (!db) continue;
 
         const { users, checkIns } = await import("../drizzle/schema");
-        const { eq, and, gte } = await import("drizzle-orm");
+        const { eq, and, gte, sql } = await import("drizzle-orm");
 
         const groupUsers = await db.select({ id: users.id }).from(users).where(eq(users.groupId, group.id));
         if (groupUsers.length === 0) continue;
@@ -2169,7 +2169,7 @@ export const appRouter = router({
         if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
 
         const { checkIns, users, groups } = await import('../drizzle/schema');
-        const { and, eq, gte } = await import('drizzle-orm');
+        const { and, eq, gte, desc } = await import('drizzle-orm');
 
         const since = new Date(Date.now() - input.days * 86400000);
 
