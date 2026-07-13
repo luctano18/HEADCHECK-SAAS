@@ -1977,6 +1977,17 @@ export async function getUserLevel(userId: number) {
 
 // ─── Weekly Challenges ────────────────────────────────────────────────────────
 
+/** Pure progress calculation for a weekly challenge — no DB I/O, easy to unit test. */
+export function computeChallengeProgress(
+  current: { progress: number; target: number; completed: boolean },
+  increment: number
+): { newProgress: number; isCompleted: boolean } | null {
+  if (current.completed) return null;
+  const newProgress = Math.min(current.progress + increment, current.target);
+  const isCompleted = newProgress >= current.target;
+  return { newProgress, isCompleted };
+}
+
 /** Génère les défis de la semaine pour un utilisateur (ou les récupère s'ils existent) */
 export async function getOrCreateWeeklyChallenges(userId: number) {
   const db = await getDb();
