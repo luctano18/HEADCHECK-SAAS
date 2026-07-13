@@ -148,6 +148,13 @@
       "when": 1781547057541,
       "tag": "0020_nifty_ben_grimm",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "5",
+      "when": 1783983425999,
+      "tag": "0021_useful_hulk",
+      "breakpoints": true
     }
   ]
 }
