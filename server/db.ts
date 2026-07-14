@@ -288,19 +288,23 @@ export async function recordAiResponseEngagement(
   const db = await getDb();
   if (!db) return;
 
-  const existing = await db
-    .select({ feedbackRating: aiResponses.feedbackRating })
-    .from(aiResponses)
-    .where(and(eq(aiResponses.checkInId, checkInId), eq(aiResponses.userId, userId)))
-    .limit(1);
-  if (!existing[0]) return;
+  try {
+    const existing = await db
+      .select({ feedbackRating: aiResponses.feedbackRating })
+      .from(aiResponses)
+      .where(and(eq(aiResponses.checkInId, checkInId), eq(aiResponses.userId, userId)))
+      .limit(1);
+    if (!existing[0]) return;
 
-  const combinedScore = computeCombinedEngagementScore(existing[0].feedbackRating, behaviorScore);
+    const combinedScore = computeCombinedEngagementScore(existing[0].feedbackRating, behaviorScore);
 
-  await db
-    .update(aiResponses)
-    .set({ dwellTimeMs, behaviorScore, combinedScore })
-    .where(and(eq(aiResponses.checkInId, checkInId), eq(aiResponses.userId, userId)));
+    await db
+      .update(aiResponses)
+      .set({ dwellTimeMs, behaviorScore, combinedScore })
+      .where(and(eq(aiResponses.checkInId, checkInId), eq(aiResponses.userId, userId)));
+  } catch {
+    // Best-effort telemetry — never let a transient DB error propagate past this function.
+  }
 }
 
 export async function updateAiResponseFeedback(
