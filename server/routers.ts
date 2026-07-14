@@ -89,6 +89,7 @@ import {
   markNotificationEmailSent,
   getRecentEmotionPatterns,
   updateAiResponseFeedback,
+  recordAiResponseEngagement,
   upsertResourceRating,
   getResourceRatingStats,
   getBatchResourceRatingStats,
@@ -865,6 +866,17 @@ export const appRouter = router({
           input.rating,
           input.feedbackText
         );
+        return { success: true };
+      }),
+
+    reportEngagement: protectedProcedure
+      .input(z.object({
+        checkInId: z.number(),
+        dwellTimeMs: z.number().min(0),
+        behaviorScore: z.number().min(-2).max(2),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        await recordAiResponseEngagement(input.checkInId, ctx.user.id, input.dwellTimeMs, input.behaviorScore);
         return { success: true };
       }),
 
