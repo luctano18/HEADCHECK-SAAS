@@ -273,6 +273,36 @@ export function computeCombinedEngagementScore(
   return explicit + behaviorScore;
 }
 
+/**
+ * Best-effort: records implicit engagement signals for an AI response and
+ * recomputes its combined score. No-ops silently if the DB is unavailable
+ * or the check-in doesn't belong to this user — this is telemetry, never
+ * something a user-facing action should fail over.
+ */
+export async function recordAiResponseEngagement(
+  checkInId: number,
+  userId: number,
+  dwellTimeMs: number,
+  behaviorScore: number
+): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+
+  const existing = await db
+    .select({ feedbackRating: aiResponses.feedbackRating })
+    .from(aiResponses)
+    .where(and(eq(aiResponses.checkInId, checkInId), eq(aiResponses.userId, userId)))
+    .limit(1);
+  if (!existing[0]) return;
+
+  const combinedScore = computeCombinedEngagementScore(existing[0].feedbackRating, behaviorScore);
+
+  await db
+    .update(aiResponses)
+    .set({ dwellTimeMs, behaviorScore, combinedScore })
+    .where(and(eq(aiResponses.checkInId, checkInId), eq(aiResponses.userId, userId)));
+}
+
 export async function updateAiResponseFeedback(
   checkInId: number,
   userId: number,
