@@ -256,6 +256,23 @@ export async function getRecentEmotionPatterns(userId: number, limit = 5) {
   return rows;
 }
 
+const ENGAGEMENT_RATING_SCORE: Record<string, number> = {
+  yes: 5,
+  helpful: 5,
+  somewhat: 3,
+  not_yet: 1,
+  not_helpful: 1,
+};
+
+/** Pure — combines the stored explicit feedback rating with a client-reported behavior score. */
+export function computeCombinedEngagementScore(
+  feedbackRating: string | null,
+  behaviorScore: number
+): number {
+  const explicit = feedbackRating ? (ENGAGEMENT_RATING_SCORE[feedbackRating] ?? 0) : 0;
+  return explicit + behaviorScore;
+}
+
 export async function updateAiResponseFeedback(
   checkInId: number,
   userId: number,
