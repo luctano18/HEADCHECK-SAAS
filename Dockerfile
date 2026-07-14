@@ -22,6 +22,8 @@ WORKDIR /app
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./
+COPY --from=builder /app/drizzle ./drizzle
+COPY --from=builder /app/drizzle.config.ts ./drizzle.config.ts
 
 # Expose port
 EXPOSE 3000
@@ -30,5 +32,6 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD node -e "require('http').get('http://localhost:3000/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"
 
-# Start command
-CMD ["node", "dist/index.js"]
+# Apply any pending migrations, then start the server. Safe to run on every
+# start — drizzle-kit tracks applied migrations and no-ops if none are due.
+CMD ["sh", "-c", "npx drizzle-kit migrate && node dist/index.js"]
