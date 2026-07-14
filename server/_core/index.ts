@@ -35,6 +35,7 @@ import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { sendWeeklyReflections } from "../weeklyReflection";
+import { sendCrisisFollowUps } from "../crisisFollowUp";
 import stripe from "../stripe";
 
 function isPortAvailable(port: number): Promise<boolean> {
@@ -145,6 +146,24 @@ async function startServer() {
         res.status(401).json({ ok: false, error: "Unauthorized" });
       } else {
         console.error("[WeeklyReflection] Error:", err);
+        res.status(500).json({ ok: false, error: message });
+      }
+    }
+  });
+
+  // GET /api/cron/crisis-follow-up — polled hourly
+  app.get("/api/cron/crisis-follow-up", async (req: import("express").Request, res: import("express").Response) => {
+    const secret = req.headers["x-cron-secret"] as string | undefined;
+    const appUrl = req.headers.origin as string || `${req.protocol}://${req.get("host")}`;
+    try {
+      const result = await sendCrisisFollowUps(appUrl, secret);
+      res.json({ ok: true, ...result });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Unknown error";
+      if (message === "Unauthorized") {
+        res.status(401).json({ ok: false, error: "Unauthorized" });
+      } else {
+        console.error("[CrisisFollowUp] Error:", err);
         res.status(500).json({ ok: false, error: message });
       }
     }
