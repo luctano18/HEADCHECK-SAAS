@@ -141,6 +141,9 @@ export const aiResponses = mysqlTable("ai_responses", {
   patternInsight: text("patternInsight"),
   feedbackRating: mysqlEnum("feedbackRating", ["helpful", "not_helpful", "yes", "somewhat", "not_yet"]),
   feedbackText: text("feedbackText"),
+  dwellTimeMs: int("dwellTimeMs"),
+  behaviorScore: int("behaviorScore"),
+  combinedScore: int("combinedScore"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
