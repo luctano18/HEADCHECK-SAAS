@@ -26,11 +26,16 @@ const RESPONSE_SECTIONS = [
 
 // ─── Engagement Beacon ──────────────────────────────────────────────────────
 function sendEngagementBeacon(checkInId: number, dwellTimeMs: number, behaviorScore: number) {
-  const body = JSON.stringify({ "0": { json: { checkInId, dwellTimeMs, behaviorScore } } });
-  navigator.sendBeacon(
-    "/api/trpc/checkIns.reportEngagement?batch=1",
-    new Blob([body], { type: "application/json" })
-  );
+  try {
+    if (typeof navigator.sendBeacon !== "function") return;
+    const body = JSON.stringify({ "0": { json: { checkInId, dwellTimeMs, behaviorScore } } });
+    navigator.sendBeacon(
+      "/api/trpc/checkIns.reportEngagement?batch=1",
+      new Blob([body], { type: "application/json" })
+    );
+  } catch {
+    // Best-effort telemetry — never let this block navigation or throw past this function.
+  }
 }
 
 /** Score for a deliberate "continue the journey" action (New Check-In / Self Trust Compass). */
