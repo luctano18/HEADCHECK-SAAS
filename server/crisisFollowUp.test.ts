@@ -10,8 +10,17 @@ import { describe, it, expect } from "vitest";
 // (which requires DB + env vars at import time) — same approach as
 // weeklyReflection.test.ts.
 
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function buildFollowUpEmailHtml(userName: string, appUrl: string): string {
-  const name = userName || "there";
+  const name = escapeHtml(userName || "there");
   const checkInUrl = `${appUrl}/check-in`;
   const preferencesUrl = `${appUrl}/profile?tab=notifications`;
 
@@ -87,5 +96,11 @@ describe("buildFollowUpEmailHtml", () => {
   it("is valid HTML with a doctype", () => {
     const html = buildFollowUpEmailHtml("Alex", "https://headcheck.app");
     expect(html).toMatch(/^<!DOCTYPE html>/i);
+  });
+
+  it("HTML-escapes the user name to prevent markup injection", () => {
+    const html = buildFollowUpEmailHtml("<img src=x onerror=alert(1)>", "https://headcheck.app");
+    expect(html).not.toContain("<img src=x onerror=alert(1)>");
+    expect(html).toContain("&lt;img src=x onerror=alert(1)&gt;");
   });
 });

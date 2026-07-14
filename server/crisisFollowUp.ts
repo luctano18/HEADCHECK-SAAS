@@ -16,8 +16,17 @@ const CRON_SECRET = process.env.CRON_SECRET || "";
 
 // ─── Email Template ───────────────────────────────────────────────────────────
 
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 export function buildFollowUpEmailHtml(userName: string, appUrl: string): string {
-  const name = userName || "there";
+  const name = escapeHtml(userName || "there");
   const checkInUrl = `${appUrl}/check-in`;
   const preferencesUrl = `${appUrl}/profile?tab=notifications`;
 
