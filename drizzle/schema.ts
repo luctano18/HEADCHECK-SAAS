@@ -161,6 +161,7 @@ export const crisisEvents = mysqlTable("crisis_events", {
   assignedToId: int("assignedToId"),
   assignedAt: timestamp("assignedAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
+  followUpSentAt: timestamp("followUpSentAt"),
 });
 
 export type CrisisEvent = typeof crisisEvents.$inferSelect;

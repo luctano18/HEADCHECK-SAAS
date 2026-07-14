@@ -1,0 +1,1 @@
+ALTER TABLE `crisis_events` ADD `followUpSentAt` timestamp;
