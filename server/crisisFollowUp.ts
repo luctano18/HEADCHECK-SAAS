@@ -12,6 +12,7 @@
 import { getDb } from "./db";
 import { crisisEvents, users } from "../drizzle/schema";
 import { and, eq, isNull, lte, inArray } from "drizzle-orm";
+import { timingSafeEqual } from "crypto";
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const FROM_EMAIL =
@@ -31,8 +32,8 @@ function escapeHtml(value: string): string {
 
 export function buildFollowUpEmailHtml(userName: string, appUrl: string): string {
   const name = escapeHtml(userName || "there");
-  const checkInUrl = `${appUrl}/check-in`;
-  const preferencesUrl = `${appUrl}/profile?tab=notifications`;
+  const checkInUrl = escapeHtml(`${appUrl}/check-in`);
+  const preferencesUrl = escapeHtml(`${appUrl}/profile?tab=notifications`);
 
   return `<!DOCTYPE html>
 <html>
@@ -106,11 +107,19 @@ async function sendCrisisFollowUpEmail(
 
 // ─── Main Handler ─────────────────────────────────────────────────────────────
 
+function isValidCronSecret(secret: string | undefined): boolean {
+  if (!CRON_SECRET || !secret) return false;
+  const provided = Buffer.from(secret);
+  const expected = Buffer.from(CRON_SECRET);
+  if (provided.length !== expected.length) return false;
+  return timingSafeEqual(provided, expected);
+}
+
 export async function sendCrisisFollowUps(
   appUrl: string,
   secret?: string
 ): Promise<{ sent: number; skipped: number; errors: number }> {
-  if (CRON_SECRET && secret !== CRON_SECRET) {
+  if (!isValidCronSecret(secret)) {
     throw new Error("Unauthorized");
   }
 

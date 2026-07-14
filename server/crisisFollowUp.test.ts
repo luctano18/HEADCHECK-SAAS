@@ -21,8 +21,8 @@ function escapeHtml(value: string): string {
 
 function buildFollowUpEmailHtml(userName: string, appUrl: string): string {
   const name = escapeHtml(userName || "there");
-  const checkInUrl = `${appUrl}/check-in`;
-  const preferencesUrl = `${appUrl}/profile?tab=notifications`;
+  const checkInUrl = escapeHtml(`${appUrl}/check-in`);
+  const preferencesUrl = escapeHtml(`${appUrl}/profile?tab=notifications`);
 
   return `<!DOCTYPE html>
 <html>
