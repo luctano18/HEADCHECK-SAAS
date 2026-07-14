@@ -1,3 +1,4 @@
+import { useRef, useEffect } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -23,8 +24,29 @@ const RESPONSE_SECTIONS = [
   { key: "affirmation", icon: <Sparkles className="w-5 h-5" />, title: "HeadCheck Affirmation", color: "bg-gradient-to-br from-violet-50 to-pink-50 border-violet-200", iconColor: "text-violet-500", badgeColor: "bg-violet-100 text-violet-700", isAffirmation: true },
 ];
 
+// ─── Engagement Beacon ──────────────────────────────────────────────────────
+function sendEngagementBeacon(checkInId: number, dwellTimeMs: number, behaviorScore: number) {
+  const body = JSON.stringify({ "0": { json: { checkInId, dwellTimeMs, behaviorScore } } });
+  navigator.sendBeacon(
+    "/api/trpc/checkIns.reportEngagement?batch=1",
+    new Blob([body], { type: "application/json" })
+  );
+}
+
+/** Score for a deliberate "continue the journey" action (New Check-In / Self Trust Compass). */
+function scoreOnContinue(dwellMs: number, feedbackGiven: boolean): number {
+  if (dwellMs > 8000) return 2;
+  return feedbackGiven ? 1 : 0;
+}
+
+/** Score for a passive exit (SPA unmount via other navigation, or the tab closing). */
+function scoreOnExit(dwellMs: number, feedbackGiven: boolean): number {
+  if (dwellMs < 3000 && !feedbackGiven) return -2;
+  return feedbackGiven ? 1 : 0;
+}
+
 // ─── Feedback Bar ─────────────────────────────────────────────────────────────
-function FeedbackBar({ checkInId }: { checkInId: number }) {
+function FeedbackBar({ checkInId, onFeedbackGiven }: { checkInId: number; onFeedbackGiven: () => void }) {
   const [selected, setSelected] = useState<"yes" | "somewhat" | "not_yet" | null>(null);
   const [comment, setComment] = useState("");
   const [submitted, setSubmitted] = useState(false);
@@ -32,6 +54,7 @@ function FeedbackBar({ checkInId }: { checkInId: number }) {
   const submitFeedback = trpc.checkIns.submitFeedback.useMutation({
     onSuccess: () => {
       setSubmitted(true);
+      onFeedbackGiven();
       toast.success("Thank you for your feedback!");
     },
     onError: () => toast.error("Could not save feedback. Please try again."),
@@ -118,6 +141,34 @@ export default function CheckInResult() {
     { checkInId },
     { enabled: !!checkInId && isAuthenticated }
   );
+
+  const pageEnteredAtRef = useRef(performance.now());
+  const feedbackGivenRef = useRef(false);
+  const reportSentRef = useRef(false);
+
+  const reportExit = () => {
+    if (reportSentRef.current) return;
+    reportSentRef.current = true;
+    const dwellMs = performance.now() - pageEnteredAtRef.current;
+    sendEngagementBeacon(checkInId, dwellMs, scoreOnExit(dwellMs, feedbackGivenRef.current));
+  };
+
+  const reportContinue = () => {
+    if (reportSentRef.current) return;
+    reportSentRef.current = true;
+    const dwellMs = performance.now() - pageEnteredAtRef.current;
+    sendEngagementBeacon(checkInId, dwellMs, scoreOnContinue(dwellMs, feedbackGivenRef.current));
+  };
+
+  useEffect(() => {
+    if (!checkInId) return;
+    window.addEventListener("pagehide", reportExit);
+    return () => {
+      window.removeEventListener("pagehide", reportExit);
+      reportExit();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [checkInId]);
 
   if (!isAuthenticated) { navigate("/"); return null; }
 
@@ -258,14 +309,14 @@ export default function CheckInResult() {
         <EmotionResourcesPanel emotion={checkIn.emotion} />
 
         {/* Feedback Bar */}
-        {aiResponse && <FeedbackBar checkInId={checkInId} />}
+        {aiResponse && <FeedbackBar checkInId={checkInId} onFeedbackGiven={() => { feedbackGivenRef.current = true; }} />}
 
         {/* Action Buttons */}
         <div className="grid grid-cols-2 gap-4 pt-4">
-          <Button variant="outline" className="h-12" onClick={() => navigate("/checkin")}>
+          <Button variant="outline" className="h-12" onClick={() => { reportContinue(); navigate("/checkin"); }}>
             <Heart className="w-4 h-4 mr-2" /> New Check-In
           </Button>
-          <Button className="h-12" onClick={() => navigate("/compass")}>
+          <Button className="h-12" onClick={() => { reportContinue(); navigate("/compass"); }}>
             <Sparkles className="w-4 h-4 mr-2" /> Self Trust Compass
           </Button>
         </div>
