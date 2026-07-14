@@ -9,6 +9,10 @@
  * Secured by a shared CRON_SECRET header.
  */
 
+import { getDb } from "./db";
+import { crisisEvents, users } from "../drizzle/schema";
+import { and, eq, isNull, lte, inArray } from "drizzle-orm";
+
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const FROM_EMAIL =
   process.env.RESEND_FROM_EMAIL || "HeadCheck AI <notifications@headcheck.app>";
@@ -66,4 +70,119 @@ export function buildFollowUpEmailHtml(userName: string, appUrl: string): string
   </div>
 </body>
 </html>`;
+}
+
+// ─── Email Sender ─────────────────────────────────────────────────────────────
+
+async function sendCrisisFollowUpEmail(
+  email: string,
+  userName: string,
+  appUrl: string
+): Promise<boolean> {
+  if (!RESEND_API_KEY) return false;
+
+  const html = buildFollowUpEmailHtml(userName, appUrl);
+  const name = userName || "there";
+
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${RESEND_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: FROM_EMAIL,
+        to: email,
+        subject: `Thinking of you, ${name}`,
+        html,
+      }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+// ─── Main Handler ─────────────────────────────────────────────────────────────
+
+export async function sendCrisisFollowUps(
+  appUrl: string,
+  secret?: string
+): Promise<{ sent: number; skipped: number; errors: number }> {
+  if (CRON_SECRET && secret !== CRON_SECRET) {
+    throw new Error("Unauthorized");
+  }
+
+  const db = await getDb();
+  if (!db) return { sent: 0, skipped: 0, errors: 0 };
+
+  const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+  const qualifyingEvents = await db
+    .select({
+      eventId: crisisEvents.id,
+      userId: crisisEvents.userId,
+      userName: users.name,
+      userEmail: users.email,
+      notificationsEnabled: users.notificationsEnabled,
+    })
+    .from(crisisEvents)
+    .innerJoin(users, eq(crisisEvents.userId, users.id))
+    .where(
+      and(
+        isNull(crisisEvents.followUpSentAt),
+        lte(crisisEvents.createdAt, cutoff)
+      )
+    );
+
+  let sent = 0;
+  let skipped = 0;
+  let errors = 0;
+
+  // Group qualifying events by user so each user gets at most one email.
+  const eventsByUser = new Map<number, typeof qualifyingEvents>();
+  for (const event of qualifyingEvents) {
+    const existing = eventsByUser.get(event.userId);
+    if (existing) {
+      existing.push(event);
+    } else {
+      eventsByUser.set(event.userId, [event]);
+    }
+  }
+
+  for (const [, userEvents] of Array.from(eventsByUser.entries())) {
+    const first = userEvents[0];
+    const eventIds = userEvents.map((e) => e.eventId);
+
+    if (!first.notificationsEnabled || !first.userEmail) {
+      await db
+        .update(crisisEvents)
+        .set({ followUpSentAt: new Date() })
+        .where(inArray(crisisEvents.id, eventIds));
+      skipped++;
+      continue;
+    }
+
+    try {
+      const ok = await sendCrisisFollowUpEmail(
+        first.userEmail,
+        first.userName ?? "",
+        appUrl
+      );
+      if (ok) {
+        await db
+          .update(crisisEvents)
+          .set({ followUpSentAt: new Date() })
+          .where(inArray(crisisEvents.id, eventIds));
+        sent++;
+      } else {
+        errors++;
+      }
+    } catch {
+      errors++;
+    }
+  }
+
+  return { sent, skipped, errors };
 }
