@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
-import NavBar from "@/components/NavBar";
+import AppSidebar from "@/components/AppSidebar";
 import { Bell, CheckCheck, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TRPCError } from "@trpc/server";
@@ -49,8 +49,7 @@ export default function Notifications() {
 
   if (!isAuthenticated || !isAdminRole) {
     return (
-      <div className="min-h-screen bg-background">
-        <NavBar />
+      <AppSidebar>
         <div className="max-w-2xl mx-auto px-4 py-24 text-center">
           <Bell className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-30" />
           <h1 className="text-2xl font-bold mb-2" style={{ color: "oklch(0.25 0.04 260)" }}>
@@ -60,7 +59,7 @@ export default function Notifications() {
             Notifications are available for admin and facilitator accounts only.
           </p>
         </div>
-      </div>
+      </AppSidebar>
     );
   }
 
@@ -70,8 +69,7 @@ export default function Notifications() {
   const unreadCount = (notifications ?? []).filter((n) => !n.read).length;
 
   return (
-    <div className="min-h-screen" style={{ background: "oklch(0.97 0.01 260)" }}>
-      <NavBar />
+    <AppSidebar>
       <div className="max-w-2xl mx-auto px-4 py-10">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
@@ -190,6 +188,6 @@ export default function Notifications() {
           )}
         </div>
       </div>
-    </div>
+    </AppSidebar>
   );
 }
