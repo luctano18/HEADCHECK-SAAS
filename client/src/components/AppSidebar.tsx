@@ -25,8 +25,7 @@ import {
 import { getLoginUrl } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
 import {
-  LayoutDashboard, CheckCircle2, Compass, BookOpen, GraduationCap,
-  Lightbulb, Library, CircleDot, NotebookPen, HeartHandshake, Heart,
+  LayoutDashboard, CheckCircle2, Compass, NotebookPen,
   BarChart3, TrendingUp, Shield, FileText, MessageCircle, Bell, User,
   LogOut, PanelLeft,
 } from "lucide-react";
@@ -46,24 +45,7 @@ const NAV_SECTIONS: NavSection[] = [
       { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
       { icon: CheckCircle2, label: "Check-In", path: "/checkin" },
       { icon: Compass, label: "Compass", path: "/compass" },
-    ],
-  },
-  {
-    label: "Learn & Resources",
-    items: [
-      { icon: BookOpen, label: "Resources", path: "/resources" },
-      { icon: GraduationCap, label: "Learn EI", path: "/learn-ei" },
-      { icon: Lightbulb, label: "Mindset", path: "/mindset" },
-      { icon: Library, label: "AIEI Library", path: "/aiei-library" },
-      { icon: CircleDot, label: "Feeling Wheel", path: "/feeling-wheel" },
-    ],
-  },
-  {
-    label: "Support",
-    items: [
       { icon: NotebookPen, label: "Wellness Log", path: "/wellness-logbook" },
-      { icon: HeartHandshake, label: "Support Options", path: "/support-options" },
-      { icon: Heart, label: "Crisis Support", path: "/crisis-support" },
     ],
   },
 ];
