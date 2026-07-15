@@ -1,8 +1,7 @@
 import { useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
-import NavBar from "@/components/NavBar";
-import Footer from "@/components/Footer";
+import AppSidebar from "@/components/AppSidebar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -87,8 +86,7 @@ export default function TeamSentiment() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <NavBar />
+    <AppSidebar>
       <div className="hc-gradient-bar h-1.5" />
       <div className="container max-w-5xl py-8 space-y-6">
         {/* Header */}
@@ -260,7 +258,6 @@ export default function TeamSentiment() {
           </Card>
         )}
       </div>
-      <Footer />
-    </div>
+    </AppSidebar>
   );
 }
