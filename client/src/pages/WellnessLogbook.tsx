@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
+import AppSidebar from "@/components/AppSidebar";
 import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -49,7 +50,7 @@ export default function WellnessLogbook() {
   const emotions = Array.from(new Set((entries ?? []).map((e) => e.emotion))).sort();
 
   return (
-    <div className="min-h-screen bg-background">
+    <AppSidebar>
       <div className="max-w-2xl mx-auto px-4 py-6 space-y-5">
         {/* Header */}
         <div className="flex items-center gap-3">
@@ -189,6 +190,6 @@ export default function WellnessLogbook() {
           </div>
         )}
       </div>
-    </div>
+    </AppSidebar>
   );
 }
