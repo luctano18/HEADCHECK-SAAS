@@ -81,6 +81,7 @@ const FACILITATOR_SECTION: NavSection = {
   items: [
     { icon: Shield, label: "Facilitator Dashboard", path: "/facilitator" },
     { icon: FileText, label: "Weekly Report", path: "/admin/weekly-report" },
+    { icon: Bell, label: "Notifications", path: "/notifications" },
   ],
 };
 
@@ -88,7 +89,6 @@ const ACCOUNT_SECTION: NavSection = {
   label: "Account",
   items: [
     { icon: MessageCircle, label: "Messages", path: "/messages" },
-    { icon: Bell, label: "Notifications", path: "/notifications" },
     { icon: User, label: "Profile", path: "/profile" },
   ],
 };
