@@ -57,6 +57,9 @@ RESEND_FROM_EMAIL=HeadCheck AI <notifications@app.yourdomain.com>
 # AI
 OPENAI_API_KEY=sk-...
 
+# Session signing (required — see note below; any stable non-empty string works)
+VITE_APP_ID=headcheck-selfhosted
+
 # Cron auth (required — the cron endpoints reject every request if this is unset)
 CRON_SECRET=<generate a strong random string>
 
@@ -77,8 +80,17 @@ STRIPE_INSTITUTION_PRICE_ID=
 Generate strong random values for `JWT_SECRET`, `CRON_SECRET`, and
 `MYSQL_ROOT_PASSWORD` with `openssl rand -hex 32`.
 
+**`VITE_APP_ID` is required, despite the name.** Every session token
+(email/password login and Google OAuth alike) is signed with
+`{ openId, appId, name }`, and `server/_core/sdk.ts`'s `verifySession`
+rejects any token where `appId` is empty — so without this set, logins
+silently fail to persist (the user is bounced back to `/` right after
+signing in). It isn't checked against anything external, so any stable
+non-empty string works; just don't change it after users have live
+sessions, or their sessions will stop validating.
+
 Note: a few other variables show up in `server/_core/env.ts`
-(`VITE_APP_ID`, `BUILT_IN_FORGE_API_URL`/`KEY`, `OAUTH_SERVER_URL`,
+(`BUILT_IN_FORGE_API_URL`/`KEY`, `OAUTH_SERVER_URL`,
 `OWNER_OPEN_ID`) that look like leftovers from a different hosting
 platform's built-in integrations. They are not in the app's hard-required
 list (`server/_core/index.ts`) and this deployment doesn't use them — leave
