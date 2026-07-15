@@ -18,6 +18,16 @@ import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { useNavProgress, type StepStatus } from "@/contexts/NavProgressContext";
 
+function LogoMark({ size = 34 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 40 40" fill="none" aria-hidden="true">
+      <circle cx="20" cy="20" r="18" stroke="var(--hc-terracotta)" strokeWidth="1.4" opacity="0.5" />
+      <path d="M20 6 L31 20 L20 34 L9 20 Z" fill="none" stroke="var(--hc-terracotta)" strokeWidth="1.6" />
+      <circle cx="20" cy="20" r="5.5" fill="var(--hc-terracotta)" />
+    </svg>
+  );
+}
+
 const NAV_LINKS = [
   { href: "/", label: "Home", emoji: "🏠" },
   { href: "/checkin", label: "Check-In", emoji: "✅" },
@@ -68,12 +78,12 @@ function MessagesIconButton() {
   return (
     <button
       onClick={() => navigate("/messages")}
-      className="relative p-2 rounded-xl hover:bg-indigo-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600"
+      className="relative p-2 rounded-xl hover:bg-[color-mix(in_oklch,var(--hc-terracotta)_12%,transparent)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400"
       aria-label={`Messages${unread > 0 ? ` (${unread} unread)` : ""}`}
     >
       <MessageCircle
         className="w-5 h-5"
-        style={{ color: unread > 0 ? "oklch(0.42 0.22 270)" : "oklch(0.55 0.04 260)" }}
+        style={{ color: unread > 0 ? "var(--hc-terracotta)" : "var(--hc-cream-muted)" }}
       />
       {unread > 0 && (
         <span
@@ -217,7 +227,7 @@ export default function NavBar() {
       onClick={() => progress.steps.length > 0 && setSummaryOpen((o) => !o)}
       className={[
         "flex items-center gap-2 rounded-xl transition-colors",
-        mobile ? "w-full px-0 py-1" : "flex-1 px-2 py-1 hover:bg-indigo-50",
+        mobile ? "w-full px-0 py-1" : "flex-1 px-2 py-1 hover:bg-[color-mix(in_oklch,var(--hc-terracotta)_10%,transparent)]",
         progress.steps.length > 0 ? "cursor-pointer" : "cursor-default",
       ].join(" ")}
       aria-expanded={summaryOpen}
@@ -228,7 +238,7 @@ export default function NavBar() {
       {/* Journey label */}
       <span
         className="text-xs font-semibold whitespace-nowrap"
-        style={{ color: "oklch(0.42 0.22 270)" }}
+        style={{ color: "var(--hc-terracotta)" }}
       >
         {progress.label}
       </span>
@@ -236,7 +246,7 @@ export default function NavBar() {
       {/* Progress track */}
       <div
         className={["rounded-full overflow-hidden flex-1", mobile ? "h-1.5" : "h-2"].join(" ")}
-        style={{ background: "oklch(0.93 0.03 285)" }}
+        style={{ background: "color-mix(in oklch, var(--hc-cream) 15%, transparent)" }}
         role="progressbar"
         aria-valuenow={progress.current}
         aria-valuemin={0}
@@ -251,7 +261,7 @@ export default function NavBar() {
       {/* Step counter */}
       <span
         className="text-xs font-medium whitespace-nowrap tabular-nums"
-        style={{ color: "oklch(0.40 0.04 260)" }}
+        style={{ color: "var(--hc-cream-muted)" }}
       >
         {progress.current}/{progress.total}
       </span>
@@ -269,8 +279,12 @@ export default function NavBar() {
 
   return (
     <nav
-      className="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-b"
-      style={{ borderColor: "oklch(0.92 0.03 260)" }}
+      className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md border-b"
+      style={{
+        backgroundColor: "var(--hc-espresso)",
+        borderColor: "color-mix(in oklch, var(--hc-terracotta) 25%, transparent)",
+        fontFamily: "'Public Sans', sans-serif",
+      }}
       role="navigation"
       aria-label="Main navigation"
     >
@@ -279,16 +293,12 @@ export default function NavBar() {
         {/* Logo */}
         <button
           onClick={() => navigate("/")}
-          className="flex items-center gap-2 font-black text-xl flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg"
-          style={{ color: "oklch(0.42 0.22 270)" }}
+          className="flex items-center gap-2 text-xl flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg"
+          style={{ color: "var(--hc-cream)" }}
           aria-label="HeadCheck — Back to home"
         >
-          <img
-            src="https://d2xsxph8kpxj0f.cloudfront.net/310519663198457005/2dnC5dXijMKhtVCChhUvdN/headcheck-logo-final_d8b554b8.png"
-            alt="HeadCheck logo"
-            className="w-8 h-8 rounded-md object-contain"
-          />
-          <span>HeadCheck</span>
+          <LogoMark />
+          <span style={{ fontFamily: "'Fraunces', serif", fontWeight: 700 }}>HeadCheck</span>
         </button>
 
         {/* Desktop nav links — hidden when progress bar is active */}
@@ -298,10 +308,12 @@ export default function NavBar() {
               <button
                 key={link.href}
                 onClick={() => navigate(link.href)}
-                className="px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600"
+                className="px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400"
                 style={{
-                  background: isActive(link.href) ? "oklch(0.94 0.04 270)" : "transparent",
-                  color: isActive(link.href) ? "oklch(0.42 0.22 270)" : "oklch(0.40 0.04 260)",
+                  background: isActive(link.href)
+                    ? "color-mix(in oklch, var(--hc-terracotta) 18%, transparent)"
+                    : "transparent",
+                  color: isActive(link.href) ? "var(--hc-cream)" : "var(--hc-cream-muted)",
                 }}
                 aria-current={isActive(link.href) ? "page" : undefined}
               >
@@ -330,10 +342,10 @@ export default function NavBar() {
             <div className="relative" ref={bellRef}>
               <button
                 onClick={() => { setBellOpen((o) => !o); if (!bellOpen) refetchNotifs(); }}
-                className="relative p-2 rounded-xl hover:bg-indigo-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600"
+                className="relative p-2 rounded-xl hover:bg-[color-mix(in_oklch,var(--hc-terracotta)_12%,transparent)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400"
                 aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ""}`}
               >
-                <Bell className="w-5 h-5" style={{ color: unreadCount > 0 ? "oklch(0.42 0.22 270)" : "oklch(0.55 0.04 260)" }} />
+                <Bell className="w-5 h-5" style={{ color: unreadCount > 0 ? "var(--hc-terracotta)" : "var(--hc-cream-muted)" }} />
                 {unreadCount > 0 && (
                   <span
                     className="absolute top-1 right-1 min-w-[18px] h-[18px] rounded-full text-white text-[10px] font-bold flex items-center justify-center px-1"
@@ -417,66 +429,72 @@ export default function NavBar() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
-                  className="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-indigo-50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600"
+                  className="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-[color-mix(in_oklch,var(--hc-terracotta)_12%,transparent)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400"
                   aria-label="User menu"
                 >
                   <span
                     className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
-                    style={{ background: "linear-gradient(135deg, oklch(0.42 0.22 270), oklch(0.65 0.18 340))" }}
+                    style={{ background: "linear-gradient(135deg, var(--hc-terracotta), var(--hc-ocre))" }}
                     aria-hidden="true"
                   >
                     {initials}
                   </span>
                   <span
                     className="hidden xl:block text-sm font-medium max-w-[120px] truncate"
-                    style={{ color: "oklch(0.25 0.04 260)" }}
+                    style={{ color: "var(--hc-cream)" }}
                   >
                     {user?.name ?? user?.email ?? "My account"}
                   </span>
-                  <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" aria-hidden="true" />
+                  <ChevronDown className="w-3.5 h-3.5" style={{ color: "var(--hc-cream-muted)" }} aria-hidden="true" />
                 </button>
               </DropdownMenuTrigger>
 
-              <DropdownMenuContent align="end" className="w-56 rounded-xl shadow-lg">
+              <DropdownMenuContent
+                align="end"
+                className="w-56 rounded-xl shadow-lg"
+                style={{ backgroundColor: "var(--hc-espresso-deep)", borderColor: "color-mix(in oklch, var(--hc-cream) 12%, transparent)" }}
+              >
                 <DropdownMenuLabel className="pb-1">
-                  <p className="text-sm font-semibold truncate">{user?.name ?? "My account"}</p>
+                  <p className="text-sm font-semibold truncate" style={{ color: "var(--hc-cream)" }}>{user?.name ?? "My account"}</p>
                   {user?.email && (
-                    <p className="text-xs text-muted-foreground font-normal truncate">{user.email}</p>
+                    <p className="text-xs font-normal truncate" style={{ color: "var(--hc-cream-muted)" }}>{user.email}</p>
                   )}
                 </DropdownMenuLabel>
 
-                <DropdownMenuSeparator />
+                <DropdownMenuSeparator style={{ backgroundColor: "color-mix(in oklch, var(--hc-cream) 12%, transparent)" }} />
 
                 <DropdownMenuItem
                   onClick={() => navigate("/dashboard")}
-                  className="cursor-pointer rounded-lg"
+                  className="cursor-pointer rounded-lg focus:bg-[color-mix(in_oklch,var(--hc-terracotta)_16%,transparent)]"
+                  style={{ color: "var(--hc-cream)" }}
                 >
-                  <LayoutDashboard className="w-4 h-4 mr-2 text-indigo-500" aria-hidden="true" />
+                  <LayoutDashboard className="w-4 h-4 mr-2" style={{ color: "var(--hc-terracotta)" }} aria-hidden="true" />
                   My Dashboard
                 </DropdownMenuItem>
                 {(user?.role === "admin" || user?.role === "superadmin" || user?.role === "facilitator") && (
                   <DropdownMenuItem
                     onClick={() => navigate("/facilitator")}
-                    className="cursor-pointer rounded-lg text-purple-600 focus:text-purple-700 focus:bg-purple-50"
+                    className="cursor-pointer rounded-lg text-purple-400 focus:text-purple-300 focus:bg-purple-950/40"
                   >
-                    <Shield className="w-4 h-4 mr-2 text-purple-500" aria-hidden="true" />
+                    <Shield className="w-4 h-4 mr-2 text-purple-400" aria-hidden="true" />
                     Facilitator View
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuItem
                   onClick={() => navigate("/profile")}
-                  className="cursor-pointer rounded-lg"
+                  className="cursor-pointer rounded-lg focus:bg-[color-mix(in_oklch,var(--hc-terracotta)_16%,transparent)]"
+                  style={{ color: "var(--hc-cream)" }}
                 >
-                  <User className="w-4 h-4 mr-2 text-muted-foreground" aria-hidden="true" />
+                  <User className="w-4 h-4 mr-2" style={{ color: "var(--hc-cream-muted)" }} aria-hidden="true" />
                   My Profile
                 </DropdownMenuItem>
 
-                <DropdownMenuSeparator />
+                <DropdownMenuSeparator style={{ backgroundColor: "color-mix(in oklch, var(--hc-cream) 12%, transparent)" }} />
 
                 <DropdownMenuItem
                   onClick={handleLogout}
                   disabled={logoutMutation.isPending}
-                  className="cursor-pointer rounded-lg text-red-600 focus:text-red-600 focus:bg-red-50"
+                  className="cursor-pointer rounded-lg text-red-400 focus:text-red-300 focus:bg-red-950/40"
                   aria-label="Sign out of HeadCheck"
                 >
                   <LogOut className="w-4 h-4 mr-2" aria-hidden="true" />
@@ -489,15 +507,16 @@ export default function NavBar() {
               <Button
                 variant="ghost"
                 size="sm"
-                className="rounded-lg font-medium focus-visible:ring-2 focus-visible:ring-indigo-600"
+                className="rounded-lg font-medium focus-visible:ring-2 focus-visible:ring-orange-400"
+                style={{ color: "var(--hc-cream)" }}
                 onClick={() => navigate("/login")}
               >
                 Sign In
               </Button>
               <Button
                 size="sm"
-                className="rounded-lg font-semibold text-white focus-visible:ring-2 focus-visible:ring-indigo-600"
-                style={{ background: "linear-gradient(135deg, oklch(0.42 0.22 270), oklch(0.65 0.18 340))" }}
+                className="rounded-lg font-semibold text-white focus-visible:ring-2 focus-visible:ring-orange-400"
+                style={{ background: "linear-gradient(135deg, var(--hc-terracotta), var(--hc-ocre))" }}
                 onClick={() => navigate("/register")}
               >
                 Get Started Free
@@ -508,9 +527,9 @@ export default function NavBar() {
 
         {/* Mobile hamburger */}
         <button
-          className="lg:hidden p-2 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600"
+          className="lg:hidden p-2 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400"
           onClick={() => setMobileOpen(!mobileOpen)}
-          style={{ color: "oklch(0.42 0.22 270)" }}
+          style={{ color: "var(--hc-cream)" }}
           aria-label={mobileOpen ? "Close menu" : "Open menu"}
           aria-expanded={mobileOpen}
           aria-controls="mobile-menu"
@@ -656,17 +675,23 @@ export default function NavBar() {
       {mobileOpen && (
         <div
           id="mobile-menu"
-          className="lg:hidden bg-white border-t px-4 py-4 space-y-1"
-          style={{ borderColor: "oklch(0.92 0.03 260)" }}
+          className="lg:hidden border-t px-4 py-4 space-y-1"
+          style={{
+            backgroundColor: "var(--hc-espresso-deep)",
+            borderColor: "color-mix(in oklch, var(--hc-cream) 12%, transparent)",
+            fontFamily: "'Public Sans', sans-serif",
+          }}
         >
           {NAV_LINKS.map((link) => (
             <button
               key={link.href}
               onClick={() => { navigate(link.href); setMobileOpen(false); }}
-              className="w-full text-left px-3 py-2.5 rounded-xl text-sm font-medium flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600"
+              className="w-full text-left px-3 py-2.5 rounded-xl text-sm font-medium flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400"
               style={{
-                background: isActive(link.href) ? "oklch(0.94 0.04 270)" : "transparent",
-                color: isActive(link.href) ? "oklch(0.42 0.22 270)" : "oklch(0.40 0.04 260)",
+                background: isActive(link.href)
+                  ? "color-mix(in oklch, var(--hc-terracotta) 18%, transparent)"
+                  : "transparent",
+                color: isActive(link.href) ? "var(--hc-cream)" : "var(--hc-cream-muted)",
               }}
               aria-current={isActive(link.href) ? "page" : undefined}
             >
@@ -674,23 +699,26 @@ export default function NavBar() {
             </button>
           ))}
 
-          <div className="pt-2 border-t" style={{ borderColor: "oklch(0.92 0.03 260)" }}>
+          <div className="pt-2 border-t" style={{ borderColor: "color-mix(in oklch, var(--hc-cream) 12%, transparent)" }}>
             {isAuthenticated ? (
               <div className="space-y-2">
-                <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-indigo-50">
+                <div
+                  className="flex items-center gap-3 px-3 py-2 rounded-xl"
+                  style={{ backgroundColor: "color-mix(in oklch, var(--hc-terracotta) 14%, transparent)" }}
+                >
                   <span
                     className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
-                    style={{ background: "linear-gradient(135deg, oklch(0.42 0.22 270), oklch(0.65 0.18 340))" }}
+                    style={{ background: "linear-gradient(135deg, var(--hc-terracotta), var(--hc-ocre))" }}
                     aria-hidden="true"
                   >
                     {initials}
                   </span>
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold truncate" style={{ color: "oklch(0.25 0.04 260)" }}>
+                    <p className="text-sm font-semibold truncate" style={{ color: "var(--hc-cream)" }}>
                       {user?.name ?? "My account"}
                     </p>
                     {user?.email && (
-                      <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                      <p className="text-xs truncate" style={{ color: "var(--hc-cream-muted)" }}>{user.email}</p>
                     )}
                   </div>
                 </div>
@@ -700,6 +728,7 @@ export default function NavBar() {
                     variant="outline"
                     size="sm"
                     className="flex-1 rounded-xl"
+                    style={{ borderColor: "color-mix(in oklch, var(--hc-cream) 20%, transparent)", color: "var(--hc-cream)" }}
                     onClick={() => { navigate(dashboardPath); setMobileOpen(false); }}
                   >
                     <LayoutDashboard className="w-4 h-4 mr-1.5" aria-hidden="true" />
@@ -724,6 +753,7 @@ export default function NavBar() {
                   variant="outline"
                   size="sm"
                   className="w-full rounded-xl"
+                  style={{ borderColor: "color-mix(in oklch, var(--hc-cream) 20%, transparent)", color: "var(--hc-cream)" }}
                   onClick={() => { navigate("/login"); setMobileOpen(false); }}
                 >
                   Sign In
@@ -731,7 +761,7 @@ export default function NavBar() {
                 <Button
                   size="sm"
                   className="w-full rounded-xl font-semibold text-white"
-                  style={{ background: "linear-gradient(135deg, oklch(0.42 0.22 270), oklch(0.65 0.18 340))" }}
+                  style={{ background: "linear-gradient(135deg, var(--hc-terracotta), var(--hc-ocre))" }}
                   onClick={() => { navigate("/register"); setMobileOpen(false); }}
                 >
                   Get Started Free
