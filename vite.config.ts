@@ -150,7 +150,18 @@ function vitePluginManusDebugCollector(): Plugin {
   };
 }
 
-const plugins = [react(), tailwindcss(), jsxLocPlugin(), vitePluginManusRuntime(), vitePluginManusDebugCollector()];
+// vitePluginManusRuntime injects a large inline bootstrap script used by the
+// Manus platform's own hosting/preview environment. It's not needed for a
+// self-hosted production build (the real app bundle is fully self-contained)
+// and its inline script is blocked by our CSP anyway — skip it in production,
+// matching the existing NODE_ENV check on vitePluginManusDebugCollector below.
+const plugins = [
+  react(),
+  tailwindcss(),
+  jsxLocPlugin(),
+  ...(process.env.NODE_ENV === "production" ? [] : [vitePluginManusRuntime()]),
+  vitePluginManusDebugCollector(),
+];
 
 export default defineConfig({
   plugins,

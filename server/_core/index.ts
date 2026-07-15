@@ -67,7 +67,20 @@ async function startServer() {
   app.set("trust proxy", 1);
 
   // ─── Security Middleware ───────────────────────────────────────────────────
-  app.use(helmet()); // Secure HTTP headers
+  // Secure HTTP headers. img-src is widened to any https: source (matching
+  // the default's own font-src/style-src pattern) since the app references
+  // external image hosts — the branding logo on a CDN, Google OAuth avatar
+  // URLs — not just same-origin/data: URIs.
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+          "img-src": ["'self'", "data:", "https:"],
+        },
+      },
+    })
+  );
 
   // CORS configuration
   const allowedOrigins = process.env.CORS_ORIGIN
