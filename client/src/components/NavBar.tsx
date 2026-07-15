@@ -28,17 +28,29 @@ export function LogoMark({ size = 34 }: { size?: number }) {
   );
 }
 
-const NAV_LINKS = [
+// Shown flat in the desktop bar — the most frequently used entry points.
+const PRIMARY_LINKS = [
   { href: "/checkin", label: "Check-In", emoji: "✅" },
   { href: "/compass", label: "Compass", emoji: "🧭" },
   { href: "/ei-quiz", label: "EI Quiz", emoji: "🧠" },
   { href: "/resources", label: "Resources", emoji: "📚" },
+];
+
+// Tucked into the "Explore" dropdown on desktop to avoid overflowing the
+// bar — still shown flat in the mobile menu, where vertical space isn't
+// constrained the same way.
+const MORE_LINKS = [
+  { href: "/learn-ei", label: "Learn EI", emoji: "🎓" },
   { href: "/mindset", label: "Mindset", emoji: "💡" },
+  { href: "/aiei-library", label: "AIEI Library", emoji: "📖" },
+  { href: "/feeling-wheel", label: "Feeling Wheel", emoji: "🎡" },
   { href: "/zera-cards", label: "Zera Cards", emoji: "🃏" },
   { href: "/coaching", label: "Coaching", emoji: "🎯" },
   { href: "/support-options", label: "Support Options", emoji: "🤝" },
   { href: "/about", label: "About", emoji: "💜" },
 ];
+
+const NAV_LINKS = [...PRIMARY_LINKS, ...MORE_LINKS];
 
 /** Returns the initials (up to 2 chars) from a display name or email */
 function getInitials(name?: string | null, email?: string | null): string {
@@ -303,7 +315,7 @@ export default function NavBar() {
         {/* Desktop nav links — hidden when progress bar is active */}
         {!progress.active && (
           <div className="hidden lg:flex items-center gap-1">
-            {NAV_LINKS.map((link) => (
+            {PRIMARY_LINKS.map((link) => (
               <button
                 key={link.href}
                 onClick={() => navigate(link.href)}
@@ -319,6 +331,42 @@ export default function NavBar() {
                 {link.label}
               </button>
             ))}
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400"
+                  style={{
+                    background: MORE_LINKS.some((link) => isActive(link.href))
+                      ? "color-mix(in oklch, var(--hc-terracotta) 18%, transparent)"
+                      : "transparent",
+                    color: MORE_LINKS.some((link) => isActive(link.href))
+                      ? "var(--hc-cream)"
+                      : "var(--hc-cream-muted)",
+                  }}
+                >
+                  Explore
+                  <ChevronDown className="w-3.5 h-3.5" aria-hidden="true" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="start"
+                className="w-48"
+                style={{ backgroundColor: "var(--hc-espresso-deep)", borderColor: "color-mix(in oklch, var(--hc-cream) 12%, transparent)" }}
+              >
+                {MORE_LINKS.map((link) => (
+                  <DropdownMenuItem
+                    key={link.href}
+                    onClick={() => navigate(link.href)}
+                    className="cursor-pointer rounded-lg focus:bg-[color-mix(in_oklch,var(--hc-terracotta)_16%,transparent)]"
+                    style={{ color: "var(--hc-cream)" }}
+                  >
+                    <span aria-hidden="true" className="mr-2">{link.emoji}</span>
+                    {link.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         )}
 
