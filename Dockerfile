@@ -3,8 +3,10 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Install dependencies
+# Install dependencies (patches/ must be present before install — package.json
+# references patches/wouter@3.7.1.patch via pnpm.patchedDependencies)
 COPY package.json pnpm-lock.yaml ./
+COPY patches ./patches
 RUN corepack enable && pnpm install --frozen-lockfile
 
 # Copy source
