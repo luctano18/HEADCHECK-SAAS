@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useRoute, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
+import AppSidebar from "@/components/AppSidebar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -757,7 +758,7 @@ export default function AlertDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <AppSidebar>
       <div className="max-w-3xl mx-auto px-4 py-8">
         {matchCrisis && paramsCrisis?.id && (
           <CrisisAlertDetail id={parseInt(paramsCrisis.id, 10)} />
@@ -774,6 +775,6 @@ export default function AlertDetailPage() {
           </div>
         )}
       </div>
-    </div>
+    </AppSidebar>
   );
 }
