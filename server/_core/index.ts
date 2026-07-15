@@ -61,6 +61,11 @@ async function startServer() {
   const app = express();
   const server = createServer(app);
 
+  // Trust exactly one upstream hop (the Caddy reverse proxy in front of this
+  // container) so req.ip / X-Forwarded-For / X-Forwarded-Proto are read from
+  // Caddy's headers rather than rejected as spoofable.
+  app.set("trust proxy", 1);
+
   // ─── Security Middleware ───────────────────────────────────────────────────
   app.use(helmet()); // Secure HTTP headers
 
