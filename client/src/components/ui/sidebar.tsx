@@ -394,7 +394,18 @@ function SidebarGroup({ className, ...props }: React.ComponentProps<"div">) {
     <div
       data-slot="sidebar-group"
       data-sidebar="group"
-      className={cn("relative flex w-full min-w-0 flex-col p-2", className)}
+      className={cn(
+        // shrink-0 prevents the default flex-shrink from compressing this
+        // group below its own content's height when SidebarContent's total
+        // children are slightly taller than the available viewport — without
+        // it, the flex algorithm shrinks the group's box while its
+        // overflow-visible children (label + fixed-height menu items) keep
+        // their natural size, so the next group's label visually overlaps
+        // the last item of this one. SidebarContent already has
+        // overflow-auto, so the excess height should scroll, not compress.
+        "relative flex w-full min-w-0 shrink-0 flex-col p-2",
+        className
+      )}
       {...props}
     />
   );

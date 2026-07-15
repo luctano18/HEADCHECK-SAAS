@@ -294,7 +294,16 @@ export default function Messages() {
       </div>
 
       {/* Layout */}
-      <div className="max-w-5xl mx-auto flex h-[calc(100vh-57px)]">
+      {/*
+        Height accounts for chrome outside this page that isn't part of the
+        old 57px-header assumption: AppSidebar's <main> wraps every page in
+        p-4 (16px top + 16px bottom = 32px), and on mobile it also renders
+        its own 56px sticky top bar above this page's content. So:
+          desktop: 100vh - 57px (this page's sticky header) - 32px (AppSidebar's p-4) = 100vh - 89px
+          mobile:  100vh - 57px - 32px - 56px (AppSidebar's mobile top bar) = 100vh - 145px
+        Verified empirically via rendered bounding rects at 1280px and 390px widths.
+      */}
+      <div className="max-w-5xl mx-auto flex h-[calc(100vh-145px)] md:h-[calc(100vh-89px)]">
         {/* Conversation list — hidden on mobile when chat is open */}
         <div
           className={`w-full md:w-80 border-r border-border bg-background flex-shrink-0 overflow-y-auto ${
