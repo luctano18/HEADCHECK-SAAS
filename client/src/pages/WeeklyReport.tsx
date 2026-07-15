@@ -7,6 +7,7 @@ import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useLocation } from "wouter";
+import AppSidebar from "@/components/AppSidebar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -59,7 +60,7 @@ export default function WeeklyReport() {
   const data = preview?.data;
 
   return (
-    <div className="min-h-screen bg-background">
+    <AppSidebar>
       <div className="max-w-5xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="flex items-center gap-4 mb-8">
@@ -254,6 +255,6 @@ export default function WeeklyReport() {
           </>
         )}
       </div>
-    </div>
+    </AppSidebar>
   );
 }
