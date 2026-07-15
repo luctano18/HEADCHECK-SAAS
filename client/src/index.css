@@ -31,6 +31,14 @@
   --hc-teal:           oklch(0.65 0.09 195);
   --hc-teal-light:     oklch(0.92 0.04 195);
   --hc-teal-deep:      oklch(0.45 0.11 195);
+  /* Navigation chrome — "Sagesse Africaine" direction (navbar/sidebar only,
+     not used by page content, buttons, or cards) */
+  --hc-espresso:       oklch(0.22 0.03 55);
+  --hc-espresso-deep:  oklch(0.16 0.03 55);
+  --hc-terracotta:     oklch(0.60 0.14 45);
+  --hc-ocre:           oklch(0.50 0.13 35);
+  --hc-cream:          oklch(0.95 0.02 75);
+  --hc-cream-muted:    oklch(0.75 0.05 65);
   /* Legacy aliases kept for backward compat */
   --hc-lavender:       oklch(0.70 0.14 270);
   --hc-lavender-light: oklch(0.94 0.04 270);
