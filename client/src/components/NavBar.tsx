@@ -29,7 +29,6 @@ function LogoMark({ size = 34 }: { size?: number }) {
 }
 
 const NAV_LINKS = [
-  { href: "/", label: "Home", emoji: "🏠" },
   { href: "/checkin", label: "Check-In", emoji: "✅" },
   { href: "/compass", label: "Compass", emoji: "🧭" },
   { href: "/ei-quiz", label: "EI Quiz", emoji: "🧠" },
@@ -308,7 +307,7 @@ export default function NavBar() {
               <button
                 key={link.href}
                 onClick={() => navigate(link.href)}
-                className="px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400"
+                className="px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400"
                 style={{
                   background: isActive(link.href)
                     ? "color-mix(in oklch, var(--hc-terracotta) 18%, transparent)"
