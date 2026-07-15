@@ -549,7 +549,7 @@ export default function NavBar() {
       {progress.active && (
         <div
           className="hidden lg:block h-0.5 w-full"
-          style={{ background: "oklch(0.93 0.03 285)" }}
+          style={{ background: "color-mix(in oklch, var(--hc-cream) 15%, transparent)" }}
         >
           <div
             className="h-full transition-all duration-500 ease-out"
