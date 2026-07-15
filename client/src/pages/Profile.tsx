@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { toast } from "sonner";
+import AppSidebar from "@/components/AppSidebar";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import ReminderSettings from "@/components/ReminderSettings";
 import {
@@ -197,7 +198,7 @@ export default function Profile() {
   const lastSeen = profile?.lastSignedIn ? new Date(profile.lastSignedIn).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—";
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-violet-50/30 to-indigo-50/40">
+    <AppSidebar>
       {/* Top bar */}
       <div className="sticky top-0 z-10 bg-white/80 backdrop-blur border-b border-gray-100 px-4 py-3 flex items-center justify-between">
         <button
@@ -529,6 +530,6 @@ export default function Profile() {
         {/* Bottom spacer */}
         <div className="h-8" />
       </div>
-    </div>
+    </AppSidebar>
   );
 }
