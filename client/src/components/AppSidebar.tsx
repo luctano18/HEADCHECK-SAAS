@@ -10,6 +10,9 @@ import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarHeader,
   SidebarInset,
   SidebarMenu,
@@ -21,23 +24,81 @@ import {
 } from "@/components/ui/sidebar";
 import { getLoginUrl } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
-import { LayoutDashboard, LogOut, PanelLeft, Users } from "lucide-react";
+import {
+  LayoutDashboard, CheckCircle2, Compass, BookOpen, GraduationCap,
+  Lightbulb, Library, CircleDot, NotebookPen, HeartHandshake, Heart,
+  BarChart3, TrendingUp, Shield, FileText, MessageCircle, Bell, User,
+  LogOut, PanelLeft,
+} from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
-import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
+import { DashboardLayoutSkeleton } from "./DashboardLayoutSkeleton";
+import { LogoMark } from "./NavBar";
 import { Button } from "./ui/button";
 
-const menuItems = [
-  { icon: LayoutDashboard, label: "Page 1", path: "/" },
-  { icon: Users, label: "Page 2", path: "/some-path" },
+type NavItem = { icon: typeof LayoutDashboard; label: string; path: string };
+type NavSection = { label: string; items: NavItem[] };
+
+const NAV_SECTIONS: NavSection[] = [
+  {
+    label: "Today",
+    items: [
+      { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
+      { icon: CheckCircle2, label: "Check-In", path: "/checkin" },
+      { icon: Compass, label: "Compass", path: "/compass" },
+    ],
+  },
+  {
+    label: "Learn & Resources",
+    items: [
+      { icon: BookOpen, label: "Resources", path: "/resources" },
+      { icon: GraduationCap, label: "Learn EI", path: "/learn-ei" },
+      { icon: Lightbulb, label: "Mindset", path: "/mindset" },
+      { icon: Library, label: "AIEI Library", path: "/aiei-library" },
+      { icon: CircleDot, label: "Feeling Wheel", path: "/feeling-wheel" },
+    ],
+  },
+  {
+    label: "Support",
+    items: [
+      { icon: NotebookPen, label: "Wellness Log", path: "/wellness-logbook" },
+      { icon: HeartHandshake, label: "Support Options", path: "/support-options" },
+      { icon: Heart, label: "Crisis Support", path: "/crisis-support" },
+    ],
+  },
 ];
+
+const INSTITUTION_SECTION: NavSection = {
+  label: "Institution",
+  items: [
+    { icon: BarChart3, label: "Pulse Surveys", path: "/pulse-surveys" },
+    { icon: TrendingUp, label: "Team Sentiment", path: "/team-sentiment" },
+  ],
+};
+
+const FACILITATOR_SECTION: NavSection = {
+  label: "Facilitator",
+  items: [
+    { icon: Shield, label: "Facilitator Dashboard", path: "/facilitator" },
+    { icon: FileText, label: "Weekly Report", path: "/admin/weekly-report" },
+  ],
+};
+
+const ACCOUNT_SECTION: NavSection = {
+  label: "Account",
+  items: [
+    { icon: MessageCircle, label: "Messages", path: "/messages" },
+    { icon: Bell, label: "Notifications", path: "/notifications" },
+    { icon: User, label: "Profile", path: "/profile" },
+  ],
+};
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";
 const DEFAULT_WIDTH = 280;
 const MIN_WIDTH = 200;
 const MAX_WIDTH = 480;
 
-export default function DashboardLayout({
+export default function AppSidebar({
   children,
 }: {
   children: React.ReactNode;
@@ -53,7 +114,7 @@ export default function DashboardLayout({
   }, [sidebarWidth]);
 
   if (loading) {
-    return <DashboardLayoutSkeleton />
+    return <DashboardLayoutSkeleton />;
   }
 
   if (!user) {
@@ -65,7 +126,7 @@ export default function DashboardLayout({
               Sign in to continue
             </h1>
             <p className="text-sm text-muted-foreground text-center max-w-sm">
-              Access to this dashboard requires authentication. Continue to launch the login flow.
+              Access to this page requires authentication. Continue to launch the login flow.
             </p>
           </div>
           <Button
@@ -90,30 +151,42 @@ export default function DashboardLayout({
         } as CSSProperties
       }
     >
-      <DashboardLayoutContent setSidebarWidth={setSidebarWidth}>
+      <AppSidebarContent setSidebarWidth={setSidebarWidth}>
         {children}
-      </DashboardLayoutContent>
+      </AppSidebarContent>
     </SidebarProvider>
   );
 }
 
-type DashboardLayoutContentProps = {
+type AppSidebarContentProps = {
   children: React.ReactNode;
   setSidebarWidth: (width: number) => void;
 };
 
-function DashboardLayoutContent({
+function AppSidebarContent({
   children,
   setSidebarWidth,
-}: DashboardLayoutContentProps) {
+}: AppSidebarContentProps) {
   const { user, logout } = useAuth();
   const [location, setLocation] = useLocation();
   const { state, toggleSidebar } = useSidebar();
   const isCollapsed = state === "collapsed";
   const [isResizing, setIsResizing] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
-  const activeMenuItem = menuItems.find(item => item.path === location);
   const isMobile = useIsMobile();
+
+  const hasInstitution = !!user?.institutionId;
+  const isFacilitator =
+    user?.role === "admin" || user?.role === "superadmin" || user?.role === "facilitator";
+
+  const sections: NavSection[] = [
+    ...NAV_SECTIONS,
+    ...(hasInstitution ? [INSTITUTION_SECTION] : []),
+    ...(isFacilitator ? [FACILITATOR_SECTION] : []),
+    ACCOUNT_SECTION,
+  ];
+  const allItems = sections.flatMap((s) => s.items);
+  const activeItem = allItems.find((item) => item.path === location);
 
   useEffect(() => {
     if (isCollapsed) {
@@ -151,6 +224,8 @@ function DashboardLayoutContent({
     };
   }, [isResizing, setSidebarWidth]);
 
+  const initials = (user?.name?.charAt(0) || user?.email?.charAt(0) || "?").toUpperCase();
+
   return (
     <>
       <div className="relative" ref={sidebarRef}>
@@ -163,15 +238,19 @@ function DashboardLayoutContent({
             <div className="flex items-center gap-3 px-2 transition-all w-full">
               <button
                 onClick={toggleSidebar}
-                className="h-8 w-8 flex items-center justify-center hover:bg-accent rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring shrink-0"
+                className="h-8 w-8 flex items-center justify-center hover:bg-sidebar-accent rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring shrink-0"
                 aria-label="Toggle navigation"
               >
-                <PanelLeft className="h-4 w-4 text-muted-foreground" />
+                <PanelLeft className="h-4 w-4 text-sidebar-foreground/70" />
               </button>
               {!isCollapsed ? (
                 <div className="flex items-center gap-2 min-w-0">
-                  <span className="font-semibold tracking-tight truncate">
-                    Navigation
+                  <LogoMark size={22} />
+                  <span
+                    className="truncate text-sidebar-foreground"
+                    style={{ fontFamily: "'Fraunces', serif", fontWeight: 700 }}
+                  >
+                    HeadCheck
                   </span>
                 </div>
               ) : null}
@@ -179,42 +258,47 @@ function DashboardLayoutContent({
           </SidebarHeader>
 
           <SidebarContent className="gap-0">
-            <SidebarMenu className="px-2 py-1">
-              {menuItems.map(item => {
-                const isActive = location === item.path;
-                return (
-                  <SidebarMenuItem key={item.path}>
-                    <SidebarMenuButton
-                      isActive={isActive}
-                      onClick={() => setLocation(item.path)}
-                      tooltip={item.label}
-                      className={`h-10 transition-all font-normal`}
-                    >
-                      <item.icon
-                        className={`h-4 w-4 ${isActive ? "text-primary" : ""}`}
-                      />
-                      <span>{item.label}</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
+            {sections.map((section) => (
+              <SidebarGroup key={section.label}>
+                <SidebarGroupLabel>{section.label}</SidebarGroupLabel>
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    {section.items.map((item) => {
+                      const isActive = location === item.path;
+                      return (
+                        <SidebarMenuItem key={item.path}>
+                          <SidebarMenuButton
+                            isActive={isActive}
+                            onClick={() => setLocation(item.path)}
+                            tooltip={item.label}
+                            className="h-10 transition-all font-normal"
+                          >
+                            <item.icon className="h-4 w-4" />
+                            <span>{item.label}</span>
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                      );
+                    })}
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </SidebarGroup>
+            ))}
           </SidebarContent>
 
           <SidebarFooter className="p-3">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-3 rounded-lg px-1 py-1 hover:bg-accent/50 transition-colors w-full text-left group-data-[collapsible=icon]:justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                  <Avatar className="h-9 w-9 border shrink-0">
-                    <AvatarFallback className="text-xs font-medium">
-                      {user?.name?.charAt(0).toUpperCase()}
+                <button className="flex items-center gap-3 rounded-lg px-1 py-1 hover:bg-sidebar-accent/50 transition-colors w-full text-left group-data-[collapsible=icon]:justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring">
+                  <Avatar className="h-9 w-9 border border-sidebar-border shrink-0">
+                    <AvatarFallback className="text-xs font-medium bg-sidebar-primary text-sidebar-primary-foreground">
+                      {initials}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0 group-data-[collapsible=icon]:hidden">
-                    <p className="text-sm font-medium truncate leading-none">
+                    <p className="text-sm font-medium truncate leading-none text-sidebar-foreground">
                       {user?.name || "-"}
                     </p>
-                    <p className="text-xs text-muted-foreground truncate mt-1.5">
+                    <p className="text-xs text-sidebar-foreground/60 truncate mt-1.5">
                       {user?.email || "-"}
                     </p>
                   </div>
@@ -250,7 +334,7 @@ function DashboardLayoutContent({
               <div className="flex items-center gap-3">
                 <div className="flex flex-col gap-1">
                   <span className="tracking-tight text-foreground">
-                    {activeMenuItem?.label ?? "Menu"}
+                    {activeItem?.label ?? "Menu"}
                   </span>
                 </div>
               </div>

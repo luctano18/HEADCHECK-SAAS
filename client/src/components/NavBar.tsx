@@ -18,7 +18,7 @@ import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { useNavProgress, type StepStatus } from "@/contexts/NavProgressContext";
 
-function LogoMark({ size = 34 }: { size?: number }) {
+export function LogoMark({ size = 34 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 40 40" fill="none" aria-hidden="true">
       <circle cx="20" cy="20" r="18" stroke="var(--hc-terracotta)" strokeWidth="1.4" opacity="0.5" />
