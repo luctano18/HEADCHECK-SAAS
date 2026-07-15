@@ -7,6 +7,7 @@
 import { useState, useEffect, useRef } from "react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
+import AppSidebar from "@/components/AppSidebar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -262,7 +263,7 @@ export default function Messages() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <AppSidebar>
       {/* Header */}
       <div className="border-b border-border bg-background sticky top-0 z-10">
         <div className="max-w-5xl mx-auto px-4 py-3 flex items-center gap-3">
@@ -329,6 +330,6 @@ export default function Messages() {
           )}
         </div>
       </div>
-    </div>
+    </AppSidebar>
   );
 }
