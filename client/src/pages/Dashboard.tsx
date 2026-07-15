@@ -11,8 +11,7 @@ import {
   TrendingUp, Calendar, Award, Plus, ChevronRight,
   BookOpen, Download
 } from "lucide-react";
-import NavBar from "@/components/NavBar";
-import Footer from "@/components/Footer";
+import AppSidebar from "@/components/AppSidebar";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell } from "recharts";
 import { format } from "date-fns";
 import MoodTrendChart from "@/components/MoodTrendChart";
@@ -105,8 +104,7 @@ export default function Dashboard() {
     : null;
 
   return (
-    <div className="min-h-screen bg-background">
-      <NavBar />
+    <AppSidebar>
       <div className="hc-gradient-bar h-1.5" />
 
       <div className="container max-w-5xl py-8 space-y-8">
@@ -445,7 +443,6 @@ export default function Dashboard() {
               </div>
             )}
       </div>
-      <Footer />
-    </div>
+    </AppSidebar>
   );
 }
