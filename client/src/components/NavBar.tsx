@@ -28,18 +28,11 @@ export function LogoMark({ size = 34 }: { size?: number }) {
   );
 }
 
-// Shown flat in the desktop bar — the most frequently used entry points.
-const PRIMARY_LINKS = [
+const NAV_LINKS = [
   { href: "/checkin", label: "Check-In", emoji: "✅" },
   { href: "/compass", label: "Compass", emoji: "🧭" },
   { href: "/ei-quiz", label: "EI Quiz", emoji: "🧠" },
   { href: "/resources", label: "Resources", emoji: "📚" },
-];
-
-// Tucked into the "Explore" dropdown on desktop to avoid overflowing the
-// bar — still shown flat in the mobile menu, where vertical space isn't
-// constrained the same way.
-const MORE_LINKS = [
   { href: "/learn-ei", label: "Learn EI", emoji: "🎓" },
   { href: "/mindset", label: "Mindset", emoji: "💡" },
   { href: "/aiei-library", label: "AIEI Library", emoji: "📖" },
@@ -49,8 +42,6 @@ const MORE_LINKS = [
   { href: "/support-options", label: "Support Options", emoji: "🤝" },
   { href: "/about", label: "About", emoji: "💜" },
 ];
-
-const NAV_LINKS = [...PRIMARY_LINKS, ...MORE_LINKS];
 
 /** Returns the initials (up to 2 chars) from a display name or email */
 function getInitials(name?: string | null, email?: string | null): string {
@@ -312,14 +303,17 @@ export default function NavBar() {
           <span style={{ fontFamily: "'Fraunces', serif", fontWeight: 700 }}>HeadCheck</span>
         </button>
 
-        {/* Desktop nav links — hidden when progress bar is active */}
+        {/* Desktop nav links — hidden when progress bar is active. All links
+            stay directly on the bar (no grouping/dropdown); on narrower
+            "lg" widths where they don't all fit, the row scrolls
+            horizontally instead of clipping or hiding items. */}
         {!progress.active && (
-          <div className="hidden lg:flex items-center gap-1">
-            {PRIMARY_LINKS.map((link) => (
+          <div className="hidden lg:flex items-center gap-0.5 overflow-x-auto min-w-0 flex-1 mx-2">
+            {NAV_LINKS.map((link) => (
               <button
                 key={link.href}
                 onClick={() => navigate(link.href)}
-                className="px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400"
+                className="px-2.5 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400"
                 style={{
                   background: isActive(link.href)
                     ? "color-mix(in oklch, var(--hc-terracotta) 18%, transparent)"
@@ -331,42 +325,6 @@ export default function NavBar() {
                 {link.label}
               </button>
             ))}
-
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400"
-                  style={{
-                    background: MORE_LINKS.some((link) => isActive(link.href))
-                      ? "color-mix(in oklch, var(--hc-terracotta) 18%, transparent)"
-                      : "transparent",
-                    color: MORE_LINKS.some((link) => isActive(link.href))
-                      ? "var(--hc-cream)"
-                      : "var(--hc-cream-muted)",
-                  }}
-                >
-                  Explore
-                  <ChevronDown className="w-3.5 h-3.5" aria-hidden="true" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                align="start"
-                className="w-48"
-                style={{ backgroundColor: "var(--hc-espresso-deep)", borderColor: "color-mix(in oklch, var(--hc-cream) 12%, transparent)" }}
-              >
-                {MORE_LINKS.map((link) => (
-                  <DropdownMenuItem
-                    key={link.href}
-                    onClick={() => navigate(link.href)}
-                    className="cursor-pointer rounded-lg focus:bg-[color-mix(in_oklch,var(--hc-terracotta)_16%,transparent)]"
-                    style={{ color: "var(--hc-cream)" }}
-                  >
-                    <span aria-hidden="true" className="mr-2">{link.emoji}</span>
-                    {link.label}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
           </div>
         )}
 
