@@ -737,7 +737,7 @@ export default function NavBar() {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="flex-1 rounded-xl border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 focus-visible:ring-red-400"
+                    className="flex-1 rounded-xl border-red-400/40 text-red-400 hover:bg-red-950/40 hover:border-red-400/60 focus-visible:ring-red-400"
                     onClick={() => { handleLogout(); setMobileOpen(false); }}
                     disabled={logoutMutation.isPending}
                     aria-label="Sign out of HeadCheck"
