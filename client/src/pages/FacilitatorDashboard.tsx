@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
+import AppSidebar from "@/components/AppSidebar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,8 +11,8 @@ import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
 import {
-  Brain, Users, AlertTriangle, TrendingUp, Plus, LogOut, User,
-  Mail, Shield, BarChart3, Building2, Copy, Loader2, Home, Heart, Settings, Sliders, Download
+  Brain, Users, AlertTriangle, TrendingUp, Plus,
+  Mail, Shield, BarChart3, Copy, Loader2, Heart, Settings, Sliders, Download
 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
@@ -100,7 +101,7 @@ const SEVERITY_BADGES: Record<string, string> = {
 const CHART_COLORS = ["#4338CA", "#F97316", "#0D9488", "#F59E0B", "#E11D48"];
 
 export default function FacilitatorDashboard() {
-  const { user, isAuthenticated, loading, logout } = useAuth();
+  const { user, isAuthenticated, loading } = useAuth();
   const [, navigate] = useLocation();
   const [inviteEmail, setInviteEmail] = useState("");
   const [groupName, setGroupName] = useState("");
@@ -280,95 +281,33 @@ export default function FacilitatorDashboard() {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="flex h-screen overflow-hidden">
-        {/* Sidebar */}
-        <aside className="w-64 bg-sidebar text-sidebar-foreground flex flex-col border-r border-sidebar-border hidden md:flex">
-          <div className="p-5 border-b border-sidebar-border">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-xl bg-sidebar-primary flex items-center justify-center">
-                <Brain className="w-4 h-4 text-sidebar-primary-foreground" />
-              </div>
-              <span className="font-semibold text-sidebar-foreground">HeadCheck <span className="text-sidebar-primary">AI</span></span>
-            </div>
-            <Badge className="mt-2 text-xs bg-sidebar-accent text-sidebar-accent-foreground">
-              <Building2 className="w-3 h-3 mr-1" /> {isSuperadmin ? "Super Admin" : "Facilitator View"}
-            </Badge>
-          </div>
-          <nav className="flex-1 p-4 space-y-1">
-            {TABS.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-                  activeTab === tab.id
-                    ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                    : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
-                }`}
-              >
-                {tab.icon}
-                <span className="flex-1 text-left">{tab.label}</span>
-                {tab.badge ? (
-                  <span className="w-5 h-5 rounded-full bg-destructive text-destructive-foreground text-xs flex items-center justify-center font-bold">
-                    {tab.badge}
-                  </span>
-                ) : null}
-              </button>
-            ))}
-            <div className="pt-2 border-t border-sidebar-border mt-2">
-              <button
-                onClick={() => navigate("/dashboard")}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-emerald-400 hover:text-emerald-200 hover:bg-emerald-900/30 border border-emerald-700/30 transition-colors"
-              >
-                <Home className="w-4 h-4" /> My Personal Dashboard
-              </button>
-            </div>
-          </nav>
-          <div className="p-4 border-t border-sidebar-border space-y-2">
-            <div className="flex items-center gap-3 px-3 py-2">
-              <div className="w-8 h-8 rounded-full bg-sidebar-accent flex items-center justify-center">
-                <User className="w-4 h-4 text-sidebar-foreground" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-medium text-sidebar-foreground truncate">{user?.name ?? "Facilitator"}</p>
-                <p className="text-xs text-sidebar-foreground/50">{isSuperadmin ? "Super Admin" : "Facilitator"}</p>
-              </div>
-            </div>
-            <button onClick={logout} className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/50 transition-colors">
-              <LogOut className="w-4 h-4" /> Sign Out
+    <AppSidebar>
+      <div className="max-w-5xl mx-auto space-y-8">
+        {/* Tab switcher — horizontal pill bar, replaces the old vertical
+            sidebar nav now that AppSidebar owns the persistent left rail. */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 -mx-1 px-1">
+          {TABS.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as any)}
+              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+                activeTab === tab.id
+                  ? "bg-foreground text-background"
+                  : "bg-muted text-muted-foreground hover:bg-muted/70"
+              }`}
+            >
+              {tab.icon}
+              {tab.label}
+              {tab.badge ? (
+                <span className="w-4.5 h-4.5 rounded-full bg-destructive text-destructive-foreground text-[10px] flex items-center justify-center font-bold px-1">
+                  {tab.badge}
+                </span>
+              ) : null}
             </button>
-          </div>
-        </aside>
+          ))}
+        </div>
 
-        {/* Main */}
-        <main className="flex-1 overflow-y-auto">
-          {/* Mobile header */}
-          <div className="md:hidden border-b bg-card/80 backdrop-blur-sm sticky top-0 z-10">
-            <div className="container flex items-center justify-between h-14">
-              <div className="flex items-center gap-2">
-                <Brain className="w-5 h-5 text-primary" />
-                <span className="font-semibold text-sm">Facilitator Dashboard</span>
-              </div>
-              <div className="flex gap-1 items-center">
-                {TABS.map((t) => (
-                  <Button key={t.id} variant={activeTab === t.id ? "default" : "ghost"} size="sm" onClick={() => setActiveTab(t.id as any)}>
-                    {t.icon}
-                  </Button>
-                ))}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => navigate("/dashboard")}
-                  className="text-emerald-400 hover:text-emerald-200 px-2"
-                  title="My Personal Dashboard"
-                >
-                  <Home className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          <div className="p-6 md:p-8 space-y-8 max-w-5xl">
+        <div className="space-y-8">
             {/* ── OVERVIEW TAB ── */}
             {activeTab === "overview" && (
               <>
@@ -1032,7 +971,6 @@ export default function FacilitatorDashboard() {
                 </div>
               </>
             )}
-          </div>
 
             {/* ── EEIS: Intervention Config Tab ── */}
             {activeTab === "eeis" && (
@@ -1194,7 +1132,7 @@ export default function FacilitatorDashboard() {
 
             {/* ── Pulse Surveys Tab ── */}
             {activeTab === "pulse" && (
-              <div className="p-6 space-y-6">
+              <>
                 <div className="flex items-center justify-between">
                   <div>
                     <h2 className="text-xl font-bold text-foreground">Pulse Surveys</h2>
@@ -1287,7 +1225,7 @@ export default function FacilitatorDashboard() {
 
                 {/* Employee Wellness Resources */}
                 <EmployeeResourcesPanel />
-              </div>
+              </>
             )}
 
             {/* Export Button (visible in Overview) */}
@@ -1345,7 +1283,7 @@ export default function FacilitatorDashboard() {
 
             {/* ── Team Sentiment Tab ── */}
             {activeTab === "sentiment" && (
-              <div className="p-6 space-y-6">
+              <>
                 <div>
                   <h2 className="text-xl font-bold text-foreground">Team Sentiment</h2>
                   <p className="text-sm text-muted-foreground mt-1">Aggregate emotional wellness analytics for your team (last 30 days).</p>
@@ -1403,11 +1341,11 @@ export default function FacilitatorDashboard() {
                     </CardContent>
                   </Card>
                 )}
-              </div>
+              </>
             )}
 
-        </main>
+        </div>
       </div>
-    </div>
+    </AppSidebar>
   );
 }
