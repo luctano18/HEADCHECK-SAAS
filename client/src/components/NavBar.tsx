@@ -11,6 +11,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import {
   Heart, Menu, X, LayoutDashboard, LogOut, ChevronDown, User,
   CheckCircle2, Circle, ArrowRight, ChevronUp, Loader2, Shield, Bell, MessageCircle,
 } from "lucide-react";
@@ -36,9 +44,9 @@ const PRIMARY_LINKS = [
   { href: "/resources", label: "Resources", emoji: "📚" },
 ];
 
-// Tucked into the "Explore" menu on desktop — opens as a vertical panel
-// anchored to the left, not a dropdown hanging off the trigger's own
-// position, so it doesn't crowd the right side of the bar.
+// Tucked into the "Explore" menu on desktop — opens as a full-height
+// drawer sliding in from the right, so it never overlaps the hero or
+// crowds the Sign In/Get Started buttons the way a dropdown could.
 const MORE_LINKS = [
   { href: "/learn-ei", label: "Learn EI", emoji: "🎓" },
   { href: "/mindset", label: "Mindset", emoji: "💡" },
@@ -332,8 +340,8 @@ export default function NavBar() {
               </button>
             ))}
 
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
+            <Sheet>
+              <SheetTrigger asChild>
                 <button
                   className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400"
                   style={{
@@ -348,30 +356,37 @@ export default function NavBar() {
                   Explore
                   <ChevronDown className="w-3.5 h-3.5" aria-hidden="true" />
                 </button>
-              </DropdownMenuTrigger>
-              {/* align="end" anchors the panel's right edge to the trigger,
-                  so it opens extending toward the left rather than hanging
-                  off to the right where it could crowd the Sign In/Get
-                  Started buttons. */}
-              <DropdownMenuContent
-                align="end"
-                sideOffset={8}
-                className="w-56"
-                style={{ backgroundColor: "var(--hc-espresso-deep)", borderColor: "color-mix(in oklch, var(--hc-cream) 12%, transparent)" }}
+              </SheetTrigger>
+              <SheetContent
+                side="right"
+                className="w-72 sm:max-w-xs border-0 p-0"
+                style={{ backgroundColor: "var(--hc-espresso-deep)", color: "var(--hc-cream)" }}
               >
-                {MORE_LINKS.map((link) => (
-                  <DropdownMenuItem
-                    key={link.href}
-                    onClick={() => navigate(link.href)}
-                    className="cursor-pointer rounded-lg focus:bg-[color-mix(in_oklch,var(--hc-terracotta)_16%,transparent)]"
-                    style={{ color: "var(--hc-cream)" }}
-                  >
-                    <span aria-hidden="true" className="mr-2">{link.emoji}</span>
-                    {link.label}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
+                <SheetHeader className="px-4 pt-5 pb-1">
+                  <SheetTitle style={{ color: "var(--hc-cream)" }}>Explore</SheetTitle>
+                </SheetHeader>
+                <div className="px-3 pb-4 flex flex-col gap-1 overflow-y-auto">
+                  {MORE_LINKS.map((link) => (
+                    <SheetClose asChild key={link.href}>
+                      <button
+                        onClick={() => navigate(link.href)}
+                        className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400"
+                        style={{
+                          background: isActive(link.href)
+                            ? "color-mix(in oklch, var(--hc-terracotta) 18%, transparent)"
+                            : "transparent",
+                          color: isActive(link.href) ? "var(--hc-cream)" : "var(--hc-cream-muted)",
+                        }}
+                        aria-current={isActive(link.href) ? "page" : undefined}
+                      >
+                        <span aria-hidden="true" className="text-base">{link.emoji}</span>
+                        {link.label}
+                      </button>
+                    </SheetClose>
+                  ))}
+                </div>
+              </SheetContent>
+            </Sheet>
           </div>
         )}
 
